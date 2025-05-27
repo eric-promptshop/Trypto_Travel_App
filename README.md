@@ -2,8 +2,6 @@
 
 <div align="center">
 
-![Trypto Logo](https://via.placeholder.com/200x80/1f5582/ffffff?text=TRYPTO)
-
 **Transform travel requests into interactive, AI-powered custom itineraries**
 
 [![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
