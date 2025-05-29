@@ -1,28 +1,26 @@
-import type React from "react"
-import type { Metadata } from "next/dist/lib/metadata/types/metadata-interface"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
+import './globals.css'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import { TripProvider } from '../contexts/TripContext'
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Trypto Travel Itinerary Builder",
-  description: "Build your custom travel itinerary with Trypto",
-    generator: 'v0.dev'
+  title: 'Trypto Travel App',
+  description: 'AI-powered custom trip builder',
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light">
+        <TripProvider>
           {children}
-        </ThemeProvider>
+        </TripProvider>
       </body>
     </html>
   )
