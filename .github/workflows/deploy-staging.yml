@@ -12,9 +12,6 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: 
-      name: staging
-      url: ${{ secrets.STAGING_NEXTAUTH_URL }}
     
     steps:
     - name: Checkout code
