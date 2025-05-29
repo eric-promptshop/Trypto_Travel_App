@@ -1,0 +1,13 @@
+{
+  "allowlist": [],
+  "skipAudit": false,
+  "levels": {
+    "low": false,
+    "moderate": false,
+    "high": true,
+    "critical": true
+  },
+  "report-type": "json",
+  "output-format": "text",
+  "advisories": []
+} 

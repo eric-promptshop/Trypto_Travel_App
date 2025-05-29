@@ -1,0 +1,343 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core tenant model for multi-tenancy
+model Tenant {
+  id            String   @id @default(uuid())
+  name          String
+  slug          String   @unique
+  description   String?
+  domain        String?  @unique
+  isActive      Boolean  @default(true)
+  settings      Json?    // Tenant-specific configuration
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  users         User[]
+  tenantSettings TenantSettings[]
+  integrations  Integration[]
+  tripTemplates TripTemplate[]
+  
+  @@index([slug])
+  @@index([domain])
+  @@map("tenants")
+}
+
+// Global settings that apply to all tenants
+model GlobalSettings {
+  id            String   @id @default(uuid())
+  settingKey    String   @unique
+  settingValue  String
+  description   String?
+  isEncrypted   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("global_settings")
+}
+
+// Tenant-specific settings with inheritance from global
+model TenantSettings {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  settingKey      String
+  settingValue    String
+  overridesGlobal Boolean  @default(false)
+  isEncrypted     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([tenantId, settingKey])
+  @@index([tenantId])
+  @@map("tenant_settings")
+}
+
+// Users with tenant isolation
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?
+  role         Role     @default(USER)
+  isActive     Boolean  @default(true)
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastLoginAt  DateTime?
+  
+  // Relations
+  trips        Trip[]
+  accounts     Account[]
+  sessions     Session[]
+  
+  @@index([email])
+  @@index([tenantId])
+  @@index([tenantId, role])
+  @@map("users")
+}
+
+// NextAuth.js Account model
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// NextAuth.js Session model
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+// NextAuth.js VerificationToken model
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Trip management with tenant isolation
+model Trip {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  location    String
+  budget      Decimal?   @db.Decimal(10, 2)
+  currency    String     @default("USD")
+  status      TripStatus @default(PLANNED)
+  isPublic    Boolean    @default(false)
+  metadata    Json?      // Flexible data storage
+  
+  // Tenant isolation
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  activities  Activity[]
+  participants TripParticipant[]
+  documents   TripDocument[]
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([startDate])
+  @@index([userId, status])
+  @@map("trips")
+}
+
+// Trip participants for group travel
+model TripParticipant {
+  id        String   @id @default(uuid())
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  email     String
+  name      String?
+  role      ParticipantRole @default(PARTICIPANT)
+  isConfirmed Boolean @default(false)
+  invitedAt DateTime @default(now())
+  confirmedAt DateTime?
+  
+  @@unique([tripId, email])
+  @@index([tripId])
+  @@map("trip_participants")
+}
+
+// Activities within trips
+model Activity {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  date        DateTime
+  startTime   String?  // Format: "HH:MM"
+  endTime     String?  // Format: "HH:MM"
+  location    String?
+  cost        Decimal? @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  category    ActivityCategory @default(GENERAL)
+  isBooked    Boolean  @default(false)
+  bookingRef  String?
+  notes       String?
+  
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([tripId])
+  @@index([date])
+  @@index([tripId, date])
+  @@map("activities")
+}
+
+// Document storage for trips
+model TripDocument {
+  id          String   @id @default(uuid())
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  fileName    String
+  originalName String
+  mimeType    String
+  size        Int
+  url         String
+  category    DocumentCategory @default(GENERAL)
+  uploadedAt  DateTime @default(now())
+  
+  @@index([tripId])
+  @@index([category])
+  @@map("trip_documents")
+}
+
+// Trip templates for quick trip creation
+model TripTemplate {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  category    String
+  duration    Int      // Duration in days
+  estimatedCost Decimal? @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  isActive    Boolean  @default(true)
+  
+  // Tenant isolation
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Template content
+  activities  Json?    // Serialized activity templates
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([tenantId])
+  @@index([category])
+  @@index([tenantId, isActive])
+  @@map("trip_templates")
+}
+
+// Third-party integrations per tenant
+model Integration {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider     IntegrationProvider
+  name         String
+  isActive     Boolean  @default(true)
+  configuration Json    // Provider-specific config
+  credentials   Json?   // Encrypted credentials
+  lastSyncAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([tenantId, provider, name])
+  @@index([tenantId])
+  @@index([provider])
+  @@map("integrations")
+}
+
+// Audit log for tracking changes
+model AuditLog {
+  id          String   @id @default(uuid())
+  tenantId    String   // For tenant isolation
+  userId      String?  // Optional user ID
+  action      String   // CREATE, UPDATE, DELETE, etc.
+  resource    String   // Table/entity name
+  resourceId  String   // ID of the affected resource
+  oldValues   Json?    // Previous values
+  newValues   Json?    // New values
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  
+  @@index([tenantId])
+  @@index([userId])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  USER
+  TRAVELER
+  AGENT
+}
+
+enum TripStatus {
+  PLANNED
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipantRole {
+  ORGANIZER
+  PARTICIPANT
+  VIEWER
+}
+
+enum ActivityCategory {
+  FLIGHT
+  ACCOMMODATION
+  RESTAURANT
+  ATTRACTION
+  TRANSPORT
+  MEETING
+  GENERAL
+}
+
+enum DocumentCategory {
+  PASSPORT
+  VISA
+  TICKET
+  BOOKING
+  ITINERARY
+  INSURANCE
+  GENERAL
+}
+
+enum IntegrationProvider {
+  HUBSPOT
+  SALESFORCE
+  ZOHO
+  MAILCHIMP
+  STRIPE
+  GOOGLE_CALENDAR
+} 
