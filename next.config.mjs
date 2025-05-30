@@ -3,14 +3,6 @@ const nextConfig = {
   // Output configuration for Docker
   output: 'standalone',
   
-  // Environment-specific optimizations
-  experimental: {
-    // Enable server components logging in development
-    logging: {
-      level: process.env.NODE_ENV === 'development' ? 'verbose' : 'error',
-    },
-  },
-  
   // Build optimizations
   compiler: {
     // Remove console logs in production
@@ -79,7 +71,6 @@ const nextConfig = {
   },
   
   // Performance optimizations
-  swcMinify: true,
   poweredByHeader: false,
 }
 
