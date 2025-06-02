@@ -1,0 +1,392 @@
+/* Print-optimized styles for Travel Itinerary */
+@media print {
+  /* Reset and basic setup */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    font-size: 12pt;
+    line-height: 1.4;
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  /* Hide non-essential elements for print */
+  .no-print,
+  .print-hidden,
+  nav,
+  .navigation,
+  .floating-widget,
+  .network-indicator,
+  .image-quality-controls,
+  .scroll-controls,
+  .back-to-top,
+  .sticky-header,
+  .filter-controls,
+  .search-bar,
+  .action-buttons:not(.print-actions),
+  .dev-tools,
+  .debug-info {
+    display: none !important;
+  }
+
+  /* Print-specific header */
+  .print-header {
+    display: block !important;
+    border-bottom: 2pt solid #1f5582;
+    margin-bottom: 20pt;
+    padding-bottom: 10pt;
+  }
+
+  .print-header h1 {
+    font-size: 24pt;
+    font-weight: bold;
+    color: #1f5582 !important;
+    margin: 0;
+  }
+
+  .print-header .trip-info {
+    font-size: 11pt;
+    color: #333 !important;
+    margin-top: 5pt;
+  }
+
+  /* Page layout and breaks */
+  .page-break {
+    page-break-before: always;
+  }
+
+  .page-break-inside-avoid {
+    page-break-inside: avoid;
+  }
+
+  .day-section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 20pt;
+    border: 1pt solid #ddd;
+    padding: 15pt;
+    border-radius: 8pt;
+  }
+
+  .day-header {
+    border-bottom: 1pt solid #1f5582;
+    padding-bottom: 8pt;
+    margin-bottom: 15pt;
+  }
+
+  .day-header h2 {
+    font-size: 18pt;
+    font-weight: bold;
+    color: #1f5582 !important;
+    margin: 0;
+  }
+
+  .day-header .date-info {
+    font-size: 11pt;
+    color: #666 !important;
+    margin-top: 3pt;
+  }
+
+  /* Activity cards */
+  .activity-card {
+    margin-bottom: 15pt;
+    padding: 10pt;
+    border: 1pt solid #e5e5e5;
+    border-radius: 6pt;
+    page-break-inside: avoid;
+  }
+
+  .activity-card .time {
+    font-weight: bold;
+    font-size: 11pt;
+    color: #1f5582 !important;
+  }
+
+  .activity-card .title {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #000 !important;
+    margin: 3pt 0;
+  }
+
+  .activity-card .description {
+    font-size: 10pt;
+    color: #333 !important;
+    line-height: 1.3;
+  }
+
+  .activity-card .location {
+    font-size: 9pt;
+    color: #666 !important;
+    font-style: italic;
+  }
+
+  /* Hotel cards */
+  .hotel-card {
+    margin-bottom: 20pt;
+    padding: 15pt;
+    border: 2pt solid #1f5582;
+    border-radius: 8pt;
+    page-break-inside: avoid;
+    background: #f8f9fa !important;
+  }
+
+  .hotel-card .hotel-name {
+    font-size: 16pt;
+    font-weight: bold;
+    color: #1f5582 !important;
+    margin-bottom: 5pt;
+  }
+
+  .hotel-card .hotel-address {
+    font-size: 10pt;
+    color: #333 !important;
+    margin-bottom: 8pt;
+  }
+
+  .hotel-card .check-info {
+    font-size: 11pt;
+    color: #000 !important;
+    display: flex;
+    gap: 20pt;
+  }
+
+  .hotel-card .amenities {
+    font-size: 9pt;
+    color: #666 !important;
+    margin-top: 8pt;
+  }
+
+  /* Flight cards */
+  .flight-card {
+    margin-bottom: 20pt;
+    padding: 15pt;
+    border: 2pt solid #ff7b00;
+    border-radius: 8pt;
+    page-break-inside: avoid;
+    background: #fff8f5 !important;
+  }
+
+  .flight-card .flight-number {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #ff7b00 !important;
+    margin-bottom: 8pt;
+  }
+
+  .flight-card .flight-route {
+    font-size: 12pt;
+    color: #000 !important;
+    margin-bottom: 5pt;
+  }
+
+  .flight-card .flight-times {
+    font-size: 11pt;
+    color: #333 !important;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .flight-card .seat-info {
+    font-size: 10pt;
+    color: #666 !important;
+    margin-top: 8pt;
+  }
+
+  /* Images - simplified for print */
+  .activity-image,
+  .hotel-image,
+  .day-image {
+    max-width: 150pt !important;
+    max-height: 100pt !important;
+    object-fit: cover;
+    border: 1pt solid #ddd;
+    border-radius: 4pt;
+    float: right;
+    margin-left: 10pt;
+    margin-bottom: 5pt;
+  }
+
+  /* Maps - replace with location text */
+  .map-container {
+    display: none !important;
+  }
+
+  .map-fallback {
+    display: block !important;
+    font-size: 9pt;
+    color: #666 !important;
+    font-style: italic;
+    padding: 10pt;
+    border: 1pt dashed #ccc;
+    text-align: center;
+  }
+
+  /* QR Code styling */
+  .qr-code-section {
+    position: fixed;
+    bottom: 20pt;
+    right: 20pt;
+    width: 80pt;
+    text-align: center;
+    font-size: 8pt;
+    color: #666 !important;
+  }
+
+  .qr-code-section img {
+    width: 60pt;
+    height: 60pt;
+    border: 1pt solid #ddd;
+  }
+
+  /* Footer information */
+  .print-footer {
+    position: fixed;
+    bottom: 10pt;
+    left: 20pt;
+    right: 100pt;
+    font-size: 8pt;
+    color: #666 !important;
+    border-top: 1pt solid #ddd;
+    padding-top: 5pt;
+  }
+
+  /* Table layouts */
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15pt;
+  }
+
+  .print-table th,
+  .print-table td {
+    border: 1pt solid #ddd;
+    padding: 8pt;
+    text-align: left;
+    font-size: 10pt;
+  }
+
+  .print-table th {
+    background: #f5f5f5 !important;
+    font-weight: bold;
+    color: #1f5582 !important;
+  }
+
+  /* Contact information */
+  .emergency-contacts {
+    page-break-before: always;
+    border: 2pt solid #dc3545;
+    padding: 15pt;
+    background: #fff5f5 !important;
+  }
+
+  .emergency-contacts h3 {
+    color: #dc3545 !important;
+    font-size: 16pt;
+    margin-bottom: 10pt;
+  }
+
+  .emergency-contacts .contact-item {
+    margin-bottom: 8pt;
+    font-size: 11pt;
+  }
+
+  /* Important notes styling */
+  .important-note {
+    border: 2pt solid #ffc107;
+    background: #fffdf0 !important;
+    padding: 10pt;
+    margin: 10pt 0;
+    border-radius: 6pt;
+  }
+
+  .important-note::before {
+    content: "⚠️ IMPORTANT: ";
+    font-weight: bold;
+    color: #856404 !important;
+  }
+
+  /* Remove shadows and fancy effects */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    background-image: none !important;
+  }
+
+  /* Ensure text remains readable */
+  .text-white {
+    color: #000 !important;
+  }
+
+  .bg-dark {
+    background: #fff !important;
+  }
+
+  /* Hide animations and transitions */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Page margins and sizing */
+  @page {
+    margin: 0.75in;
+    size: letter;
+  }
+
+  /* Accessibility - ensure sufficient contrast */
+  a, a:visited {
+    color: #000 !important;
+    text-decoration: underline;
+  }
+
+  /* Status indicators */
+  .status-confirmed {
+    background: #d4edda !important;
+    color: #155724 !important;
+    padding: 2pt 6pt;
+    border-radius: 3pt;
+    font-size: 9pt;
+  }
+
+  .status-pending {
+    background: #fff3cd !important;
+    color: #856404 !important;
+    padding: 2pt 6pt;
+    border-radius: 3pt;
+    font-size: 9pt;
+  }
+
+  /* Print-specific utility classes */
+  .print-only {
+    display: block !important;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+
+  .print-text-left {
+    text-align: left !important;
+  }
+
+  .print-text-center {
+    text-align: center !important;
+  }
+
+  .print-text-right {
+    text-align: right !important;
+  }
+
+  .print-font-bold {
+    font-weight: bold !important;
+  }
+
+  .print-font-normal {
+    font-weight: normal !important;
+  }
+} 

@@ -18,6 +18,104 @@ body {
   .floating-card {
     @apply shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1;
   }
+
+  /* Scrollbar utilities for enhanced mobile navigation */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-track-transparent {
+    scrollbar-color: transparent transparent;
+  }
+
+  .scrollbar-thumb-gray-300 {
+    scrollbar-color: #d1d5db transparent;
+  }
+
+  .scrollbar-thumb-gray-600 {
+    scrollbar-color: #4b5563 transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 3px;
+  }
+
+  /* Orientation-specific utilities */
+  .portrait-only {
+    @media (orientation: landscape) {
+      display: none !important;
+    }
+  }
+
+  .landscape-only {
+    @media (orientation: portrait) {
+      display: none !important;
+    }
+  }
+
+  .mobile-portrait-only {
+    @media (max-width: 767px) and (orientation: landscape) {
+      display: none !important;
+    }
+    @media (min-width: 768px) {
+      display: none !important;
+    }
+  }
+
+  .mobile-landscape-only {
+    @media (max-width: 767px) and (orientation: portrait) {
+      display: none !important;
+    }
+    @media (min-width: 768px) {
+      display: none !important;
+    }
+  }
+
+  /* Touch-friendly spacing utilities */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+  }
+
+  .touch-spacing {
+    padding: 12px;
+  }
+
+  /* Responsive text sizes that work across orientations */
+  .text-responsive-sm {
+    font-size: clamp(0.875rem, 2.5vw, 1rem);
+  }
+
+  .text-responsive-base {
+    font-size: clamp(1rem, 3vw, 1.125rem);
+  }
+
+  .text-responsive-lg {
+    font-size: clamp(1.125rem, 4vw, 1.25rem);
+  }
+
+  .text-responsive-xl {
+    font-size: clamp(1.25rem, 5vw, 1.5rem);
+  }
 }
 
 @layer base {
@@ -33,10 +131,10 @@ body {
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
+    --muted-foreground: 0 0% 42%;
     --accent: 28 100% 50%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 48%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
@@ -55,6 +153,7 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --one-handed-ui-scale: 1;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -119,6 +218,67 @@ body {
 
   ::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
+  }
+
+  /* Dark mode scrollbar */
+  .dark ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+  }
+
+  /* Dark mode form inputs - better contrast for mobile */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    background: hsl(var(--input));
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+  }
+
+  .dark input:focus,
+  .dark textarea:focus,
+  .dark select:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-color: #3b82f6;
+  }
+
+  /* Enhanced dark mode mobile optimizations */
+  .dark .glass-effect {
+    @apply bg-gray-900/70 backdrop-blur-sm border border-gray-700/20;
+  }
+
+  .dark .floating-card {
+    @apply shadow-lg shadow-black/20 hover:shadow-xl hover:shadow-black/30;
+  }
+
+  /* Dark mode touch targets - ensure proper contrast */
+  .dark .touch-target {
+    color: hsl(var(--foreground));
+  }
+
+  .dark .touch-target:hover {
+    background-color: hsl(var(--accent) / 0.1);
+  }
+
+  .dark .touch-target:active {
+    background-color: hsl(var(--accent) / 0.2);
+  }
+
+  /* Dark mode mobile bottom nav */
+  .dark .mobile-bottom-nav {
+    background: hsl(var(--background));
+    border-top: 1px solid hsl(var(--border));
+  }
+
+  /* Dark mode sheet content */
+  .dark [data-sonner-toaster] {
+    --normal-bg: hsl(var(--background));
+    --normal-border: hsl(var(--border));
+    --normal-text: hsl(var(--foreground));
   }
 }
 
@@ -633,4 +793,354 @@ button[type="button"]:hover {
 .leaflet-marker-icon * {
   pointer-events: auto !important;
   cursor: pointer !important;
+}
+
+/* Touch target utility for mobile accessibility */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Optionally add extra padding for visual comfort */
+  padding: 4px;
+}
+
+/* Reduced Motion: Respect user preference to minimize motion */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Orientation-Specific Responsive Design */
+
+/* Mobile Portrait Optimizations */
+@media (max-width: 767px) and (orientation: portrait) {
+  /* Optimize vertical space usage */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Stack navigation vertically with better spacing */
+  .mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* Optimize card layouts for portrait */
+  .card-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* Improve form layouts */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-input {
+    padding: 0.75rem 1rem;
+    font-size: 1rem; /* Prevent iOS zoom */
+  }
+
+  /* Portrait-specific image sizing */
+  .responsive-image {
+    width: 100%;
+    height: auto;
+    max-height: 60vh;
+    object-fit: cover;
+  }
+
+  /* Optimize buttons for thumb reach */
+  .btn-mobile-portrait {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    min-height: 44px;
+  }
+
+  /* Better text spacing for readability */
+  .text-content {
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Optimize modal sizing */
+  .modal-content {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+    border-radius: 0.75rem;
+  }
+}
+
+/* Mobile Landscape Optimizations */
+@media (max-width: 767px) and (orientation: landscape) {
+  /* Maximize horizontal space usage */
+  .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* Horizontal layouts for landscape */
+  .landscape-flex {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Compact navigation for landscape */
+  .mobile-nav-landscape {
+    display: flex;
+    flex-direction: row;
+    gap: 0.25rem;
+    padding: 0.5rem;
+  }
+
+  /* Landscape-specific image sizing */
+  .responsive-image-landscape {
+    max-width: 50%;
+    height: auto;
+    max-height: 40vh;
+  }
+
+  /* Compact cards for landscape */
+  .card-landscape {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Horizontal button groups */
+  .btn-group-landscape {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  /* Optimize text for landscape reading */
+  .text-content-landscape {
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    columns: 2;
+    column-gap: 2rem;
+  }
+
+  /* Landscape modal optimizations */
+  .modal-content-landscape {
+    margin: 0.5rem;
+    max-height: calc(100vh - 1rem);
+    max-width: calc(100vw - 1rem);
+    border-radius: 0.5rem;
+  }
+
+  /* Hide less critical content in landscape to focus on main content */
+  .landscape-hide {
+    display: none;
+  }
+
+  /* Compact spacing for landscape mode */
+  .landscape-compact {
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+  }
+}
+
+/* Tablet Portrait (iPad-like devices) */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  /* Two-column layouts for tablet portrait */
+  .tablet-portrait-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  /* Better sidebar handling */
+  .sidebar-tablet-portrait {
+    width: 100%;
+    max-width: none;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Optimize touch targets for tablet */
+  .btn-tablet-portrait {
+    padding: 1rem 1.5rem;
+    font-size: 1.125rem;
+    min-height: 48px;
+  }
+}
+
+/* Tablet Landscape Optimizations */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+  /* Three-column layout for tablet landscape */
+  .tablet-landscape-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr 280px;
+    gap: 1.5rem;
+    height: 100vh;
+  }
+
+  /* Maintain desktop-like behavior on tablet landscape */
+  .sidebar-tablet-landscape {
+    display: block;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+}
+
+/* Cross-orientation optimizations */
+@media (max-width: 767px) {
+  /* Universal mobile optimizations regardless of orientation */
+  
+  /* Improve scroll performance */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Better touch interaction */
+  button, a, input, textarea {
+    touch-action: manipulation;
+  }
+
+  /* Prevent text size adjustment */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Optimize focus states for mobile */
+  input:focus, textarea:focus, select:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+
+  /* Safe area handling for devices with notches */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* One-Handed Mode Styles */
+.one-handed-mode {
+  /* Scale up interactive elements for easier touch */
+  button, 
+  .interactive-element, 
+  input[type="checkbox"], 
+  input[type="radio"] {
+    transform: scale(var(--one-handed-ui-scale));
+  }
+  
+  /* Thumb zone positioning classes */
+  .thumb-zone-wrapper {
+    transition: transform 0.3s ease-out;
+  }
+  
+  /* High priority elements - always in thumb reach */
+  .thumb-zone-high {
+    position: fixed !important;
+    bottom: 80px;
+    z-index: 100;
+    
+    &.thumb-zone-high-right {
+      right: 20px;
+    }
+    
+    &.thumb-zone-high-left {
+      left: 20px;
+    }
+  }
+  
+  /* Medium priority - moved to bottom half of screen */
+  .thumb-zone-medium {
+    position: relative;
+    margin-top: auto;
+    
+    &.thumb-zone-medium-right {
+      margin-left: auto;
+      margin-right: 20px;
+    }
+    
+    &.thumb-zone-medium-left {
+      margin-right: auto;
+      margin-left: 20px;
+    }
+  }
+  
+  /* Reposition navigation for one-handed use */
+  .app-navigation {
+    flex-direction: column;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    background: var(--bg-primary);
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+  }
+  
+  /* Bottom sheet style for modals */
+  .modal-container {
+    .modal-content {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 80vh;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      transform: translateY(0);
+      animation: slide-up 0.3s ease-out;
+    }
+  }
+  
+  /* Form containers optimized for one-handed use */
+  .form-container {
+    display: flex;
+    flex-direction: column-reverse; /* Important fields at bottom */
+    
+    .primary-actions {
+      position: sticky;
+      bottom: 70px;
+      padding: 10px;
+      background: var(--bg-primary);
+      z-index: 10;
+    }
+  }
+}
+
+/* Animations */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .one-handed-mode .thumb-zone-wrapper {
+    transition-duration: 0.1s !important;
+  }
 }

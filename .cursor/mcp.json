@@ -7,8 +7,8 @@
                 "task-master-mcp"
             ],
             "env": {
-                "ANTHROPIC_API_KEY": "YOUR_ANTHROPIC_API_KEY",
-                "PERPLEXITY_API_KEY": "YOUR_PERPLEXITY_API_KEY",
+                "ANTHROPIC_API_KEY": "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",
+                "PERPLEXITY_API_KEY": "pplx-ye3ktw5FDED6Yi4Px1XOpVgPWAPow6JWHSMh3jMHmLZDn57OY",
                 "MODEL": "claude-3-7-sonnet-20250219",
                 "PERPLEXITY_MODEL": "sonar-pro",
                 "MAX_TOKENS": "64000",

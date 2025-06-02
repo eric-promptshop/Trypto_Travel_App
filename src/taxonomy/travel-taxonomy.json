@@ -1,0 +1,358 @@
+{
+  "contentCategories": {
+    "destination": {
+      "name": "Destinations",
+      "description": "Places to visit including cities, natural areas, and attractions"
+    },
+    "activity": {
+      "name": "Activities & Experiences",
+      "description": "Things to do including tours, adventures, and cultural experiences"
+    },
+    "accommodation": {
+      "name": "Accommodations",
+      "description": "Places to stay including hotels, rentals, and unique lodging"
+    },
+    "transportation": {
+      "name": "Transportation",
+      "description": "Ways to travel including flights, trains, and local transport"
+    },
+    "dining": {
+      "name": "Dining & Food",
+      "description": "Restaurants, cafes, and food experiences"
+    },
+    "shopping": {
+      "name": "Shopping",
+      "description": "Markets, malls, and shopping experiences"
+    },
+    "practicalInfo": {
+      "name": "Practical Information",
+      "description": "Travel requirements, local info, and helpful tips"
+    },
+    "itinerary": {
+      "name": "Itineraries",
+      "description": "Complete travel plans and trip schedules"
+    }
+  },
+  
+  "hierarchies": {
+    "destination": {
+      "geographic": {
+        "world": {
+          "africa": {
+            "name": "Africa",
+            "regions": {
+              "north_africa": ["egypt", "morocco", "tunisia", "algeria", "libya"],
+              "west_africa": ["nigeria", "ghana", "senegal", "mali"],
+              "east_africa": ["kenya", "tanzania", "ethiopia", "uganda"],
+              "central_africa": ["cameroon", "congo", "gabon"],
+              "southern_africa": ["south_africa", "zimbabwe", "botswana", "namibia"]
+            }
+          },
+          "asia": {
+            "name": "Asia",
+            "regions": {
+              "east_asia": ["china", "japan", "south_korea", "taiwan"],
+              "southeast_asia": ["thailand", "vietnam", "indonesia", "malaysia", "singapore", "philippines"],
+              "south_asia": ["india", "pakistan", "bangladesh", "sri_lanka", "nepal"],
+              "central_asia": ["kazakhstan", "uzbekistan", "kyrgyzstan"],
+              "western_asia": ["turkey", "israel", "jordan", "uae", "saudi_arabia"]
+            }
+          },
+          "europe": {
+            "name": "Europe",
+            "regions": {
+              "western_europe": ["france", "germany", "netherlands", "belgium", "austria", "switzerland"],
+              "eastern_europe": ["poland", "czech_republic", "hungary", "romania", "bulgaria"],
+              "northern_europe": ["uk", "ireland", "sweden", "norway", "denmark", "finland", "iceland"],
+              "southern_europe": ["spain", "italy", "greece", "portugal", "croatia"]
+            }
+          },
+          "north_america": {
+            "name": "North America",
+            "regions": {
+              "usa": ["northeast", "southeast", "midwest", "southwest", "west"],
+              "canada": ["eastern_canada", "western_canada", "northern_canada"],
+              "mexico": ["northern_mexico", "central_mexico", "southern_mexico"],
+              "central_america": ["costa_rica", "panama", "guatemala", "belize"],
+              "caribbean": ["cuba", "jamaica", "dominican_republic", "puerto_rico"]
+            }
+          },
+          "south_america": {
+            "name": "South America",
+            "regions": {
+              "northern": ["colombia", "venezuela", "guyana", "suriname"],
+              "andean": ["peru", "bolivia", "ecuador"],
+              "southern_cone": ["argentina", "chile", "uruguay", "paraguay"],
+              "brazil": ["northeast", "southeast", "south", "north", "central_west"]
+            }
+          },
+          "oceania": {
+            "name": "Oceania",
+            "regions": {
+              "australia": ["new_south_wales", "victoria", "queensland", "western_australia"],
+              "new_zealand": ["north_island", "south_island"],
+              "pacific_islands": ["fiji", "tahiti", "hawaii", "samoa"]
+            }
+          }
+        }
+      },
+      
+      "types": {
+        "urban": {
+          "city": {
+            "keywords": ["metropolitan", "downtown", "urban", "cityscape"],
+            "features": ["skyline", "neighborhoods", "districts", "city_center"]
+          },
+          "town": {
+            "keywords": ["small_town", "township", "borough"],
+            "features": ["main_street", "town_square", "local_shops"]
+          }
+        },
+        "natural": {
+          "beach": {
+            "keywords": ["coastal", "seaside", "shore", "oceanfront"],
+            "features": ["sand", "waves", "coral_reef", "boardwalk"]
+          },
+          "mountain": {
+            "keywords": ["alpine", "peaks", "highland", "mountainous"],
+            "features": ["summit", "valley", "glacier", "ski_resort"]
+          },
+          "desert": {
+            "keywords": ["arid", "dunes", "sahara", "dry"],
+            "features": ["oasis", "sand_dunes", "canyons"]
+          },
+          "forest": {
+            "keywords": ["rainforest", "jungle", "woods", "tropical"],
+            "features": ["canopy", "trails", "wildlife", "waterfalls"]
+          }
+        },
+        "water": {
+          "island": {
+            "keywords": ["isle", "archipelago", "atoll", "cay"],
+            "features": ["beaches", "lagoon", "tropical", "remote"]
+          },
+          "lake": {
+            "keywords": ["lakeside", "waterfront", "freshwater"],
+            "features": ["shore", "marina", "water_sports"]
+          },
+          "river": {
+            "keywords": ["riverside", "waterway", "stream"],
+            "features": ["banks", "delta", "rapids", "cruise"]
+          }
+        },
+        "cultural": {
+          "historical": {
+            "keywords": ["heritage", "ancient", "historic", "archaeological"],
+            "features": ["ruins", "monuments", "museums", "old_town"]
+          },
+          "religious": {
+            "keywords": ["sacred", "pilgrimage", "spiritual"],
+            "features": ["temples", "churches", "mosques", "shrines"]
+          }
+        }
+      }
+    },
+    
+    "activity": {
+      "sightseeing": {
+        "city_tours": {
+          "walking_tour": ["guided_walk", "free_tour", "historical_walk"],
+          "bus_tour": ["hop_on_hop_off", "panoramic", "double_decker"],
+          "bike_tour": ["cycling_tour", "e_bike", "bicycle_tour"],
+          "boat_tour": ["river_cruise", "harbor_tour", "canal_tour"]
+        },
+        "attraction_visits": {
+          "monuments": ["statue", "memorial", "landmark"],
+          "viewpoints": ["observation_deck", "panoramic_view", "lookout"],
+          "architecture": ["buildings", "bridges", "squares"]
+        }
+      },
+      
+      "adventure": {
+        "water_activities": {
+          "diving": ["scuba", "snorkeling", "freediving"],
+          "surfing": ["windsurfing", "kitesurfing", "bodyboarding"],
+          "boating": ["kayaking", "canoeing", "rafting", "sailing"],
+          "swimming": ["beach", "pool", "open_water"]
+        },
+        "land_activities": {
+          "hiking": ["trekking", "walking", "mountaineering", "trail"],
+          "climbing": ["rock_climbing", "bouldering", "via_ferrata"],
+          "cycling": ["mountain_biking", "road_cycling", "bmx"],
+          "motor_sports": ["atv", "4x4", "motorcycle_tour"]
+        },
+        "air_activities": {
+          "flying": ["paragliding", "skydiving", "hang_gliding"],
+          "ballooning": ["hot_air_balloon", "scenic_flight"],
+          "bungee": ["bungee_jumping", "zip_line"]
+        }
+      },
+      
+      "cultural": {
+        "arts": {
+          "museums": ["art_museum", "history_museum", "science_museum"],
+          "galleries": ["art_gallery", "exhibition", "contemporary_art"],
+          "performances": ["theater", "opera", "ballet", "concert"]
+        },
+        "local_culture": {
+          "workshops": ["cooking_class", "craft_workshop", "language_class"],
+          "festivals": ["local_festival", "cultural_event", "celebration"],
+          "traditions": ["ceremony", "ritual", "cultural_show"]
+        }
+      },
+      
+      "relaxation": {
+        "wellness": {
+          "spa": ["massage", "facial", "body_treatment"],
+          "thermal": ["hot_springs", "thermal_bath", "sauna"],
+          "meditation": ["yoga", "mindfulness", "retreat"]
+        },
+        "leisure": {
+          "beach": ["sunbathing", "beach_club", "water_sports"],
+          "pool": ["swimming_pool", "infinity_pool", "poolside"],
+          "garden": ["botanical_garden", "park", "nature_walk"]
+        }
+      }
+    },
+    
+    "accommodation": {
+      "traditional": {
+        "hotels": {
+          "luxury": ["5_star", "boutique", "resort", "palace"],
+          "business": ["conference_hotel", "airport_hotel", "corporate"],
+          "mid_range": ["3_star", "4_star", "chain_hotel"],
+          "budget": ["2_star", "motel", "economy"]
+        },
+        "small_properties": {
+          "guesthouse": ["b&b", "inn", "pension"],
+          "hostel": ["backpacker", "youth_hostel", "pod_hotel"]
+        }
+      },
+      
+      "alternative": {
+        "rentals": {
+          "apartment": ["studio", "flat", "serviced_apartment"],
+          "house": ["villa", "cottage", "chalet"],
+          "room": ["private_room", "shared_room", "homestay"]
+        },
+        "outdoor": {
+          "camping": ["tent", "campground", "wild_camping"],
+          "glamping": ["luxury_tent", "yurt", "treehouse"],
+          "rv": ["motorhome", "caravan", "campervan"]
+        }
+      },
+      
+      "unique": {
+        "themed": {
+          "nature": ["eco_lodge", "safari_lodge", "jungle_lodge"],
+          "historic": ["castle", "palace", "heritage_hotel"],
+          "unusual": ["underwater", "ice_hotel", "cave_hotel"]
+        }
+      }
+    }
+  },
+  
+  "attributes": {
+    "priceRange": {
+      "budget": {
+        "symbol": "$",
+        "description": "Affordable, economical options"
+      },
+      "moderate": {
+        "symbol": "$$",
+        "description": "Mid-range pricing"
+      },
+      "expensive": {
+        "symbol": "$$$",
+        "description": "Higher-end options"
+      },
+      "luxury": {
+        "symbol": "$$$$",
+        "description": "Premium, luxury pricing"
+      }
+    },
+    
+    "duration": {
+      "quick": {
+        "range": "0-2 hours",
+        "keywords": ["brief", "short", "quick_stop"]
+      },
+      "half_day": {
+        "range": "2-4 hours",
+        "keywords": ["morning", "afternoon", "half_day"]
+      },
+      "full_day": {
+        "range": "4-8 hours",
+        "keywords": ["day_trip", "full_day", "all_day"]
+      },
+      "multi_day": {
+        "range": "2+ days",
+        "keywords": ["overnight", "weekend", "week_long"]
+      }
+    },
+    
+    "difficulty": {
+      "easy": {
+        "description": "Suitable for all ages and fitness levels",
+        "keywords": ["beginner", "family_friendly", "accessible"]
+      },
+      "moderate": {
+        "description": "Requires some physical fitness",
+        "keywords": ["intermediate", "some_experience", "moderate_fitness"]
+      },
+      "challenging": {
+        "description": "Requires good fitness and/or experience",
+        "keywords": ["advanced", "strenuous", "experienced"]
+      },
+      "extreme": {
+        "description": "For experts only",
+        "keywords": ["expert", "professional", "high_risk"]
+      }
+    },
+    
+    "suitability": {
+      "families": {
+        "keywords": ["family_friendly", "kids", "children", "all_ages"],
+        "features": ["child_care", "kids_menu", "playground", "family_rooms"]
+      },
+      "couples": {
+        "keywords": ["romantic", "honeymoon", "couples", "adults_only"],
+        "features": ["spa", "privacy", "romantic_dining", "couples_activities"]
+      },
+      "solo": {
+        "keywords": ["solo_travel", "backpacker", "independent"],
+        "features": ["social_areas", "single_rooms", "group_activities"]
+      },
+      "groups": {
+        "keywords": ["group_travel", "friends", "tour_group"],
+        "features": ["group_rates", "large_accommodations", "group_activities"]
+      },
+      "business": {
+        "keywords": ["business_travel", "corporate", "conference"],
+        "features": ["wifi", "business_center", "meeting_rooms", "airport_access"]
+      }
+    }
+  },
+  
+  "keywords": {
+    "seasons": {
+      "summer": ["june", "july", "august", "hot", "sunny", "beach_season"],
+      "winter": ["december", "january", "february", "cold", "snow", "ski_season"],
+      "spring": ["march", "april", "may", "flowers", "mild", "easter"],
+      "autumn": ["september", "october", "november", "fall", "foliage", "harvest"]
+    },
+    
+    "booking_terms": {
+      "reservation": ["book", "reserve", "booking", "reservation"],
+      "availability": ["available", "sold_out", "limited", "last_minute"],
+      "cancellation": ["refundable", "non_refundable", "free_cancellation"],
+      "payment": ["prepaid", "pay_later", "deposit", "full_payment"]
+    },
+    
+    "quality_indicators": {
+      "positive": ["recommended", "popular", "must_see", "top_rated", "award_winning"],
+      "ratings": ["5_star", "excellent", "very_good", "good", "average"],
+      "certifications": ["certified", "licensed", "accredited", "verified"]
+    }
+  }
+} 

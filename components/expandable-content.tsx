@@ -101,7 +101,7 @@ export function ExpandableContent({ summary, fullText, additionalInfo, isExpande
           <Button
             variant="ghost"
             size="sm"
-            className="text-[#1f5582] hover:text-[#164569] hover:bg-[#1f5582]/5 p-0 h-auto read-more-btn"
+            className="text-[#1f5582] hover:text-[#164569] hover:bg-[#1f5582]/5 p-0 h-auto read-more-btn touch-target"
             onClick={onToggle}
           >
             {isExpanded ? (

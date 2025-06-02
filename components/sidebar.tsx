@@ -2,65 +2,77 @@
 
 import { motion } from "framer-motion"
 import { Textarea } from "@/components/ui/textarea"
+import { useOrientation } from "@/hooks/use-orientation"
+import { useOneHandedMode } from "@/hooks/use-one-handed-mode"
+import { useBatteryStatus } from "@/hooks/use-battery-status"
 
 export function Sidebar() {
+  const { orientation } = useOrientation();
+  const oneHanded = useOneHandedMode();
+  const { powerSaving } = useBatteryStatus();
+  const duration = powerSaving ? 0.05 : 0.4;
+  const delay1 = powerSaving ? 0 : 0.2;
+  const delay2 = powerSaving ? 0 : 0.3;
+  const isMobileLandscape = typeof window !== 'undefined' && window.innerWidth < 768 && orientation === 'landscape';
+  if (oneHanded || isMobileLandscape) return null;
+
   return (
     <motion.div
-      className="w-[30%] min-w-[300px] border-r border-gray-200 bg-white p-4 overflow-y-auto"
+      className="w-[30%] min-w-[300px] border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-4 overflow-y-auto"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration }}
     >
-      <div className="space-y-4">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-        >
-          <h1 className="text-xl font-bold text-[#1f5582]">Jenny & Tim's Date to South America</h1>
-          <div className="text-gray-600">
-            <p>Peru & Brazil | 13 Days | 4 Travelers</p>
-            <p className="font-semibold">Price Estimate: $2,400/person</p>
-          </div>
-        </motion.div>
+      <motion.div
+        className="mb-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: delay1, duration }}
+      >
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">Trip Planning Assistant</h2>
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
+          Use this space to add notes, preferences, or special requests for your Peru adventure.
+        </p>
+      </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
-        >
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Tell us how to update your travel itinerary:
+      <motion.div
+        className="space-y-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: delay2, duration }}
+      >
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Notes & Preferences
           </label>
           <Textarea
-            placeholder="Type your travel preferences here..."
-            className="w-full border-gray-300 focus:border-[#1f5582] focus:ring-[#1f5582] transition-all duration-300"
+            placeholder="Add your travel notes, special requests, dietary restrictions, or any other preferences..."
+            className="min-h-[120px] resize-none border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900/50 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-[#1f5582] dark:focus:border-[#3b82f6] focus:ring-1 focus:ring-[#1f5582] dark:focus:ring-[#3b82f6]"
           />
-        </motion.div>
+        </div>
 
-        <motion.div
-          className="border-t border-gray-200 pt-4 mt-4"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.4 }}
-        >
-          <div className="max-h-[calc(100vh-350px)] overflow-y-auto">
-            <motion.div
-              className="bg-gray-100 p-3 rounded-lg mb-3 shadow-sm hover:shadow-md transition-all duration-300"
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex justify-between items-start">
-                <span className="font-semibold text-[#1f5582]">Jenny</span>
-                <span className="text-xs text-gray-500">Sat 02 Jan '25 12:45pm</span>
-              </div>
-              <p className="text-gray-700 mt-1">
-                I'd like to see a 13 day itinerary of Brazil and Peru, we'd like 3-Star Hotels and private tours
-              </p>
-            </motion.div>
-          </div>
-        </motion.div>
-      </div>
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Quick Tips</h3>
+          <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+            <li className="flex items-start">
+              <span className="w-1.5 h-1.5 bg-[#1f5582] dark:bg-[#3b82f6] rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
+              Best time to visit Peru is during dry season (May-September)
+            </li>
+            <li className="flex items-start">
+              <span className="w-1.5 h-1.5 bg-[#1f5582] dark:bg-[#3b82f6] rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
+              Book Machu Picchu tickets in advance
+            </li>
+            <li className="flex items-start">
+              <span className="w-1.5 h-1.5 bg-[#1f5582] dark:bg-[#3b82f6] rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
+              Consider altitude sickness prevention in Cusco
+            </li>
+            <li className="flex items-start">
+              <span className="w-1.5 h-1.5 bg-[#1f5582] dark:bg-[#3b82f6] rounded-full mt-1.5 mr-2 flex-shrink-0"></span>
+              Pack layers for varying climates
+            </li>
+          </ul>
+        </div>
+      </motion.div>
     </motion.div>
   )
 }

@@ -82,10 +82,13 @@ export async function getLocationImage(location: string, query?: string): Promis
 
 // Function to validate image relevance based on tags, description, and location
 function validateImageRelevance(imageData: any, location: string): boolean {
-  if (!imageData) return false
+  if (!imageData || !location) return false
 
   // Extract location name without country
-  const locationName = location.split(",")[0].toLowerCase().trim()
+  const locationParts = location.split(",")
+  const locationName = locationParts[0]?.toLowerCase().trim() || ""
+
+  if (!locationName) return false
 
   // Check description
   if (imageData.description && imageData.description.toLowerCase().includes(locationName)) {

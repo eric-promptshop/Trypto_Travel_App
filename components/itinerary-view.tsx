@@ -6,15 +6,21 @@ import { Button } from "@/components/ui/button"
 import { ChevronRight, ChevronLeft, ArrowLeft, ArrowRight } from "lucide-react"
 import { useKeyboardNavigation } from "@/hooks/use-keyboard-navigation"
 import { ExpandableContentSubtle } from "./expandable-content-subtle"
-import { LeafletMapLoader } from "./LeafletMapLoader"
+import dynamic from 'next/dynamic'
 import { itineraryData } from "@/data/itinerary-data"
 // Update the import for the image service
 import { getRealisticImageUrl } from "@/lib/image-service"
+import { useSwipeable } from 'react-swipeable'
 
 interface ItineraryViewProps {
   showItineraryList: boolean
   setShowItineraryList: (show: boolean) => void
 }
+
+const LeafletMapLoader = dynamic(() => import('./LeafletMapLoader').then(mod => mod.LeafletMapLoader), {
+  ssr: false,
+  loading: () => <div className="w-full h-96 bg-gray-100 animate-pulse flex items-center justify-center"><span className="text-gray-500">Loading map...</span></div>
+})
 
 export function ItineraryView({ showItineraryList, setShowItineraryList }: ItineraryViewProps) {
   const [selectedDay, setSelectedDay] = useState(1)
@@ -24,8 +30,32 @@ export function ItineraryView({ showItineraryList, setShowItineraryList }: Itine
   // Add a state for location images in the ItineraryView component
   const [locationImages, setLocationImages] = useState<Record<string, string>>({})
 
+  // Swipe handlers for day navigation
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (selectedDay < itineraryData.length) {
+        setDirection(1)
+        setSelectedDay(selectedDay + 1)
+        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+          navigator.vibrate?.(10)
+        }
+      }
+    },
+    onSwipedRight: () => {
+      if (selectedDay > 1) {
+        setDirection(-1)
+        setSelectedDay(selectedDay - 1)
+        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+          navigator.vibrate?.(10)
+        }
+      }
+    },
+    trackMouse: true
+  })
+
   // Function to extract first two sentences
-  const extractFirstTwoSentences = (text: string) => {
+  const extractFirstTwoSentences = (text: string | undefined) => {
+    if (!text) return ""
     const sentenceRegex = /[^.!?]*[.!?]/g
     const sentences = text.match(sentenceRegex) || []
     return sentences.slice(0, 2).join(" ")
@@ -140,7 +170,7 @@ export function ItineraryView({ showItineraryList, setShowItineraryList }: Itine
   }, [])
 
   return (
-    <>
+    <div {...swipeHandlers}>
       {/* Map View */}
       <div className={`relative ${showItineraryList ? "w-[50%]" : "w-full"} transition-all duration-500 ease-in-out`}>
         {/* Map Container - Lower z-index */}
@@ -162,7 +192,7 @@ export function ItineraryView({ showItineraryList, setShowItineraryList }: Itine
             <Button
               variant="outline"
               size="icon"
-              className="ml-2 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white rounded-full h-10 w-10 shadow-lg transition-all duration-300 hover:shadow-xl"
+              className="ml-2 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white rounded-full h-10 w-10 shadow-lg transition-all duration-300 hover:shadow-xl touch-target"
               onClick={navigateToPrevDay}
               disabled={selectedDay === 1}
             >
@@ -176,7 +206,7 @@ export function ItineraryView({ showItineraryList, setShowItineraryList }: Itine
             <Button
               variant="outline"
               size="icon"
-              className="mr-2 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white rounded-full h-10 w-10 shadow-lg transition-all duration-300 hover:shadow-xl"
+              className="mr-2 bg-white/80 backdrop-blur-sm border-gray-300 hover:bg-white rounded-full h-10 w-10 shadow-lg transition-all duration-300 hover:shadow-xl touch-target"
               onClick={navigateToNextDay}
               disabled={selectedDay === itineraryData.length}
             >
@@ -188,12 +218,12 @@ export function ItineraryView({ showItineraryList, setShowItineraryList }: Itine
           {/* Itinerary Toggle Button */}
           <div className="absolute top-4 right-4 pointer-events-auto">
             <Button
-              className="bg-[#1f5582] hover:bg-[#164569] text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+              className="bg-[#1f5582] hover:bg-[#164569] text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-1 touch-target"
               onClick={toggleItineraryView}
             >
               {showItineraryList ? (
                 <>
-                  <ChevronRight className="mr-2 h-4 w-4" />
+                  <ChevronRight className="mr-2 h-4 w-4 touch-target" />
                   HIDE ITINERARY
                 </>
               ) : (
@@ -243,13 +273,20 @@ export function ItineraryView({ showItineraryList, setShowItineraryList }: Itine
                 </motion.p>
 
                 {/* Description with subtle Read More functionality */}
-                <ExpandableContentSubtle
-                  summary={extractFirstTwoSentences(itineraryData[selectedDay - 1]?.description)}
-                  fullText={itineraryData[selectedDay - 1]?.description}
-                  additionalInfo={itineraryData[selectedDay - 1]?.additionalInfo}
-                  isExpanded={!!expandedCards[selectedDay]}
-                  onToggle={() => toggleCardExpansion(selectedDay)}
-                />
+                {(() => {
+                  const currentDay = itineraryData[selectedDay - 1];
+                  if (!currentDay) return null;
+                  
+                  return (
+                    <ExpandableContentSubtle
+                      summary={extractFirstTwoSentences(currentDay.description)}
+                      fullText={currentDay.description || ""}
+                      {...(currentDay.additionalInfo && { additionalInfo: currentDay.additionalInfo })}
+                      isExpanded={!!expandedCards[selectedDay]}
+                      onToggle={() => toggleCardExpansion(selectedDay)}
+                    />
+                  );
+                })()}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -275,7 +312,7 @@ export function ItineraryView({ showItineraryList, setShowItineraryList }: Itine
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-[#1f5582]">Your Itinerary</h2>
                 <Button variant="ghost" size="sm" className="text-gray-500" onClick={toggleItineraryView}>
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4 touch-target" />
                 </Button>
               </div>
 
@@ -338,6 +375,6 @@ export function ItineraryView({ showItineraryList, setShowItineraryList }: Itine
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   )
 }

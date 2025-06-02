@@ -13,6 +13,17 @@ const customJestConfig = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   testEnvironment: 'jest-environment-jsdom',
+  // Transform ES modules in node_modules
+  transformIgnorePatterns: [
+    'node_modules/(?!(cheerio|bottleneck)/)'
+  ],
+  // Handle ES modules
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  globals: {
+    'ts-jest': {
+      useESM: true
+    }
+  }
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async

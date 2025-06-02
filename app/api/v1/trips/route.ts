@@ -126,9 +126,13 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   }
 
   // Create new trip
+  const { description, participants, ...requiredData } = validation.data;
   const newTrip: Trip = {
     id: Math.random().toString(36).substr(2, 9), // Generate random ID
-    ...validation.data,
+    ...requiredData,
+    // Only include optional properties if they are defined
+    ...(description !== undefined && { description }),
+    ...(participants !== undefined && { participants }),
     status: 'draft',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
