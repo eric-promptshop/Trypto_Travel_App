@@ -38,7 +38,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface Activity {
+export interface Activity {
   id: string
   time: string
   title: string
@@ -58,7 +58,7 @@ interface Activity {
   }
 }
 
-interface Day {
+export interface Day {
   date: string
   title: string
   activities: Activity[]
@@ -66,7 +66,7 @@ interface Day {
   highlights: string[]
 }
 
-interface Itinerary {
+export interface Itinerary {
   id: string
   title: string
   destination: string

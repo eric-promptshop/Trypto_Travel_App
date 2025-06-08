@@ -1,3 +1,6 @@
+// Primary Itinerary Component (Standardized)
+export { ModernItineraryViewer } from './ModernItineraryViewer';
+
 // Print and Share Functionality
 export { PrintShareActions, type ItineraryData } from './print-share-actions';
 export { 
@@ -12,6 +15,7 @@ export { PrintShareDemo } from './print-share-demo';
 import './print-styles.css';
 
 // Re-export everything for easy access
+export * from './ModernItineraryViewer';
 export * from './print-share-actions';
 export * from './share-analytics';
 export * from './print-share-demo'; 
