@@ -95,18 +95,6 @@ export function createLazyComponent<T extends React.ComponentType<any>>(
 
 // Pre-built lazy components for common heavy components
 export const LazyMap = createLazyComponent(
-  () => import('@/components/interactive-map').then(mod => ({ default: mod.InteractiveMap })),
-  { 
-    fallback: (
-      <div className="w-full h-[400px] bg-gray-100 animate-pulse flex items-center justify-center">
-        <p className="text-gray-500">Loading map...</p>
-      </div>
-    ),
-    ssr: false 
-  }
-)
-
-export const LazyLeafletMap = createLazyComponent(
   () => import('@/components/LeafletMapLoader').then(mod => ({ default: mod.LeafletMapLoader })),
   { 
     fallback: (

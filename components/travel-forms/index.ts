@@ -1,6 +1,6 @@
 // Travel Form Components - Specialized components for travel questionnaire
 export { TravelFormProvider, useTravelForm } from './travel-form-provider'
-export type { TravelFormData, FormStep } from './travel-form-provider'
+export type { TravelFormData } from './travel-form-provider'
 export { DateRangePicker } from './date-range-picker'
 export { BudgetRangeSlider } from './budget-range-slider'
 export { TravelerCounter } from './traveler-counter'
@@ -8,7 +8,7 @@ export { DestinationSelector } from './destination-selector'
 export { InterestTags } from './interest-tags'
 export { FormSection } from './form-section'
 export { ProgressIndicator } from './progress-indicator'
-export { ProgressiveForm } from './progressive-form'
+// ProgressiveForm removed as part of form consolidation
 
 // Enhanced validation components
 export {
