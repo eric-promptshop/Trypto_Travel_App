@@ -4,11 +4,6 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
-  "build": {
-    "env": {
-      "ANALYZE": "false"
-    }
-  },
   "functions": {
     "app/api/generate-itinerary/route.ts": {
       "maxDuration": 30
