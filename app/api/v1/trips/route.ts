@@ -3,45 +3,18 @@ import { createSuccessResponse, createErrorResponse, createUnauthorizedResponse,
 import { authenticateRequest, extractPaginationParams, extractQueryParams } from '@/lib/auth/middleware';
 import { createTripSchema, tripQuerySchema } from '@/lib/validations/trip';
 import { Trip } from '@/lib/types/api';
-
-// Mock data for development - replace with actual database calls
-const mockTrips: Trip[] = [
-  {
-    id: '1',
-    title: 'Peru Adventure',
-    description: 'Explore the ancient wonders of Machu Picchu',
-    startDate: '2024-06-01T00:00:00Z',
-    endDate: '2024-06-10T00:00:00Z',
-    location: 'Peru',
-    participants: [],
-    status: 'active',
-    createdAt: '2024-05-01T00:00:00Z',
-    updatedAt: '2024-05-01T00:00:00Z',
-    userId: '1'
-  },
-  {
-    id: '2',
-    title: 'Brazil Explorer',
-    description: 'Discover the vibrant culture of Brazil',
-    startDate: '2024-07-15T00:00:00Z',
-    endDate: '2024-07-25T00:00:00Z',
-    location: 'Brazil',
-    participants: [],
-    status: 'draft',
-    createdAt: '2024-05-02T00:00:00Z',
-    updatedAt: '2024-05-02T00:00:00Z',
-    userId: '1'
-  }
-];
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth/config';
 
 /**
  * GET /api/v1/trips
- * List trips with optional filtering and pagination
+ * List trips (itineraries) with optional filtering and pagination
  */
 export const GET = withErrorHandling(async (request: NextRequest) => {
-  // Authenticate request
-  const user = await authenticateRequest(request);
-  if (!user) {
+  // Get authenticated session
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
     return createUnauthorizedResponse();
   }
 
@@ -59,57 +32,103 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
   }
 
   const { status, location, startDate, endDate } = validation.data;
+  const { page = 1, limit = 10 } = paginationParams;
 
-  // Filter trips based on user and query parameters
-  let filteredTrips = mockTrips.filter(trip => trip.userId === user.id);
+  // Build where clause for database query
+  const whereClause: any = {
+    OR: [
+      { userId: session.user.id },
+      { tenantId: session.user.tenantId || 'default' }
+    ]
+  };
 
-  if (status) {
-    filteredTrips = filteredTrips.filter(trip => trip.status === status);
-  }
-
+  // Add filters
   if (location) {
-    filteredTrips = filteredTrips.filter(trip => 
-      trip.location.toLowerCase().includes(location.toLowerCase())
-    );
+    whereClause.destination = {
+      contains: location,
+      mode: 'insensitive'
+    };
   }
 
   if (startDate) {
-    filteredTrips = filteredTrips.filter(trip => 
-      new Date(trip.startDate) >= new Date(startDate)
-    );
+    whereClause.startDate = {
+      gte: new Date(startDate)
+    };
   }
 
   if (endDate) {
-    filteredTrips = filteredTrips.filter(trip => 
-      new Date(trip.endDate) <= new Date(endDate)
-    );
+    whereClause.endDate = {
+      lte: new Date(endDate)
+    };
   }
 
-  // Apply pagination
-  const { page = 1, limit = 10 } = paginationParams;
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const paginatedTrips = filteredTrips.slice(startIndex, endIndex);
+  // Query database with pagination
+  const [itineraries, total] = await Promise.all([
+    prisma.itinerary.findMany({
+      where: whereClause,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        tenant: {
+          select: {
+            name: true,
+            slug: true
+          }
+        }
+      }
+    }),
+    prisma.itinerary.count({ where: whereClause })
+  ]);
+
+  // Transform itineraries to match Trip interface
+  const trips: Trip[] = itineraries.map(itinerary => {
+    const trip: Trip = {
+      id: itinerary.id,
+      title: itinerary.title,
+      startDate: itinerary.startDate.toISOString(),
+      endDate: itinerary.endDate.toISOString(),
+      location: itinerary.destination,
+      status: ((itinerary.metadata as any)?.status || 'active') as Trip['status'],
+      createdAt: itinerary.createdAt.toISOString(),
+      updatedAt: itinerary.updatedAt.toISOString(),
+      userId: itinerary.userId || session.user.id
+    };
+    
+    // Add optional properties only if they exist
+    if (itinerary.description) {
+      trip.description = itinerary.description;
+    }
+    
+    const metadata = itinerary.metadata ? JSON.parse(itinerary.metadata as string) : {};
+    if (metadata.participants && Array.isArray(metadata.participants)) {
+      trip.participants = metadata.participants;
+    }
+    
+    return trip;
+  });
 
   // Create response with metadata
   const meta = {
     page,
     limit,
-    total: filteredTrips.length,
-    totalPages: Math.ceil(filteredTrips.length / limit)
+    total,
+    totalPages: Math.ceil(total / limit),
+    hasNext: page * limit < total,
+    hasPrev: page > 1
   };
 
-  return createSuccessResponse(paginatedTrips, meta);
+  return createSuccessResponse(trips, meta);
 });
 
 /**
  * POST /api/v1/trips
- * Create a new trip
+ * Create a new trip (itinerary)
  */
 export const POST = withErrorHandling(async (request: NextRequest) => {
-  // Authenticate request
-  const user = await authenticateRequest(request);
-  if (!user) {
+  // Get authenticated session
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
     return createUnauthorizedResponse();
   }
 
@@ -125,22 +144,84 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     );
   }
 
-  // Create new trip
-  const { description, participants, ...requiredData } = validation.data;
-  const newTrip: Trip = {
-    id: Math.random().toString(36).substr(2, 9), // Generate random ID
-    ...requiredData,
-    // Only include optional properties if they are defined
-    ...(description !== undefined && { description }),
-    ...(participants !== undefined && { participants }),
-    status: 'draft',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    userId: user.id
-  };
+  const { title, startDate, endDate, location, description, participants } = validation.data;
 
-  // TODO: Save to database
-  mockTrips.push(newTrip);
+  // Calculate number of days
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const numberOfDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+  // Create default day structure
+  const days = Array.from({ length: numberOfDays }, (_, index) => {
+    const dayDate = new Date(start);
+    dayDate.setDate(dayDate.getDate() + index);
+    return {
+      day: index + 1,
+      date: dayDate.toISOString().split('T')[0],
+      activities: [],
+      accommodations: [],
+      transportation: []
+    };
+  });
+
+  // Create new itinerary in database
+  const newItinerary = await prisma.itinerary.create({
+    data: {
+      title,
+      description: description || null,
+      destination: location,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      travelers: participants?.length || 1,
+      days: JSON.stringify(days),
+      userId: session.user.id,
+      tenantId: session.user.tenantId || 'default',
+      metadata: JSON.stringify({
+        status: 'draft',
+        participants: participants || [],
+        createdBy: session.user.email
+      })
+    }
+  });
+
+  // Log the creation
+  if (session.user.tenantId) {
+    await prisma.auditLog.create({
+      data: {
+        action: 'CREATE',
+        resource: 'itinerary',
+        resourceId: newItinerary.id,
+        tenantId: session.user.tenantId,
+        userId: session.user.id,
+        newValues: {
+          title,
+          destination: location,
+          dates: `${startDate} - ${endDate}`
+        }
+      }
+    });
+  }
+
+  // Transform to Trip interface
+  const newTrip: Trip = {
+    id: newItinerary.id,
+    title: newItinerary.title,
+    startDate: newItinerary.startDate.toISOString(),
+    endDate: newItinerary.endDate.toISOString(),
+    location: newItinerary.destination,
+    status: 'draft',
+    createdAt: newItinerary.createdAt.toISOString(),
+    updatedAt: newItinerary.updatedAt.toISOString(),
+    userId: session.user.id
+  };
+  
+  // Add optional properties
+  if (newItinerary.description) {
+    newTrip.description = newItinerary.description;
+  }
+  if (participants && participants.length > 0) {
+    newTrip.participants = participants;
+  }
 
   return createSuccessResponse(newTrip, undefined, 201);
 }); 

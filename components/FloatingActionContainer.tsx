@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface FloatingActionContainerProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
 }
 
@@ -11,8 +11,16 @@ export const FloatingActionContainer: React.FC<FloatingActionContainerProps> = (
 }) => {
   const [position, setPosition] = useState({
     x: 20, 
-    y: window.innerHeight - 80
+    y: 0 // Initialize to 0, will be set in useEffect
   });
+  
+  // Initialize position after component mounts to avoid SSR issues
+  useEffect(() => {
+    setPosition({
+      x: 20,
+      y: window.innerHeight - 80
+    });
+  }, []);
   
   // Allow user to reposition the floating controls
   const handleDrag = (e: React.DragEvent) => {
@@ -21,6 +29,11 @@ export const FloatingActionContainer: React.FC<FloatingActionContainerProps> = (
       y: Math.max(0, Math.min(window.innerHeight - 60, e.clientY - 30))
     });
   };
+  
+  // Don't render anything if no children provided
+  if (!children) {
+    return null;
+  }
   
   return (
     <div 
@@ -40,4 +53,6 @@ export const FloatingActionContainer: React.FC<FloatingActionContainerProps> = (
       {children}
     </div>
   );
-}; 
+};
+
+export default FloatingActionContainer; 

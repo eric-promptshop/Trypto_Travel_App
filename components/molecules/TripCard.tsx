@@ -7,6 +7,7 @@ interface TripCardProps {
   description?: string;
   imageUrl?: string;
   onSelect: (id: string) => void;
+  className?: string;
 }
 
 export const TripCard: React.FC<TripCardProps> = ({
@@ -15,10 +16,11 @@ export const TripCard: React.FC<TripCardProps> = ({
   description,
   imageUrl,
   onSelect,
+  className,
 }) => {
   return (
     <div 
-      className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg dark:hover:shadow-gray-900/20 transition-all duration-200 hover:scale-105"
+      className={`bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg dark:hover:shadow-gray-900/20 transition-all duration-200 hover:scale-105 ${className || ''}`}
       onClick={() => onSelect(id)}
     >
       {imageUrl && (

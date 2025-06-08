@@ -254,8 +254,8 @@ describe('FormValidationSummary', () => {
     )
 
     expect(screen.getByText('2 errors found')).toBeInTheDocument()
-    expect(screen.getByText(/email: Email is required/i)).toBeInTheDocument()
-    expect(screen.getByText(/password: Password is too short/i)).toBeInTheDocument()
+    expect(screen.getByText('Email is required')).toBeInTheDocument()
+    expect(screen.getByText('Password is too short')).toBeInTheDocument()
   })
 
   it('should render warning summary', () => {

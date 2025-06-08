@@ -30,4 +30,6 @@ export const ThumbZoneWrapper: React.FC<ThumbZoneWrapperProps> = ({
       {children}
     </div>
   );
-}; 
+};
+
+export default ThumbZoneWrapper; 

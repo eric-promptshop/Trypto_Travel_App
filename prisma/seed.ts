@@ -1,254 +1,173 @@
 import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import { hash } from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('🌱 Seeding database...')
+  console.log('Seeding database...')
 
-  // Create a demo tenant
-  const demoTenant = await prisma.tenant.upsert({
-    where: { slug: 'demo' },
-    update: {},
-    create: {
-      name: 'Demo Travel Agency',
-      slug: 'demo',
-      description: 'Demo tenant for testing multi-tenant functionality',
-      domain: 'demo.travel-crm.local',
-      isActive: true,
-      settings: {
-        branding: {
-          primaryColor: '#3B82F6',
-          logo: '/logos/demo-logo.png'
-        }
-      }
-    }
-  })
-
-  console.log('✅ Demo tenant created:', demoTenant.name)
-
-  // Create global settings
-  await prisma.globalSettings.upsert({
-    where: { settingKey: 'DEFAULT_CURRENCY' },
-    update: {},
-    create: {
-      settingKey: 'DEFAULT_CURRENCY',
-      settingValue: 'USD',
-      description: 'Default currency for new trips'
-    }
-  })
-
-  console.log('✅ Global settings created')
-
-  // Create demo users
-  const hashedPassword = await bcrypt.hash('demo123', 12)
-  
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@demo.travel-crm.local' },
-    update: {},
-    create: {
-      email: 'admin@demo.travel-crm.local',
-      name: 'Demo Admin',
-      passwordHash: hashedPassword,
-      role: 'ADMIN',
-      isActive: true,
-      tenantId: demoTenant.id
-    }
-  })
-
-  const travelerUser = await prisma.user.upsert({
-    where: { email: 'traveler@demo.travel-crm.local' },
-    update: {},
-    create: {
-      email: 'traveler@demo.travel-crm.local',
-      name: 'Demo Traveler',
-      passwordHash: hashedPassword,
+  // Create a test user
+  const testUser = await prisma.user.create({
+    data: {
+      email: 'test@example.com',
+      name: 'Test User',
       role: 'USER',
-      isActive: true,
-      tenantId: demoTenant.id
-    }
-  })
-
-  console.log('✅ Demo users created')
-
-  // Create tenant-specific settings
-  await prisma.tenantSettings.upsert({
-    where: {
-      tenantId_settingKey: {
-        tenantId: demoTenant.id,
-        settingKey: 'PRIMARY_COLOR'
-      }
     },
-    update: {},
-    create: {
-      tenantId: demoTenant.id,
-      settingKey: 'PRIMARY_COLOR',
-      settingValue: '#3B82F6',
-      overridesGlobal: false
-    }
   })
 
-  console.log('✅ Tenant settings created')
+  console.log('Created test user:', testUser.email)
 
-  // Create trip template (no unique constraint, so use create instead of upsert)
-  await prisma.tripTemplate.create({
-    data: {
-      title: '3-Day Paris Getaway',
-      description: 'A romantic 3-day trip to Paris with classic attractions',
-      category: 'Romantic',
-      duration: 3,
-      estimatedCost: 1200.00,
-      currency: 'EUR',
-      tenantId: demoTenant.id,
-      activities: {
-        'day1': [
-          { time: '09:00', activity: 'Visit Eiffel Tower', duration: '2 hours' }
-        ]
-      }
-    }
-  })
-
-  console.log('✅ Trip templates created')
-
-  // Create demo trip
-  const demoTrip = await prisma.trip.create({
-    data: {
-      title: 'Summer Vacation in Barcelona',
-      description: 'A week-long exploration of Barcelona\'s culture, food, and architecture',
-      startDate: new Date('2024-07-15T00:00:00Z'),
-      endDate: new Date('2024-07-22T00:00:00Z'),
-      location: 'Barcelona, Spain',
-      budget: 1500.00,
-      currency: 'EUR',
-      status: 'PLANNED',
-      isPublic: false,
-      userId: travelerUser.id,
-      metadata: {
-        travelers: 2,
-        tripType: 'leisure'
-      }
-    }
-  })
-
-  console.log('✅ Demo trip created')
-
-  // Create demo activities
-  await prisma.activity.create({
-    data: {
-      title: 'Visit Sagrada Familia',
-      description: 'Guided tour of Gaudí\'s masterpiece basilica',
-      date: new Date('2024-07-16T10:00:00Z'),
-      startTime: '10:00',
-      endTime: '12:00',
-      location: 'Sagrada Familia, Barcelona',
-      cost: 45.00,
-      currency: 'EUR',
-      category: 'ATTRACTION',
-      isBooked: true,
-      bookingRef: 'SF240716001',
-      tripId: demoTrip.id
-    }
-  })
-
-  await prisma.activity.create({
-    data: {
-      title: 'Beach Day at Barceloneta',
-      description: 'Relax at Barcelona\'s most famous beach',
-      date: new Date('2024-07-19T14:00:00Z'),
-      startTime: '14:00',
-      endTime: '18:00',
-      location: 'Barceloneta Beach, Barcelona',
-      cost: 0.00,
-      currency: 'EUR',
-      category: 'GENERAL',
-      isBooked: false,
-      tripId: demoTrip.id,
-      notes: 'Bring sunscreen and towels'
-    }
-  })
-
-  console.log('✅ Demo activities created')
-
-  // Create trip participants
-  await prisma.tripParticipant.upsert({
-    where: {
-      tripId_email: {
-        tripId: demoTrip.id,
-        email: travelerUser.email
-      }
+  // Create sample content for Peru and Brazil
+  const destinations = [
+    {
+      type: 'destination',
+      name: 'Lima, Peru',
+      description: 'The capital city of Peru, known for its colonial architecture, world-class cuisine, and vibrant culture.',
+      location: 'Lima, Peru',
+      city: 'Lima',
+      country: 'Peru',
+      images: JSON.stringify(['/images/lima-peru.png']),
     },
-    update: {},
-    create: {
-      tripId: demoTrip.id,
-      email: travelerUser.email,
-      name: travelerUser.name,
-      role: 'ORGANIZER',
-      isConfirmed: true,
-      confirmedAt: new Date()
-    }
-  })
+    {
+      type: 'destination',
+      name: 'Cusco, Peru',
+      description: 'Former capital of the Inca Empire, gateway to Machu Picchu, and a UNESCO World Heritage site.',
+      location: 'Cusco, Peru',
+      city: 'Cusco',
+      country: 'Peru',
+      images: JSON.stringify(['/images/cusco-peru.png']),
+    },
+    {
+      type: 'destination',
+      name: 'Rio de Janeiro, Brazil',
+      description: 'Iconic beach city known for Christ the Redeemer, Copacabana Beach, and vibrant carnival celebrations.',
+      location: 'Rio de Janeiro, Brazil',
+      city: 'Rio de Janeiro',
+      country: 'Brazil',
+      images: JSON.stringify(['/images/rio-de-janeiro.png']),
+    },
+  ]
 
-  console.log('✅ Trip participants added')
+  for (const destination of destinations) {
+    await prisma.content.create({ data: destination })
+  }
 
-  // Create demo integration (use correct field names)
-  await prisma.integration.create({
+  // Create sample activities
+  const activities = [
+    {
+      type: 'activity',
+      name: 'Machu Picchu Day Tour',
+      description: 'Full day guided tour of the ancient Inca citadel, including train transportation from Cusco.',
+      location: 'Machu Picchu, Peru',
+      city: 'Cusco',
+      country: 'Peru',
+      price: 350,
+      duration: 720, // 12 hours
+      images: JSON.stringify(['/images/machu-picchu.png']),
+      included: JSON.stringify(['Round-trip train tickets', 'Entrance fees', 'Professional guide', 'Lunch']),
+      excluded: JSON.stringify(['Hotel pickup', 'Tips', 'Personal expenses']),
+    },
+    {
+      type: 'activity',
+      name: 'Sacred Valley Tour',
+      description: 'Explore the heart of the Inca Empire with visits to Pisac, Ollantaytambo, and local markets.',
+      location: 'Sacred Valley, Peru',
+      city: 'Cusco',
+      country: 'Peru',
+      price: 85,
+      duration: 480, // 8 hours
+      images: JSON.stringify(['/images/sacred-valley.png']),
+      included: JSON.stringify(['Transportation', 'Guide', 'Entrance fees']),
+      excluded: JSON.stringify(['Lunch', 'Tips']),
+    },
+    {
+      type: 'activity',
+      name: 'Christ the Redeemer & Sugarloaf Tour',
+      description: 'Visit Rio\'s most famous landmarks with breathtaking views of the city and beaches.',
+      location: 'Rio de Janeiro, Brazil',
+      city: 'Rio de Janeiro',
+      country: 'Brazil',
+      price: 120,
+      duration: 360, // 6 hours
+      images: JSON.stringify(['/images/rio-de-janeiro.png']),
+      included: JSON.stringify(['Transportation', 'Entrance fees', 'Guide']),
+      excluded: JSON.stringify(['Meals', 'Tips']),
+    },
+  ]
+
+  for (const activity of activities) {
+    await prisma.content.create({ data: activity })
+  }
+
+  // Create sample accommodations
+  const accommodations = [
+    {
+      type: 'accommodation',
+      name: 'Hotel Oro Verde Cusco',
+      description: 'Comfortable 3-star hotel in the heart of Cusco, walking distance to main attractions.',
+      location: 'Cusco, Peru',
+      city: 'Cusco',
+      country: 'Peru',
+      price: 65,
+      images: JSON.stringify([]),
+      amenities: JSON.stringify(['Free WiFi', 'Breakfast included', '24-hour reception', 'Tour desk']),
+    },
+    {
+      type: 'accommodation',
+      name: 'Copacabana Palace',
+      description: 'Iconic 5-star beachfront hotel on Copacabana Beach with luxury amenities.',
+      location: 'Rio de Janeiro, Brazil',
+      city: 'Rio de Janeiro',
+      country: 'Brazil',
+      price: 450,
+      images: JSON.stringify([]),
+      amenities: JSON.stringify(['Beach access', 'Pool', 'Spa', 'Multiple restaurants', 'Fitness center']),
+    },
+  ]
+
+  for (const accommodation of accommodations) {
+    await prisma.content.create({ data: accommodation })
+  }
+
+  console.log('Sample content created successfully')
+
+  // Create a sample trip for the test user
+  const sampleTrip = await prisma.trip.create({
     data: {
-      provider: 'HUBSPOT',
-      name: 'Demo HubSpot Integration',
-      tenantId: demoTenant.id,
-      isActive: true,
-      configuration: {
-        syncContacts: true,
-        syncDeals: true
-      },
-      credentials: {
-        apiKey: 'demo-api-key-encrypted',
-        hubId: '12345678'
-      }
-    }
+      title: 'Peru & Brazil Adventure',
+      destination: 'Peru and Brazil',
+      startDate: new Date('2025-03-15'),
+      endDate: new Date('2025-03-28'),
+      budget: 4500,
+      travelers: 2,
+      userId: testUser.id,
+      itinerary: JSON.stringify({
+        days: [
+          {
+            day: 1,
+            date: '2025-03-15',
+            title: 'Arrival in Lima',
+            activities: ['Airport transfer', 'Check-in to hotel', 'Welcome dinner'],
+          },
+          {
+            day: 2,
+            date: '2025-03-16',
+            title: 'Lima City Tour',
+            activities: ['Historic center tour', 'Larco Museum', 'Barranco district'],
+          },
+        ],
+      }),
+    },
   })
 
-  console.log('✅ Demo integration created')
-
-  // Create audit log entry (use correct field names)
-  await prisma.auditLog.create({
-    data: {
-      tenantId: demoTenant.id,
-      userId: travelerUser.id,
-      action: 'CREATE',
-      resource: 'trips',
-      resourceId: demoTrip.id,
-      newValues: {
-        title: demoTrip.title,
-        status: demoTrip.status,
-        budget: demoTrip.budget
-      }
-    }
-  })
-
-  console.log('✅ Audit log entry created')
-
-  console.log('')
-  console.log('🎉 Database seeding completed successfully!')
-  console.log('')
-  console.log('📊 Summary:')
-  console.log(`   • Tenant: ${demoTenant.name} (${demoTenant.domain})`)
-  console.log(`   • Users: 2 (1 admin, 1 traveler)`)
-  console.log(`   • Trip: 1 with 2 activities`)
-  console.log(`   • Template: 1 trip template`)
-  console.log(`   • Integration: 1 HubSpot demo integration`)
-  console.log('')
-  console.log('🔐 Demo login credentials:')
-  console.log('   • admin@demo.travel-crm.local : demo123')
-  console.log('   • traveler@demo.travel-crm.local : demo123')
+  console.log('Sample trip created:', sampleTrip.title)
 }
 
 main()
-  .then(async () => {
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
     await prisma.$disconnect()
   })
-  .catch(async (e) => {
-    console.error(e)
-    await prisma.$disconnect()
-    process.exit(1)
-  }) 

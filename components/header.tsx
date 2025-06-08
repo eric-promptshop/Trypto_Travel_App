@@ -1,99 +1,213 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { MapIcon, BedDoubleIcon, PlaneIcon, UsersIcon, DollarSignIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { LogoCreative as Logo } from "./logo-creative"
-import { useTheme } from "next-themes"
-import { Switch } from "@/components/ui/switch"
-import { Sun, Moon } from "lucide-react"
-import { useOneHandedMode } from "@/hooks/use-one-handed-mode"
+import { Menu, X, Plane, Bed, MapPin, Users, DollarSign, Save, Send, Mail, User } from "lucide-react"
+import { TripNavLogo } from "./ui/TripNavLogo"
+
+interface FormData {
+  destinations?: string[]
+  travelDates?: {
+    startDate?: string
+    endDate?: string
+    flexible?: boolean
+  }
+  travelers?: {
+    adults?: number
+    children?: number
+  }
+  budget?: {
+    amount?: number
+    currency?: string
+    perPerson?: boolean
+  }
+  accommodation?: string
+  interests?: string[]
+  specialRequirements?: string
+  completeness?: number
+}
 
 interface HeaderProps {
   activeTab: string
   setActiveTab: (tab: string) => void
+  isMobile?: boolean
+  formData?: FormData
 }
 
-export function Header({ activeTab, setActiveTab }: HeaderProps) {
-  const tabs = [
-    { id: "itinerary", label: "ITINERARY", icon: <MapIcon className="h-4 w-4 mr-2" /> },
-    { id: "lodging", label: "LODGING", icon: <BedDoubleIcon className="h-4 w-4 mr-2" /> },
-    { id: "flights", label: "FLIGHTS", icon: <PlaneIcon className="h-4 w-4 mr-2" /> },
-    { id: "travelers", label: "TRAVELERS", icon: <UsersIcon className="h-4 w-4 mr-2" /> },
-    { id: "trip-cost", label: "TRIP COST", icon: <DollarSignIcon className="h-4 w-4 mr-2" /> },
-  ]
-  const { theme, setTheme, resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const oneHanded = useOneHandedMode();
-  return (
-    <motion.header
-      className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-sm"
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.4 }}
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center p-4">
-          <motion.div
-            className="flex items-center space-x-6"
-            initial={{ x: -20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.1, duration: 0.4 }}
-          >
-            <Logo />
-            {!oneHanded && (
-              <nav className="hidden md:flex space-x-6" role="navigation" aria-label="Main navigation">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-800/60 ${
-                      activeTab === tab.id
-                        ? "bg-[#1f5582] text-white shadow-sm"
-                        : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
-                    }`}
-                    aria-current={activeTab === tab.id ? "page" : undefined}
-                  >
-                    {tab.icon}
-                    {tab.label}
-                  </button>
-                ))}
-              </nav>
-            )}
-          </motion.div>
+export function Header({ activeTab, setActiveTab, isMobile = false, formData }: HeaderProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-          <motion.div
-            className="flex items-center space-x-4 relative"
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
-          >
-            {/* Floating Theme Switcher Button */}
-            <button
-              type="button"
-              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="inline-flex items-center justify-center rounded-full bg-white dark:bg-gray-900 shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 w-10 h-10 absolute top-2 right-2 z-20 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary-400"
-              style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}
-            >
-              {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />}
-            </button>
-            {!oneHanded && (
-              <Button className="bg-[#ff7b00] hover:bg-[#e56f00] text-white shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                QUOTE TRIP
-              </Button>
+  // Close menu when switching to desktop
+  useEffect(() => {
+    if (!isMobile) {
+      setIsMenuOpen(false)
+    }
+  }, [isMobile])
+
+  const tabs = [
+    { id: "itinerary", label: "ITINERARY", icon: MapPin },
+    { id: "lodging", label: "LODGING", icon: Bed },
+    { id: "flights", label: "FLIGHTS", icon: Plane },
+    { id: "travelers", label: "TRAVELERS", icon: Users },
+    { id: "trip-cost", label: "TRIP COST", icon: DollarSign },
+  ]
+
+  // Generate trip information from form data
+  const getTripTitle = () => {
+    if (formData?.destinations?.length) {
+      return `Trip to ${formData.destinations.join(" & ")}`
+    }
+    return "Trip to Peru & Brazil"
+  }
+
+  const getTripDetails = () => {
+    const destinations = formData?.destinations?.join(" & ") || "Peru & Brazil"
+    const days = "13 Days"
+    const travelers = formData?.travelers?.adults
+      ? `${formData.travelers.adults + (formData.travelers.children || 0)} Traveler${
+          formData.travelers.adults + (formData.travelers.children || 0) !== 1 ? "s" : ""
+        }`
+      : "2 Travelers"
+    return `${destinations} | ${days} | ${travelers}`
+  }
+
+  const getPriceEstimate = () => {
+    if (formData?.budget?.amount) {
+      const total = formData.budget.perPerson
+        ? formData.budget.amount * (formData.travelers?.adults || 1)
+        : formData.budget.amount
+      return `Price Estimate: $${total.toLocaleString()} total`
+    }
+    return "Price Estimate: $5,000 total"
+  }
+
+  return (
+    <header className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex justify-between items-center">
+          {/* Left side - Logo and Trip Info */}
+          <div className="flex items-center gap-6">
+            <TripNavLogo />
+            {!isMobile && (
+              <div className="hidden lg:block">
+                <h1 className="text-lg font-bold text-[#1f5582] leading-tight">{getTripTitle()}</h1>
+                <p className="text-sm text-gray-600 mt-0.5">{getTripDetails()}</p>
+                <p className="text-sm font-semibold text-gray-800 mt-1">{getPriceEstimate()}</p>
+              </div>
             )}
-          </motion.div>
+          </div>
+
+          {/* Center - Navigation (Desktop) */}
+          {!isMobile && (
+            <nav className="hidden md:flex">
+              {tabs.map((tab) => {
+                const IconComponent = tab.icon
+                return (
+                  <Button
+                    key={tab.id}
+                    variant={activeTab === tab.id ? "default" : "ghost"}
+                    className={`relative px-4 py-2 flex items-center gap-2 ${
+                      activeTab === tab.id
+                        ? "bg-[#1f5582] text-white"
+                        : "text-gray-600 hover:text-[#1f5582] hover:bg-gray-100"
+                    }`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <IconComponent className="w-4 h-4" />
+                    {tab.label}
+                    {activeTab === tab.id && (
+                      <motion.div
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1f5582]"
+                        layoutId="activeTab"
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                  </Button>
+                )
+              })}
+            </nav>
+          )}
+
+          {/* Right side - Action Buttons (Desktop) / Menu Button (Mobile) */}
+          {!isMobile ? (
+            <div className="flex items-center gap-2">
+              <Button className="bg-[#ff7b00] hover:bg-[#ff7b00]/90 text-white font-semibold px-6">
+                <Save className="w-4 h-4 mr-2" />
+                SAVE TRIP
+              </Button>
+              <Button variant="outline" size="icon" className="text-[#1f5582] border-[#1f5582]">
+                <Send className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="text-[#1f5582] border-[#1f5582]">
+                <Mail className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="text-[#1f5582] border-[#1f5582]">
+                <User className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              {/* Mobile Trip Info */}
+              <div className="text-right">
+                <h1 className="text-sm font-bold text-[#1f5582] leading-tight">{getTripTitle()}</h1>
+                <p className="text-xs text-gray-600">{getTripDetails()}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            </div>
+          )}
         </div>
+
+        {/* Mobile Trip Price (below main header) */}
+        {isMobile && (
+          <div className="mt-2 text-center">
+            <p className="text-sm font-semibold text-gray-800">{getPriceEstimate()}</p>
+          </div>
+        )}
       </div>
-      {oneHanded && (
-        <Button
-          className="fixed bottom-4 right-4 z-50 bg-[#ff7b00] hover:bg-[#e56f00] text-white shadow-lg hover:shadow-xl transition-all duration-300 w-16 h-16 rounded-full flex items-center justify-center text-lg"
-          style={{ boxShadow: "0 6px 24px rgba(0,0,0,0.18)" }}
+
+      {/* Mobile Navigation */}
+      {isMobile && isMenuOpen && (
+        <motion.nav
+          className="md:hidden bg-white border-t border-gray-200"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.2 }}
         >
-          QUOTE
-        </Button>
+          <div className="container mx-auto px-4 py-2 flex flex-col">
+            {tabs.map((tab) => {
+              const IconComponent = tab.icon
+              return (
+                <Button
+                  key={tab.id}
+                  variant="ghost"
+                  className={`justify-start px-4 py-2 flex items-center gap-2 ${
+                    activeTab === tab.id
+                      ? "bg-gray-100 text-[#1f5582] font-medium"
+                      : "text-gray-600 hover:text-[#1f5582] hover:bg-gray-50"
+                  }`}
+                  onClick={() => {
+                    setActiveTab(tab.id)
+                    setIsMenuOpen(false)
+                  }}
+                >
+                  <IconComponent className="w-4 h-4" />
+                  {tab.label}
+                </Button>
+              )
+            })}
+          </div>
+        </motion.nav>
       )}
-    </motion.header>
+    </header>
   )
 }

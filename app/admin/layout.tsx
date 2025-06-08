@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function AdminLayout({
   children,
 }: {
@@ -10,9 +12,15 @@ export default function AdminLayout({
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-semibold">Admin Dashboard</h1>
             <div className="flex gap-4">
-              <a href="/" className="text-blue-600 hover:text-blue-800">
+              <Link href="/admin/crm" className="text-blue-600 hover:text-blue-800">
+                CRM Management
+              </Link>
+              <Link href="/admin/white-label" className="text-blue-600 hover:text-blue-800">
+                White-Label Config
+              </Link>
+              <Link href="/" className="text-gray-600 hover:text-gray-800">
                 Back to App
-              </a>
+              </Link>
             </div>
           </div>
         </div>

@@ -16,6 +16,7 @@ export default function TripCustomizationDemo() {
   const [tripData, setTripData] = React.useState<TripModificationData | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
   const [saveStatus, setSaveStatus] = React.useState<'idle' | 'saving' | 'saved' | 'error' | 'queued'>('idle')
+  const networkCondition = useNetworkCondition()
 
   // Example initial data
   const exampleTripData: Partial<TripModificationData> = {
@@ -44,8 +45,7 @@ export default function TripCustomizationDemo() {
     setSaveStatus('saving')
     setIsLoading(true)
 
-    const { isOnline } = useNetworkCondition()
-    if (!isOnline) {
+    if (!networkCondition.isOnline) {
       enqueueOfflineAction({ type: 'saveTrip', payload: data })
       setSaveStatus('queued')
       setTimeout(() => setSaveStatus('idle'), 3000)
@@ -73,14 +73,13 @@ export default function TripCustomizationDemo() {
 
   // Process offline queue when back online
   useEffect(() => {
-    const { isOnline } = useNetworkCondition()
-    if (!isOnline) return
+    if (!networkCondition.isOnline) return
     processOfflineQueue(async (action: OfflineAction) => {
       if (action.type === 'saveTrip') {
         await handleSaveTrip(action.payload)
       }
     })
-  }, [useNetworkCondition])
+  }, [networkCondition.isOnline])
 
   const handleLoadExample = () => {
     // This would trigger the form to populate with example data

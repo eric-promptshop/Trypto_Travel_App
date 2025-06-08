@@ -34,11 +34,11 @@ export function ExpandableContentAdvanced({
 
       resizeObserver.observe(containerRef.current)
       return () => {
-        resizeObserver.disconnect()
+        if (containerRef.current) {
+          resizeObserver.unobserve(containerRef.current)
+        }
       }
     }
-    // Return undefined for the else case to satisfy TypeScript
-    return undefined
   }, [isExpanded])
 
   return (
@@ -88,7 +88,7 @@ export function ExpandableContentAdvanced({
           <Button
             variant="ghost"
             size="sm"
-            className="text-[#1f5582] hover:text-[#164569] hover:bg-[#1f5582]/5 p-0 h-auto read-more-btn touch-target"
+            className="text-[#1f5582] hover:text-[#164569] hover:bg-[#1f5582]/5 p-0 h-auto read-more-btn"
             onClick={onToggle}
           >
             <AnimatePresence mode="wait" initial={false}>

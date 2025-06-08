@@ -7,7 +7,9 @@ const config = {
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
+    "*.{js,ts,jsx,tsx,mdx}",
   ],
+  prefix: "",
   theme: {
     container: {
       center: true,
@@ -24,8 +26,9 @@ const config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#1f5582",
-          foreground: "#ffffff",
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+          blue: "#1f5582", // Custom primary blue
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -40,8 +43,9 @@ const config = {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "#ff7b00",
-          foreground: "#ffffff",
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+          orange: "#ff6b35", // Custom orange accent
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -50,6 +54,10 @@ const config = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        success: {
+          DEFAULT: "#22c55e", // Custom success green
+          foreground: "#ffffff",
         },
       },
       borderRadius: {
@@ -66,10 +74,21 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "radar-scan": {
+          "0%": { transform: "scale(0)", opacity: "0.5" },
+          "50%": { opacity: "0.2" },
+          "100%": { transform: "scale(1)", opacity: "0" },
+        },
+        "confetti-fall": {
+          "0%": { transform: "translateY(-100%) rotate(0deg)", opacity: "1" },
+          "100%": { transform: "translateY(100vh) rotate(720deg)", opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "radar-scan": "radar-scan 2s infinite linear",
+        "confetti-fall": "confetti-fall 5s linear infinite",
       },
     },
   },

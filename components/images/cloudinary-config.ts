@@ -21,15 +21,15 @@ export const DEMO_CONFIG: CloudinaryConfig = {
 // 3. Replace 'your-cloud-name' with your actual cloud name
 export const PRODUCTION_CONFIG: CloudinaryConfig = {
   cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'your-cloud-name',
-  useCloudinaryFetch: false, // Use direct Cloudinary URLs for uploaded images
+  useCloudinaryFetch: true, // Use fetch mode to transform external images (Unsplash, etc.)
   // API credentials only needed if you plan to upload images programmatically
   ...(process.env.CLOUDINARY_API_KEY && { apiKey: process.env.CLOUDINARY_API_KEY }),
   ...(process.env.CLOUDINARY_API_SECRET && { apiSecret: process.env.CLOUDINARY_API_SECRET }),
 };
 
-// Current configuration - defaults to demo mode
+// Current configuration - use production config if cloud name is provided
 export const CURRENT_CONFIG: CloudinaryConfig = 
-  process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+  process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME !== 'your-cloud-name'
     ? PRODUCTION_CONFIG 
     : DEMO_CONFIG;
 

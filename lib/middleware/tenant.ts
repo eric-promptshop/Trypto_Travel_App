@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { UserContext, SYSTEM_ROLES, createTenantRole, Role } from '@/lib/auth/rbac'
 
-// Tenant context storage
+// Enhanced tenant context with user roles
 export interface TenantContext {
   tenantId: string
   userId?: string
+  userContext?: UserContext
   role?: string
 }
 
@@ -18,6 +20,7 @@ const TENANT_ISOLATED_MODELS = [
   'TripTemplate',
   'Integration',
   'TenantSettings',
+  'TenantContent',
   'AuditLog'
 ]
 
@@ -98,6 +101,7 @@ function addTenantFilter(model: string, where: any, tenantId: string): any {
     case 'TripTemplate':
     case 'Integration':
     case 'TenantSettings':
+    case 'TenantContent':
     case 'AuditLog':
       where.tenantId = tenantId
       break
@@ -129,6 +133,7 @@ function addTenantData(model: string, data: any, tenantId: string): any {
     case 'TripTemplate':
     case 'Integration':
     case 'TenantSettings':
+    case 'TenantContent':
     case 'AuditLog':
       data.tenantId = tenantId
       break
@@ -156,18 +161,72 @@ export function clearTenantContext() {
 }
 
 /**
- * Higher-order function to wrap API handlers with tenant isolation
- * Note: Requires NextAuth.js configuration to be implemented
+ * Build user context with tenant-specific roles
+ */
+async function buildUserContext(userId: string, tenantId: string): Promise<UserContext | null> {
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        tenantId: tenantId,
+        isActive: true,
+      }
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    // Get user roles - in a full implementation, these would be stored in a UserRole junction table
+    // For now, we'll derive from the user.role field and map to our RBAC system
+    const roles: Role[] = [];
+    
+    switch (user.role) {
+      case 'ADMIN':
+        // Admins get tenant admin role
+        if (SYSTEM_ROLES.TENANT_ADMIN) {
+          roles.push(createTenantRole(SYSTEM_ROLES.TENANT_ADMIN, tenantId));
+        }
+        break;
+      case 'AGENT':
+        // Agents get content manager role
+        if (SYSTEM_ROLES.CONTENT_MANAGER) {
+          roles.push(createTenantRole(SYSTEM_ROLES.CONTENT_MANAGER, tenantId));
+        }
+        break;
+      case 'USER':
+      case 'TRAVELER':
+      default:
+        // Regular users get viewer role
+        if (SYSTEM_ROLES.VIEWER) {
+          roles.push(createTenantRole(SYSTEM_ROLES.VIEWER, tenantId));
+        }
+    }
+
+    return {
+      userId: user.id,
+      tenantId: tenantId,
+      roles: roles,
+      isActive: user.isActive,
+    };
+  } catch (error) {
+    console.error('Error building user context:', error);
+    return null;
+  }
+}
+
+/**
+ * Enhanced higher-order function to wrap API handlers with tenant isolation and RBAC
  */
 export function withTenantIsolation<T extends any[]>(
   handler: (tenantContext: TenantContext, ...args: T) => Promise<NextResponse>
 ) {
   return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
     try {
-      // TODO: Implement session validation once NextAuth.js is configured
-      // For now, extract tenant from request headers or query params
+      // Extract tenant identifier
       const tenantSlug = request.headers.get('x-tenant-slug') || 
-                        request.nextUrl.searchParams.get('tenant')
+                        request.nextUrl.searchParams.get('tenant') ||
+                        extractTenantFromDomain(request.headers.get('host'))
       
       if (!tenantSlug) {
         return NextResponse.json({ error: 'Tenant identifier required' }, { status: 400 })
@@ -178,9 +237,27 @@ export function withTenantIsolation<T extends any[]>(
         return NextResponse.json({ error: 'Invalid tenant' }, { status: 404 })
       }
 
+      if (!tenant.isActive) {
+        return NextResponse.json({ error: 'Tenant is not active' }, { status: 403 })
+      }
+
+      // Extract user information (in a real app, this would come from session/JWT)
+      const userId = request.headers.get('x-user-id') || 
+                     request.nextUrl.searchParams.get('userId')
+
+      let userContext: UserContext | null = null;
+      if (userId) {
+        userContext = await buildUserContext(userId, tenant.id);
+        if (!userContext) {
+          return NextResponse.json({ error: 'Invalid user or insufficient permissions' }, { status: 403 })
+        }
+      }
+
       const tenantContext: TenantContext = {
         tenantId: tenant.id,
-        // userId and role would come from session once auth is implemented
+        ...(userId && { userId }),
+        ...(userContext && { userContext }),
+        ...(userContext?.roles[0]?.id && { role: userContext.roles[0].id })
       }
 
       // Set tenant context for this request
@@ -203,31 +280,85 @@ export function withTenantIsolation<T extends any[]>(
 }
 
 /**
- * Get tenant by slug or domain
+ * Extract tenant from custom domain
+ */
+function extractTenantFromDomain(host: string | null): string | null {
+  if (!host) return null;
+  
+  // Handle custom domains by looking up in database
+  // For now, return null to force explicit tenant parameter
+  return null;
+}
+
+/**
+ * Get tenant by identifier (slug or domain)
  */
 export async function getTenantByIdentifier(identifier: string) {
-  return prisma.tenant.findFirst({
-    where: {
-      OR: [
-        { slug: identifier },
-        { domain: identifier }
-      ],
-      isActive: true
-    }
-  })
+  try {
+    const tenant = await prisma.tenant.findFirst({
+      where: {
+        OR: [
+          { slug: identifier },
+          { domain: identifier },
+          { domain: `https://${identifier}` },
+          { domain: `http://${identifier}` },
+        ]
+      }
+    })
+    return tenant
+  } catch (error) {
+    console.error('Error fetching tenant:', error)
+    return null
+  }
 }
 
 /**
  * Validate user belongs to tenant
  */
 export async function validateUserTenant(userId: string, tenantId: string): Promise<boolean> {
-  const user = await prisma.user.findFirst({
-    where: {
-      id: userId,
-      tenantId,
-      isActive: true
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        tenantId: tenantId,
+        isActive: true
+      }
+    })
+    return !!user
+  } catch (error) {
+    console.error('Error validating user tenant:', error)
+    return false
+  }
+}
+
+/**
+ * Create an audit log entry
+ */
+export async function createAuditLog(
+  tenantContext: TenantContext,
+  action: string,
+  resource: string,
+  resourceId?: string,
+  metadata?: any
+) {
+  try {
+    if (!tenantContext.userId) {
+      // Skip audit log if no user context
+      return;
     }
-  })
-  
-  return !!user
+
+    await prisma.auditLog.create({
+      data: {
+        action,
+        resource,
+        resourceId: resourceId || '',
+        tenantId: tenantContext.tenantId,
+        userId: tenantContext.userId,
+        newValues: metadata || {},
+      }
+    });
+  } catch (error) {
+    console.error('Error creating audit log:', error);
+    // Don't throw here to avoid breaking the main operation
+  }
 } 

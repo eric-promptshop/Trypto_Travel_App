@@ -1,6 +1,3 @@
-// Image service to fetch real location images
-
-// Map of verified location images as fallbacks
 const VERIFIED_LOCATION_IMAGES: Record<string, string> = {
   "LIMA, PERU": "/images/lima-peru.png",
   "PUERTO MALDONADO, PERU": "/images/puerto-maldonado.png",
@@ -10,7 +7,7 @@ const VERIFIED_LOCATION_IMAGES: Record<string, string> = {
   "RIO DE JANEIRO, BRAZIL": "/images/rio-de-janeiro.png",
 }
 
-// Function to get a real image for a location
+// Function to get a real image for a location via API route
 export async function getLocationImage(location: string, query?: string): Promise<string> {
   try {
     // Format the search query with specific landmarks to improve relevance
@@ -39,84 +36,45 @@ export async function getLocationImage(location: string, query?: string): Promis
 
     console.log(`Fetching image for: ${searchQuery}`)
 
-    // Use Unsplash API to get a random image for the location
-    const response = await fetch(
-      `https://api.unsplash.com/photos/random?query=${encodeURIComponent(
-        searchQuery,
-      )}&orientation=landscape&content_filter=high`,
-      {
-        headers: {
-          Authorization: `Client-ID ${process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY}`,
+    // Use our API route with timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout
+
+    try {
+      const response = await fetch(
+        `/api/images?query=${encodeURIComponent(searchQuery)}&location=${encodeURIComponent(location)}`,
+        {
+          signal: controller.signal,
         },
-      },
-    )
-
-    if (!response.ok) {
-      console.error(`Unsplash API error: ${response.status}`)
-      throw new Error(`Failed to fetch image: ${response.status}`)
-    }
-
-    const data = await response.json()
-    console.log(`Successfully fetched image for ${location}`)
-
-    // Validate image has relevant tags or description
-    const isRelevant = validateImageRelevance(data, location)
-
-    if (!isRelevant) {
-      console.warn(`Image for ${location} may not be relevant, using verified fallback`)
-      return (
-        VERIFIED_LOCATION_IMAGES[location] ||
-        `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(location)}`
       )
-    }
 
-    return data.urls.regular
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        console.error(`Image API error: ${response.status}`)
+        throw new Error(`Failed to fetch image: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
+      console.log(`Successfully fetched image for ${location}`)
+      return data.imageUrl
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      throw fetchError
+    }
   } catch (error) {
     console.error("Error fetching location image:", error)
     // Return a verified fallback image for the location
-    return (
+    const fallbackImage =
       VERIFIED_LOCATION_IMAGES[location] || `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(location)}`
-    )
+    console.log(`Using fallback image for ${location}: ${fallbackImage}`)
+    return fallbackImage
   }
-}
-
-// Function to validate image relevance based on tags, description, and location
-function validateImageRelevance(imageData: any, location: string): boolean {
-  if (!imageData || !location) return false
-
-  // Extract location name without country
-  const locationParts = location.split(",")
-  const locationName = locationParts[0]?.toLowerCase().trim() || ""
-
-  if (!locationName) return false
-
-  // Check description
-  if (imageData.description && imageData.description.toLowerCase().includes(locationName)) {
-    return true
-  }
-
-  // Check alt description
-  if (imageData.alt_description && imageData.alt_description.toLowerCase().includes(locationName)) {
-    return true
-  }
-
-  // Check tags if available
-  if (imageData.tags && Array.isArray(imageData.tags)) {
-    for (const tag of imageData.tags) {
-      if (tag.title && tag.title.toLowerCase().includes(locationName)) {
-        return true
-      }
-    }
-  }
-
-  // If location is a major landmark, be more lenient
-  if (location.includes("MACHU PICCHU") || location.includes("RIO DE JANEIRO")) {
-    return true // These are distinctive enough that we'll trust Unsplash search
-  }
-
-  // Default to true for now, but with a warning logged
-  console.warn(`Could not verify image relevance for ${location}, using anyway`)
-  return true
 }
 
 // Cache for storing fetched images to avoid repeated API calls
@@ -128,6 +86,7 @@ export async function getCachedLocationImage(location: string, query?: string): 
 
   // Return cached image if available
   if (imageCache[cacheKey]) {
+    console.log(`Using cached image for ${location}`)
     return imageCache[cacheKey]
   }
 
@@ -138,9 +97,11 @@ export async function getCachedLocationImage(location: string, query?: string): 
     return imageUrl
   } catch (error) {
     console.error("Error in getCachedLocationImage:", error)
-    return (
+    const fallbackImage =
       VERIFIED_LOCATION_IMAGES[location] || `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(location)}`
-    )
+    // Cache the fallback too to avoid repeated failures
+    imageCache[cacheKey] = fallbackImage
+    return fallbackImage
   }
 }
 
@@ -149,8 +110,16 @@ export async function preloadLocationImages(
   locations: Array<{ location: string; title: string }>,
 ): Promise<Record<string, string>> {
   const imagePromises = locations.map(async (loc) => {
-    const imageUrl = await getCachedLocationImage(loc.location, loc.title)
-    return { location: loc.location, url: imageUrl }
+    try {
+      const imageUrl = await getCachedLocationImage(loc.location, loc.title)
+      return { location: loc.location, url: imageUrl }
+    } catch (error) {
+      console.error(`Error preloading image for ${loc.location}:`, error)
+      const fallbackImage =
+        VERIFIED_LOCATION_IMAGES[loc.location] ||
+        `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(loc.location)}`
+      return { location: loc.location, url: fallbackImage }
+    }
   })
 
   try {
@@ -164,7 +133,14 @@ export async function preloadLocationImages(
     return imageMap
   } catch (error) {
     console.error("Error preloading images:", error)
-    return {}
+    // Return fallback images for all locations
+    const fallbackMap: Record<string, string> = {}
+    locations.forEach((loc) => {
+      fallbackMap[loc.location] =
+        VERIFIED_LOCATION_IMAGES[loc.location] ||
+        `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(loc.location)}`
+    })
+    return fallbackMap
   }
 }
 
@@ -176,13 +152,28 @@ export async function getRealisticImageUrl(location: string): Promise<string> {
     const cachedImage = typeof window !== "undefined" ? sessionStorage.getItem(cacheKey) : null
 
     if (cachedImage) {
+      console.log(`Using session cached image for ${location}`)
       return cachedImage
     }
 
-    // If no cached image, use our verified images as a fallback
-    const fallbackImage = VERIFIED_LOCATION_IMAGES[location]
+    // Check if we have a verified image for this location
+    const verifiedImage = VERIFIED_LOCATION_IMAGES[location]
+    if (verifiedImage) {
+      console.log(`Using verified image for ${location}: ${verifiedImage}`)
 
-    // Fetch from Unsplash
+      // Cache the verified image
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem(cacheKey, verifiedImage)
+        } catch (e) {
+          console.warn("Could not cache image URL:", e)
+        }
+      }
+
+      return verifiedImage
+    }
+
+    // Try to fetch from our API route
     const imageUrl = await getLocationImage(location)
 
     // Cache the result
@@ -197,8 +188,9 @@ export async function getRealisticImageUrl(location: string): Promise<string> {
     return imageUrl
   } catch (error) {
     console.error("Error getting realistic image:", error)
-    return (
+    const fallbackImage =
       VERIFIED_LOCATION_IMAGES[location] || `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(location)}`
-    )
+    console.log(`Final fallback for ${location}: ${fallbackImage}`)
+    return fallbackImage
   }
 }

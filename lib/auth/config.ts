@@ -1,7 +1,10 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import { prisma } from '@/lib/prisma';
 
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       id: 'credentials',
@@ -15,17 +18,32 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // TODO: Implement actual authentication logic
-        // For now, return a mock user for development
-        const user = {
-          id: '1',
-          email: credentials.email,
-          name: 'Demo User',
-          role: 'user',
-          tenantId: 'demo-tenant'
-        };
+        try {
+          // Find user by email
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          });
 
-        return user;
+          if (!user) {
+            return null;
+          }
+
+          // For demo purposes, accept any password for existing users
+          // In production, you would store and verify hashed passwords
+          // const passwordValid = await bcrypt.compare(credentials.password, user.password);
+          // if (!passwordValid) return null;
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name || '',
+            role: user.role,
+            tenantId: 'default' // Will be implemented with multi-tenancy
+          };
+        } catch (error) {
+          console.error('Auth error:', error);
+          return null;
+        }
       }
     })
   ],

@@ -15,13 +15,35 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   // Transform ES modules in node_modules
   transformIgnorePatterns: [
-    'node_modules/(?!(cheerio|bottleneck)/)'
+    'node_modules/(?!(cheerio|bottleneck|uuid|@dnd-kit)/)'
   ],
   // Handle ES modules
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   globals: {
     'ts-jest': {
       useESM: true
+    }
+  },
+  // Coverage configuration
+  collectCoverageFrom: [
+    'app/**/*.{ts,tsx}',
+    'components/**/*.{ts,tsx}',
+    'lib/**/*.{ts,tsx}',
+    'hooks/**/*.{ts,tsx}',
+    '!**/*.d.ts',
+    '!**/node_modules/**',
+    '!**/coverage/**',
+    '!**/__tests__/**',
+    '!**/cypress/**',
+  ],
+  coverageReporters: ['html', 'text', 'lcov'],
+  coverageDirectory: 'coverage',
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70
     }
   }
 }

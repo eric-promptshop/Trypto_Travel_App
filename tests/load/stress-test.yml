@@ -1,0 +1,84 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    - duration: 30
+      arrivalRate: 10
+      name: "Baseline"
+    - duration: 60
+      arrivalRate: 50
+      name: "Stress level 1"
+    - duration: 60
+      arrivalRate: 100
+      name: "Stress level 2"
+    - duration: 60
+      arrivalRate: 200
+      name: "Breaking point test"
+    - duration: 30
+      arrivalRate: 10
+      name: "Recovery"
+  defaults:
+    headers:
+      'User-Agent': 'Artillery Stress Test'
+  
+scenarios:
+  - name: "Heavy API Load"
+    weight: 60
+    flow:
+      - post:
+          url: "/api/generate-itinerary"
+          headers:
+            'Content-Type': 'application/json'
+          json:
+            destination: "Peru"
+            duration: 7
+            travelers: 2
+            budget: 3000
+            interests: ["culture", "nature", "adventure", "food", "history"]
+          capture:
+            - json: "$.itinerary.id"
+              as: "itineraryId"
+              ifExists: "continue"
+      - think: 1
+      
+  - name: "Database Intensive Operations"
+    weight: 25
+    flow:
+      - get:
+          url: "/api/v1/trips"
+          expect:
+            - statusCode: [200, 401, 403]
+      - post:
+          url: "/api/v1/trips"
+          headers:
+            'Content-Type': 'application/json'
+          json:
+            title: "Stress Test Trip {{ $randomString() }}"
+            destination: "Test Destination"
+            startDate: "2024-07-01"
+            endDate: "2024-07-08"
+            budget: "{{ $randomInt(1000, 10000) }}"
+            travelers: "{{ $randomInt(1, 6) }}"
+          expect:
+            - statusCode: [200, 201, 400, 401]
+      - think: 2
+      
+  - name: "Static Resource Flooding"
+    weight: 15
+    flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/placeholder.svg"
+      - get:
+          url: "/favicon.ico"
+      - get:
+          url: "/api/health"
+      - think: 0.5
+
+# Stress test specific expectations
+expect:
+  - http.response_time.p95: 5000  # Allow higher response times under stress
+  - http.response_time.p99: 10000 # Maximum acceptable response time
+  - http.request_rate: 50         # Should handle at least 50 requests per second
+  - http.codes.200: 60           # Lower success rate acceptable under stress
+  - http.codes.500: 10           # Error rate should not exceed 10%

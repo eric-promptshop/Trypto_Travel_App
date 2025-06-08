@@ -1,0 +1,77 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 10
+      name: "Ramp up load"
+    - duration: 300
+      arrivalRate: 15
+      name: "Sustained load"
+  defaults:
+    headers:
+      'User-Agent': 'Artillery Load Test'
+  
+scenarios:
+  - name: "Homepage Load Test"
+    weight: 30
+    flow:
+      - get:
+          url: "/"
+          capture:
+            - json: "$.status"
+              as: "status"
+      - think: 2
+      
+  - name: "Health Check Test"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/health"
+          expect:
+            - statusCode: [200, 206]
+      - think: 1
+      
+  - name: "Static Assets Test"
+    weight: 15
+    flow:
+      - get:
+          url: "/favicon.ico"
+      - get:
+          url: "/placeholder.svg"
+      - think: 1
+      
+  - name: "Itinerary Generation Test"
+    weight: 25
+    flow:
+      - post:
+          url: "/api/generate-itinerary"
+          headers:
+            'Content-Type': 'application/json'
+          json:
+            destination: "{{ $randomString() }}"
+            duration: "{{ $randomInt(1, 14) }}"
+            travelers: "{{ $randomInt(1, 8) }}"
+            budget: "{{ $randomInt(500, 5000) }}"
+            interests: ["culture", "nature"]
+          expect:
+            - statusCode: [200, 400, 422]
+      - think: 5
+      
+  - name: "API Documentation Test"
+    weight: 10
+    flow:
+      - get:
+          url: "/api/docs"
+          expect:
+            - statusCode: [200, 404]
+      - think: 2
+
+# Performance thresholds
+expect:
+  - http.response_time.p95: 2000  # 95% of requests should complete within 2s
+  - http.response_time.p99: 5000  # 99% of requests should complete within 5s
+  - http.request_rate: 10         # Should handle at least 10 requests per second
+  - http.codes.200: 80           # At least 80% success rate

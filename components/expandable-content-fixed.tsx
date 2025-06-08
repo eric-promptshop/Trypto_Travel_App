@@ -46,7 +46,7 @@ export function ExpandableContentFixed({
           <Button
             variant="outline"
             size="sm"
-            className="text-[#1f5582] hover:text-[#164569] border border-[#1f5582]/30 hover:bg-[#1f5582]/5 touch-target"
+            className="text-[#1f5582] hover:text-[#164569] border border-[#1f5582]/30 hover:bg-[#1f5582]/5"
             onClick={onToggle}
           >
             {isExpanded ? (
