@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
-import { prisma } from '@/lib/prisma'
+// import { prisma } from '@/lib/prisma' // TODO: Uncomment when analytics storage is enabled
 
 interface AnalyticsEvent {
   event: string
@@ -45,22 +45,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Store in database (optional - for long-term analytics)
+    // TODO: Add analyticsEvent model to Prisma schema when enabling analytics storage
     if (process.env.ENABLE_ANALYTICS_STORAGE === 'true') {
-      await prisma.analyticsEvent.create({
-        data: {
-          event: analyticsEvent.event,
-          properties: analyticsEvent.properties,
-          userId: analyticsEvent.userId,
-          sessionId: analyticsEvent.sessionId,
-          timestamp: analyticsEvent.timestamp,
-          metadata: {
-            ipAddress: analyticsEvent.ipAddress,
-            userAgent: analyticsEvent.userAgent,
-            referrer: analyticsEvent.referrer,
-            url: analyticsEvent.url
-          }
-        }
-      })
+      // await prisma.analyticsEvent.create({
+      //   data: {
+      //     event: analyticsEvent.event,
+      //     properties: analyticsEvent.properties,
+      //     userId: analyticsEvent.userId,
+      //     sessionId: analyticsEvent.sessionId,
+      //     timestamp: analyticsEvent.timestamp,
+      //     metadata: {
+      //       ipAddress: analyticsEvent.ipAddress,
+      //       userAgent: analyticsEvent.userAgent,
+      //       referrer: analyticsEvent.referrer,
+      //       url: analyticsEvent.url
+      //     }
+      //   }
+      // })
     }
 
     // Send to external analytics services

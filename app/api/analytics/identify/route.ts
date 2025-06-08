@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
-import { prisma } from '@/lib/prisma'
+// import { prisma } from '@/lib/prisma' // TODO: Uncomment when analytics storage is enabled
 
 interface UserProperties {
   userId: string
@@ -45,26 +45,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Store in database
+    // TODO: Add userAnalytics model to Prisma schema when enabling analytics storage
     if (process.env.ENABLE_ANALYTICS_STORAGE === 'true') {
-      await prisma.userAnalytics.upsert({
-        where: { userId: data.userId },
-        update: {
-          email: userProfile.email,
-          plan: userProfile.plan,
-          lastActiveDate: userProfile.lastActiveDate,
-          preferences: userProfile.preferences,
-          lastIdentified: userProfile.lastIdentified
-        },
-        create: {
-          userId: userProfile.userId,
-          email: userProfile.email,
-          plan: userProfile.plan,
-          signupDate: userProfile.signupDate,
-          lastActiveDate: userProfile.lastActiveDate,
-          preferences: userProfile.preferences,
-          lastIdentified: userProfile.lastIdentified
-        }
-      })
+      // await prisma.userAnalytics.upsert({
+      //   where: { userId: data.userId },
+      //   update: {
+      //     email: userProfile.email,
+      //     plan: userProfile.plan,
+      //     lastActiveDate: userProfile.lastActiveDate,
+      //     preferences: userProfile.preferences,
+      //     lastIdentified: userProfile.lastIdentified
+      //   },
+      //   create: {
+      //     userId: userProfile.userId,
+      //     email: userProfile.email,
+      //     plan: userProfile.plan,
+      //     signupDate: userProfile.signupDate,
+      //     lastActiveDate: userProfile.lastActiveDate,
+      //     preferences: userProfile.preferences,
+      //     lastIdentified: userProfile.lastIdentified
+      //   }
+      // })
     }
 
     // Send to external analytics services

@@ -219,7 +219,7 @@ function createFallbackItinerary(
 
     days.push({
       day: i + 1,
-      date: currentDate.toISOString().split('T')[0],
+      date: currentDate.toISOString().split('T')[0]!,
       title: `Day ${i + 1} in ${tripData.destination}`,
       description: `Exploring the best of ${tripData.destination}`,
       activities: dayActivities,
@@ -245,8 +245,8 @@ function createFallbackItinerary(
   return {
     destination: tripData.destination,
     duration,
-    startDate: startDate.toISOString().split('T')[0],
-    endDate: endDate.toISOString().split('T')[0],
+    startDate: startDate.toISOString().split('T')[0]!,
+    endDate: endDate.toISOString().split('T')[0]!,
     travelers: tripData.travelers,
     totalBudget: tripData.budget[1],
     days,

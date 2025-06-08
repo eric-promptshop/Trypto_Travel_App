@@ -103,7 +103,7 @@ export const POST = withTenantIsolation(async (tenantContext, request: NextReque
         contentType: true,
         content: true,
         metadata: true,
-        version: true,
+        createdAt: true,
       }
     });
 
@@ -141,7 +141,7 @@ export const POST = withTenantIsolation(async (tenantContext, request: NextReque
         contentType: 'deployment',
         status: 'pending',
         tenantId: tenant.id,
-        authorId: tenantContext.userId,
+        authorId: tenantContext.userId || null,
         metadata: {
           deploymentId: `deploy-${Date.now()}`,
           environment,

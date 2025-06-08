@@ -72,7 +72,7 @@ export const POST = withTenantIsolation(async (tenantContext, request: NextReque
         metadata: metadata || {},
         status,
         tenantId: tenantContext.tenantId,
-        authorId: tenantContext.userId,
+        authorId: tenantContext.userId || null,
       },
       include: {
         author: {

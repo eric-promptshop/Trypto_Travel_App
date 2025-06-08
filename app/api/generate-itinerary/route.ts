@@ -5,7 +5,10 @@ import {
   Activity,
   Accommodation,
   Transportation,
-  Destination 
+  Destination,
+  MatchingCriteria,
+  ItineraryDay,
+  Meal
 } from '@/lib/types/itinerary'
 
 import { DefaultPreferenceMatchingService } from '@/lib/itinerary-engine/services/preference-matching-service'
@@ -13,6 +16,7 @@ import { DefaultDestinationSequencingService } from '@/lib/itinerary-engine/serv
 import { DefaultDayPlanningService } from '@/lib/itinerary-engine/services/day-planning-service'
 import { DefaultPricingCalculationService } from '@/lib/itinerary-engine/services/pricing-calculation-service'
 import { MemoryCachingService } from '@/lib/itinerary-engine/services/caching-service'
+import { SequencingConstraints, GenerationResult } from '@/lib/itinerary-engine/types'
 
 /**
  * Complete Itinerary Generation Pipeline API
@@ -37,10 +41,7 @@ const pricingService = new DefaultPricingCalculationService({
   contingencyPercentage: 15
 })
 
-const cachingService = new MemoryCachingService({
-  maxSize: 1000,
-  ttlMinutes: 30
-})
+const cachingService = new MemoryCachingService(1000, 1800) // 1000 items max, 30 minutes TTL
 
 // Performance monitoring
 interface PerformanceTimer {
@@ -112,20 +113,23 @@ function createSampleContent(destination: string): {
       description: `Comprehensive guided tour of ${destination}'s main attractions`,
       category: 'sightseeing',
       location: destination,
-      coordinates: { lat: 48.8566, lng: 2.3522 },
+      coordinates: { latitude: 48.8566, longitude: 2.3522 },
       timeSlot: { startTime: '09:00', endTime: '17:00', duration: 480 },
       difficulty: 'easy',
       indoorOutdoor: 'both',
       accessibility: {
         wheelchairAccessible: true,
-        mobilityRequirements: 'none',
-        visuallyImpairedSupport: true,
-        hearingImpairedSupport: true
+        hearingImpaired: true,
+        visuallyImpaired: true,
+        mobilityAssistance: false
       },
       seasonality: ['spring', 'summer', 'fall', 'winter'],
       bookingRequired: true,
-      cost: { amount: 45, currency: 'USD' },
-      tags: ['guided', 'history', 'culture']
+      estimatedCost: { amount: 45, currency: 'USD' },
+      tags: ['guided', 'history', 'culture'],
+      images: [`https://images.unsplash.com/photo-city-tour`],
+      createdAt: new Date(),
+      updatedAt: new Date()
     },
     {
       id: 'act_2',
@@ -133,20 +137,23 @@ function createSampleContent(destination: string): {
       description: `Explore local food markets and taste regional specialties`,
       category: 'culinary',
       location: destination,
-      coordinates: { lat: 48.8606, lng: 2.3376 },
+      coordinates: { latitude: 48.8606, longitude: 2.3376 },
       timeSlot: { startTime: '10:00', endTime: '13:00', duration: 180 },
       difficulty: 'easy',
       indoorOutdoor: 'both',
       accessibility: {
         wheelchairAccessible: true,
-        mobilityRequirements: 'walking',
-        visuallyImpairedSupport: false,
-        hearingImpairedSupport: true
+        hearingImpaired: true,
+        visuallyImpaired: false,
+        mobilityAssistance: true
       },
       seasonality: ['spring', 'summer', 'fall', 'winter'],
       bookingRequired: false,
-      cost: { amount: 25, currency: 'USD' },
-      tags: ['food', 'local', 'market']
+      estimatedCost: { amount: 25, currency: 'USD' },
+      tags: ['food', 'local', 'market'],
+      images: [`https://images.unsplash.com/photo-food-market`],
+      createdAt: new Date(),
+      updatedAt: new Date()
     },
     {
       id: 'act_3',
@@ -154,20 +161,23 @@ function createSampleContent(destination: string): {
       description: `Visit world-renowned museums and art galleries`,
       category: 'cultural',
       location: destination,
-      coordinates: { lat: 48.8606, lng: 2.3376 },
+      coordinates: { latitude: 48.8606, longitude: 2.3376 },
       timeSlot: { startTime: '14:00', endTime: '17:00', duration: 180 },
       difficulty: 'easy',
       indoorOutdoor: 'indoor',
       accessibility: {
         wheelchairAccessible: true,
-        mobilityRequirements: 'none',
-        visuallyImpairedSupport: true,
-        hearingImpairedSupport: true
+        hearingImpaired: true,
+        visuallyImpaired: true,
+        mobilityAssistance: false
       },
       seasonality: ['spring', 'summer', 'fall', 'winter'],
       bookingRequired: true,
-      cost: { amount: 15, currency: 'USD' },
-      tags: ['museum', 'art', 'culture', 'indoor']
+      estimatedCost: { amount: 15, currency: 'USD' },
+      tags: ['museum', 'art', 'culture', 'indoor'],
+      images: [`https://images.unsplash.com/photo-museum`],
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
   ]
 
@@ -179,15 +189,16 @@ function createSampleContent(destination: string): {
       description: `5-star luxury hotel in the heart of ${destination}`,
       type: 'hotel',
       location: destination,
-      coordinates: { lat: 48.8566, lng: 2.3522 },
+      coordinates: { latitude: 48.8566, longitude: 2.3522 },
       starRating: 5,
       amenities: ['wifi', 'pool', 'spa', 'restaurant', 'gym', 'concierge'],
       roomTypes: [
         {
-          type: 'standard',
+          name: 'Standard Room',
           capacity: 2,
-          priceRange: { min: 250, max: 350 },
-          amenities: ['king_bed', 'city_view', 'minibar']
+          bedConfiguration: 'King Bed',
+          amenities: ['king_bed', 'city_view', 'minibar'],
+          pricePerNight: { amount: 300, currency: 'USD' }
         }
       ],
       checkInTime: '15:00',
@@ -196,10 +207,14 @@ function createSampleContent(destination: string): {
       contactInfo: {
         phone: '+33 1 23 45 67 89',
         email: 'reservations@luxuryhotel.com',
-        website: 'https://luxuryhotel.com'
+        website: 'https://luxuryhotel.com',
+        address: `123 Main Street, ${destination}`
       },
-      cost: { amount: 300, currency: 'USD' },
-      tags: ['luxury', 'central', '5-star']
+      estimatedCost: { amount: 300, currency: 'USD' },
+      tags: ['luxury', 'central', '5-star'],
+      images: [`https://images.unsplash.com/photo-luxury-hotel`],
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
   ]
 
@@ -212,13 +227,16 @@ function createSampleContent(destination: string): {
       type: 'car',
       from: `${destination} Airport`,
       to: destination,
-      fromCoordinates: { lat: 49.0097, lng: 2.5479 },
-      toCoordinates: { lat: 48.8566, lng: 2.3522 },
+      fromCoordinates: { latitude: 49.0097, longitude: 2.5479 },
+      toCoordinates: { latitude: 48.8566, longitude: 2.3522 },
       departureTime: '10:00',
       arrivalTime: '11:00',
       duration: 60,
-      cost: { amount: 55, currency: 'USD' },
-      tags: ['private', 'comfortable', 'direct']
+      estimatedCost: { amount: 55, currency: 'USD' },
+      tags: ['private', 'comfortable', 'direct'],
+      images: [`https://images.unsplash.com/photo-car-rental`],
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
   ]
 
@@ -229,18 +247,23 @@ function createSampleContent(destination: string): {
       title: destination,
       description: `Beautiful city of ${destination} with rich history and culture`,
       location: destination,
-      coordinates: { lat: 48.8566, lng: 2.3522 },
+      coordinates: { latitude: 48.8566, longitude: 2.3522 },
       countryCode: 'FR',
-      region: 'Europe',
-      timeZone: 'Europe/Paris',
-      averageTemperature: { celsius: 15, fahrenheit: 59 },
-      bestVisitingMonths: ['May', 'June', 'September', 'October'],
-      languagesSpoken: ['French', 'English'],
-      currency: 'EUR',
+      timezone: 'Europe/Paris',
+      weatherInfo: {
+        averageTemperature: 15,
+        humidity: 70,
+        precipitation: 50,
+        season: 'spring'
+      },
+      localCurrency: 'EUR',
+      languages: ['French', 'English'],
       safetyRating: 9,
-      touristRating: 10,
-      costLevel: 'moderate',
-      tags: ['historic', 'romantic', 'cultural', 'gastronomy']
+      touristSeason: 'shoulder',
+      images: [`https://images.unsplash.com/photo-${destination.toLowerCase()}`],
+      tags: ['historic', 'romantic', 'cultural', 'gastronomy'],
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
   ]
 
@@ -262,18 +285,35 @@ async function generateCompleteItinerary(
   // Step 2: Parallel content matching by type
   const matchingTimer = performanceTracker.start('contentMatching')
   
+  // Create MatchingCriteria from UserPreferences
+  const criteria: MatchingCriteria = {
+    userPreferences: preferences,
+    destinationConstraints: [],
+    timeConstraints: [],
+    budgetConstraints: []
+  }
+  
   const [activityScores, accommodationScores, transportationScores, destinationScores] = await Promise.all([
-    preferenceService.scoreAndRankContent(availableContent.activities, preferences),
-    preferenceService.scoreAndRankContent(availableContent.accommodations, preferences),
-    preferenceService.scoreAndRankContent(availableContent.transportation, preferences),
-    preferenceService.scoreAndRankContent(availableContent.destinations, preferences)
+    preferenceService.scoreContent(availableContent.activities, criteria),
+    preferenceService.scoreContent(availableContent.accommodations, criteria),
+    preferenceService.scoreContent(availableContent.transportation, criteria),
+    preferenceService.scoreContent(availableContent.destinations, criteria)
   ])
 
+  // Map contentId back to actual content
   const matchedContent = {
-    activities: activityScores.map(s => s.content as Activity),
-    accommodations: accommodationScores.map(s => s.content as Accommodation),
-    transportation: transportationScores.map(s => s.content as Transportation),
-    destinations: destinationScores.map(s => s.content as Destination)
+    activities: activityScores
+      .map((score): Activity | null => availableContent.activities.find(a => a.id === score.contentId) || null)
+      .filter((a): a is Activity => a !== null),
+    accommodations: accommodationScores
+      .map((score): Accommodation | null => availableContent.accommodations.find(a => a.id === score.contentId) || null)
+      .filter((a): a is Accommodation => a !== null),
+    transportation: transportationScores
+      .map((score): Transportation | null => availableContent.transportation.find(t => t.id === score.contentId) || null)
+      .filter((t): t is Transportation => t !== null),
+    destinations: destinationScores
+      .map((score): Destination | null => availableContent.destinations.find(d => d.id === score.contentId) || null)
+      .filter((d): d is Destination => d !== null)
   }
 
   performanceTracker.end(matchingTimer)
@@ -281,16 +321,16 @@ async function generateCompleteItinerary(
   // Step 3: Destination sequencing
   const sequencingTimer = performanceTracker.start('destinationSequencing')
   
-  const sequencingConstraints = {
-    maxTravelTime: 8,
+  const sequencingConstraints: SequencingConstraints = {
+    maxTravelTimePerDay: 480, // 8 hours
+    preferredTransportation: ['car', 'train', 'bus'],
     startLocation: preferences.primaryDestination,
-    endLocation: preferences.primaryDestination,
-    avoidBacktracking: true,
-    preferDirectRoutes: true
+    endLocation: preferences.primaryDestination
   }
 
-  const sequencedDestinations = await sequencingService.optimizeDestinationSequence(
+  const sequencedDestinations = await sequencingService.optimizeSequence(
     matchedContent.destinations,
+    preferences,
     sequencingConstraints
   )
 
@@ -303,31 +343,44 @@ async function generateCompleteItinerary(
     (new Date(preferences.endDate).getTime() - new Date(preferences.startDate).getTime()) / (1000 * 60 * 60 * 24)
   )
 
-  const days = []
+  const days: ItineraryDay[] = []
+  // Handle case where no destinations are available
+  if (sequencedDestinations.length === 0) {
+    throw new Error('No destinations available for itinerary generation')
+  }
+
   for (let dayNumber = 1; dayNumber <= tripDuration; dayNumber++) {
     const dayDate = new Date(preferences.startDate)
     dayDate.setDate(dayDate.getDate() + dayNumber - 1)
     
-    const currentDestination = sequencedDestinations[Math.min(dayNumber - 1, sequencedDestinations.length - 1)]
+    const destinationIndex = Math.min(dayNumber - 1, sequencedDestinations.length - 1)
+    const currentDestination = sequencedDestinations[destinationIndex]!
     
     const relevantActivities = matchedContent.activities.filter(activity =>
       activity.location.toLowerCase().includes(currentDestination.location.toLowerCase())
     )
 
     const dayPlanningPreferences = {
-      pacing: preferences.pacePreference || 'moderate' as const,
+      pacing: (preferences.pacePreference === 'slow' ? 'relaxed' : 
+               preferences.pacePreference === 'fast' ? 'packed' : 'moderate') as 'relaxed' | 'moderate' | 'packed',
       startTime: '09:00:00',
       endTime: '18:00:00',
       mealPreferences: [
         { type: 'breakfast' as const, timing: '08:00', style: 'casual' as const, budget: { amount: 25, currency: 'USD' } },
         { type: 'lunch' as const, timing: '12:30', style: 'casual' as const, budget: { amount: 35, currency: 'USD' } },
-        { type: 'dinner' as const, timing: '19:00', style: 'moderate' as const, budget: { amount: 50, currency: 'USD' } }
+        { type: 'dinner' as const, timing: '19:00', style: 'fine_dining' as const, budget: { amount: 50, currency: 'USD' } }
       ],
-      includeDowntime: preferences.pacePreference === 'relaxed'
+      activityTypes: preferences.interests || [],
+      maxActivities: preferences.pacePreference === 'slow' ? 2 : preferences.pacePreference === 'fast' ? 4 : 3,
+      budgetForDay: { amount: 200, currency: 'USD' },
+      accessibility: false
     }
 
+    const dayDateString = dayDate.toISOString().split('T')[0]!
+    
     const dayPlan = await dayPlanningService.planDay(
       currentDestination,
+      dayDateString,
       relevantActivities,
       dayPlanningPreferences
     )
@@ -336,21 +389,38 @@ async function generateCompleteItinerary(
       acc.location.toLowerCase().includes(currentDestination.location.toLowerCase())
     )
 
-    days.push({
+    const dayData: ItineraryDay = {
       id: `day_${dayNumber}`,
       dayNumber,
-      date: dayDate.toISOString().split('T')[0],
+      date: dayDateString,
       title: `Day ${dayNumber}: ${currentDestination.title}`,
       location: currentDestination.location,
       coordinates: currentDestination.coordinates,
-      accommodation,
       activities: dayPlan.activities,
       transportation: [],
-      meals: dayPlan.meals,
+      meals: dayPlan.meals.map(meal => {
+        const mealItem: Meal = {
+          type: meal.type,
+          time: meal.time,
+          location: currentDestination.location,
+          estimatedCost: meal.cost,
+          dietaryOptions: []
+        }
+        if (meal.venue) {
+          mealItem.venue = meal.venue
+        }
+        return mealItem
+      }),
       totalEstimatedCost: { amount: 0, currency: 'USD' },
-      pacing: dayPlan.pacing,
+      pacing: dayPlan.pacing as 'relaxed' | 'moderate' | 'packed',
       notes: `Exploring ${currentDestination.title}`
-    })
+    }
+    
+    if (accommodation) {
+      dayData.accommodation = accommodation
+    }
+    
+    days.push(dayData)
   }
 
   performanceTracker.end(dayPlanningTimer)
@@ -359,7 +429,7 @@ async function generateCompleteItinerary(
   const pricingTimer = performanceTracker.start('pricingCalculation')
   
   const preliminaryItinerary: GeneratedItinerary = {
-    id: `itin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `itin_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
     title: `${tripDuration}-Day ${sequencedDestinations[0]?.title || 'Adventure'} Trip`,
     description: `A ${tripDuration}-day travel itinerary exploring ${sequencedDestinations.map(d => d.title).join(', ')}`,
     destinations: sequencedDestinations,
@@ -373,7 +443,7 @@ async function generateCompleteItinerary(
       avgDailyCost: { amount: 0, currency: 'USD' },
       recommendedBudget: { amount: 0, currency: 'USD' },
       physicalDemand: 'moderate' as const,
-      culturalImmersion: 'high' as const
+      culturalImmersion: 'deep' as const
     },
     metadata: {
       generationTime: 0,
@@ -453,10 +523,10 @@ export async function POST(request: NextRequest) {
     const cacheKey = generateCacheKey(preferences)
     const cached = await cachingService.get(cacheKey)
     
-    if (cached) {
+    if (cached && cached.itinerary) {
       return NextResponse.json({
         success: true,
-        itinerary: cached,
+        itinerary: cached.itinerary,
         fromCache: true,
         generationTime: performance.now() - startTime,
         cacheKey
@@ -470,7 +540,29 @@ export async function POST(request: NextRequest) {
     itinerary.metadata.generationTime = totalTime
 
     // Cache the result
-    await cachingService.set(cacheKey, itinerary)
+    const generationResult: GenerationResult = {
+      itinerary,
+      success: true,
+      metadata: {
+        generationTimeMs: totalTime,
+        componentsUsed: {
+          destinationsProcessed: itinerary.destinations.length,
+          activitiesEvaluated: itinerary.days.reduce((sum, day) => sum + day.activities.length, 0),
+          accommodationsConsidered: itinerary.days.filter(day => day.accommodation).length,
+          transportationOptions: itinerary.days.reduce((sum, day) => sum + day.transportation.length, 0),
+          totalContentItems: 0
+        },
+        performanceMetrics: {
+          contentLoadingMs: performanceTracker.getResults()['contentLoading'] || 0,
+          preferencesAnalysisMs: 0,
+          matchingAlgorithmMs: performanceTracker.getResults()['contentMatching'] || 0,
+          sequencingMs: performanceTracker.getResults()['destinationSequencing'] || 0,
+          optimizationMs: performanceTracker.getResults()['dayPlanning'] || 0
+        },
+        optimizationApplied: ['parallel-processing', 'content-filtering', 'smart-sequencing']
+      }
+    }
+    await cachingService.set(cacheKey, generationResult)
 
     // Check performance target (3 seconds)
     const metPerformanceTarget = totalTime <= 3000

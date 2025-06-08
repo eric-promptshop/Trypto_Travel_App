@@ -58,11 +58,13 @@ export const GET = withErrorHandling(async (
     createdAt: itinerary.createdAt.toISOString(),
     updatedAt: itinerary.updatedAt.toISOString(),
     userId: itinerary.userId || session.user.id,
-    // Additional metadata
-    travelers: itinerary.travelers,
-    totalPrice: itinerary.totalPrice,
-    currency: itinerary.currency,
-    days: JSON.parse(itinerary.days || '[]')
+    // Additional metadata from the itinerary data
+    metadata: {
+      travelers: itinerary.travelers,
+      totalPrice: itinerary.totalPrice,
+      currency: itinerary.currency,
+      days: JSON.parse(itinerary.days || '[]')
+    }
   };
 
   return createSuccessResponse(trip);
@@ -189,7 +191,7 @@ export const PUT = withErrorHandling(async (
   const updatedTrip: Trip = {
     id: updatedItinerary.id,
     title: updatedItinerary.title,
-    description: updatedItinerary.description || undefined,
+    description: updatedItinerary.description || '',
     startDate: updatedItinerary.startDate.toISOString(),
     endDate: updatedItinerary.endDate.toISOString(),
     location: updatedItinerary.destination,

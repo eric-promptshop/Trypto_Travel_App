@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 
 // Reuse the validation schema from parent route
 const ColorPaletteSchema = z.object({
@@ -225,8 +226,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           resourceId: params.id,
           tenantId: existingTheme.tenantId,
           userId: session.user.id,
-          oldValues: existingTheme.content,
-          newValues: updatedContent,
+          oldValues: existingTheme.content as Prisma.InputJsonValue,
+          newValues: updatedContent as Prisma.InputJsonValue,
         }
       })
     }
@@ -342,7 +343,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
           resourceId: params.id,
           tenantId: existingTheme.tenantId,
           userId: session.user.id,
-          oldValues: existingTheme.content,
+          oldValues: existingTheme.content as Prisma.InputJsonValue,
         }
       })
     }

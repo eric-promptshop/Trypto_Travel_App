@@ -15,7 +15,7 @@ function validateImageRelevance(imageData: any, location: string): boolean {
   if (!imageData) return false
 
   // Extract location name without country
-  const locationName = location.split(",")[0].toLowerCase().trim()
+  const locationName = location.split(",")[0]?.toLowerCase().trim() || ''
 
   // Check description
   if (imageData.description && imageData.description.toLowerCase().includes(locationName)) {
