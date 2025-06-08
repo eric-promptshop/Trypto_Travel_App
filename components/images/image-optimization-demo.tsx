@@ -91,22 +91,20 @@ export const ImageOptimizationDemo: React.FC<{
     );
   };
 
-  const renderGalleryTab = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {DEMO_IMAGES.map((image) => {
-          const sources = useImageSources(image.baseUrl, {
-            width: 400,
-            height: 300,
-            qualities: ['low', 'medium', 'high', 'original'],
-            cloudName: 'demo', // Using Cloudinary demo account
-            useCloudinaryFetch: true, // Fetch and transform Unsplash images
-            format: 'auto', // Auto-select best format (WebP when supported)
-          });
+  // Component to handle individual image rendering with hooks
+  const GalleryImage = ({ image }: { image: typeof DEMO_IMAGES[0] }) => {
+    const sources = useImageSources(image.baseUrl, {
+      width: 400,
+      height: 300,
+      qualities: ['low', 'medium', 'high', 'original'],
+      cloudName: 'demo', // Using Cloudinary demo account
+      useCloudinaryFetch: true, // Fetch and transform Unsplash images
+      format: 'auto', // Auto-select best format (WebP when supported)
+    });
 
-          const loadTime = loadingTimes.get(image.id);
+    const loadTime = loadingTimes.get(image.id);
 
-          return (
+    return (
             <div key={image.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               <ImageLoadTracker imageId={image.id}>
                 <AdaptiveImage
@@ -135,8 +133,15 @@ export const ImageOptimizationDemo: React.FC<{
                 </div>
               </div>
             </div>
-          );
-        })}
+    );
+  };
+
+  const renderGalleryTab = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {DEMO_IMAGES.map((image) => (
+          <GalleryImage key={image.id} image={image} />
+        ))}
       </div>
     </div>
   );

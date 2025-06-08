@@ -27,6 +27,8 @@ import {
   X,
 } from "lucide-react"
 import { TripNavLogo as Logo } from "@/components/ui/TripNavLogo"
+import { useTrips } from '@/hooks/use-trips'
+import { itineraryUtils } from '@/hooks/use-itinerary'
 
 interface Message {
   id: string
@@ -55,6 +57,7 @@ interface FormData {
   interests?: string[]
   specialRequirements?: string
   completeness?: number
+  tripId?: string
 }
 
 interface AIRequestFormProps {
@@ -62,6 +65,7 @@ interface AIRequestFormProps {
 }
 
 export function AIRequestForm({ onComplete }: AIRequestFormProps) {
+  const { createTrip, loading: tripLoading } = useTrips()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -254,14 +258,36 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     }
   }
 
-  const proceedToItinerary = () => {
-    onComplete(extractedData)
+  const proceedToItinerary = async () => {
+    try {
+      // Convert form data to trip creation format
+      const tripData = itineraryUtils.convertFormDataToTrip(extractedData)
+      
+      // Create the trip in the backend
+      const newTrip = await createTrip(tripData)
+      
+      if (newTrip) {
+        // Include the trip ID in the completion data
+        onComplete({
+          ...extractedData,
+          tripId: newTrip.id
+        })
+      } else {
+        // If trip creation fails, still proceed with form data only
+        console.warn('Trip creation failed, proceeding with form data only')
+        onComplete(extractedData)
+      }
+    } catch (error) {
+      console.error('Error creating trip:', error)
+      // If there's an error, still proceed with form data only
+      onComplete(extractedData)
+    }
   }
 
   const retryLastMessage = () => {
     if (messages.length >= 2) {
       const lastUserMessage = messages[messages.length - 2]
-      if (lastUserMessage.role === "user") {
+      if (lastUserMessage && lastUserMessage.role === "user") {
         // Remove the last two messages (user message and error response)
         setMessages((prev) => prev.slice(0, -2))
         // Retry sending the last user message

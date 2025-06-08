@@ -47,8 +47,9 @@ function useRegisterServiceWorker() {
 export default function ClientAppShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false)
   
-  // Call useWebVitals at the component level (only in production)
-  const webVitals = process.env.NODE_ENV === 'production' ? useWebVitals() : null
+  // Always call the hook, but only use its value in production
+  const webVitals = useWebVitals()
+  const shouldTrackVitals = process.env.NODE_ENV === 'production'
   
   useRegisterServiceWorker()
   

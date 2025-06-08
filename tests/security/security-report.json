@@ -1,11 +1,11 @@
 {
   "summary": {
-    "total_issues": 47,
+    "total_issues": 67,
     "high_severity": 4,
-    "medium_severity": 23,
-    "low_severity": 20
+    "medium_severity": 30,
+    "low_severity": 33
   },
-  "timestamp": "2025-06-03T04:08:41.123Z",
+  "timestamp": "2025-06-08T05:40:46.949Z",
   "vulnerabilities": [],
   "dependencies": [],
   "codeAnalysis": [
@@ -13,6 +13,78 @@
       "type": "data_integrity",
       "severity": "medium",
       "message": "Email field should have @unique constraint"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/clients/[id]/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/clients/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "authentication",
+      "severity": "medium",
+      "file": "/app/api/admin/deploy/route.ts",
+      "message": "API route may lack authentication"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/deploy/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/admin/themes/[id]/apply/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/[id]/apply/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/admin/themes/[id]/deploy/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/[id]/deploy/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/[id]/duplicate/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/[id]/preview/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/[id]/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/route.ts",
+      "message": "API route may lack rate limiting"
     },
     {
       "type": "input_validation",
@@ -93,6 +165,12 @@
       "message": "API route may lack rate limiting"
     },
     {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/images/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
       "type": "input_validation",
       "severity": "medium",
       "file": "/app/api/monitoring/metrics/route.ts",
@@ -145,6 +223,12 @@
       "severity": "low",
       "file": "/app/api/v1/content/route.ts",
       "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/v1/crm/sync/route.ts",
+      "message": "API route may lack input validation"
     },
     {
       "type": "rate_limiting",
@@ -209,7 +293,37 @@
     {
       "type": "rate_limiting",
       "severity": "low",
+      "file": "/app/api/v1/trips/[id]/itinerary/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v1/trips/[id]/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
       "file": "/app/api/v1/trips/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "authentication",
+      "severity": "medium",
+      "file": "/app/api/v2/generate-itinerary/route.ts",
+      "message": "API route may lack authentication"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/v2/generate-itinerary/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v2/generate-itinerary/route.ts",
       "message": "API route may lack rate limiting"
     },
     {
@@ -271,6 +385,12 @@
       "type": "configuration",
       "severity": "low",
       "message": "Environment file .env.production detected - ensure it's not committed to version control"
+    },
+    {
+      "type": "file_permissions",
+      "severity": "medium",
+      "file": ".env",
+      "message": "File .env is world-readable"
     },
     {
       "type": "file_permissions",

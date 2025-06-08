@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { CrmFactory } from '@/lib/crm/crm-factory';
+import { CrmIntegrationFactory } from '@/lib/crm/crm-factory';
 import { CrmConfig, CrmType } from '@/lib/crm/types/crm-integration';
 import { EmailService } from './email-service';
 
@@ -62,7 +62,8 @@ export class LeadSyncService {
       }
 
       // Initialize CRM connector
-      const crmConnector = CrmFactory.create(crmConfig);
+      const factory = CrmIntegrationFactory.getInstance();
+      const crmConnector = factory.create(crmConfig.type, crmConfig);
 
       // Prepare lead data for CRM
       const crmLead = {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { AIRequestForm } from '@/components/ai-request-form'
-import { ItineraryBuilder } from '@/components/itinerary-builder'
+import { ConnectedItineraryViewer } from '@/components/itinerary/ConnectedItineraryViewer'
 import { motion } from 'framer-motion'
 import { useAnalytics } from '@/lib/analytics/analytics-service'
 
@@ -26,6 +26,7 @@ interface FormData {
   interests?: string[]
   specialRequirements?: string
   completeness?: number
+  tripId?: string
 }
 
 export default function PlanTripPage() {
@@ -57,9 +58,10 @@ export default function PlanTripPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <ItineraryBuilder 
-            formData={formData} 
-            isMobile={false}
+          <ConnectedItineraryViewer
+            tripId={formData.tripId || null}
+            formData={formData}
+            onEdit={() => setCurrentView('form')}
           />
         </motion.div>
       )}
