@@ -408,15 +408,19 @@ export default function WhiteLabelDashboard() {
               {/* Theme Customizer */}
               <div className="border-t pt-6">
                 <h4 className="font-medium mb-3">Custom Theme Editor</h4>
-                <ThemeCustomizerConnected
-                  clientId={selectedClient?.id}
-                  onThemeApplied={(theme) => {
-                    setSelectedTheme(theme);
-                    if (selectedClient) {
-                      handleCustomThemeChange(theme);
-                    }
-                  }}
-                />
+                {selectedClient?.id ? (
+                  <ThemeCustomizerConnected
+                    clientId={selectedClient.id}
+                    onThemeApplied={(theme) => {
+                      setSelectedTheme(theme);
+                      if (selectedClient) {
+                        handleCustomThemeChange(theme);
+                      }
+                    }}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">Select a client to customize theme</p>
+                )}
               </div>
             </div>
           )}

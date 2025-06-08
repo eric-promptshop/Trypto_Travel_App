@@ -2,23 +2,10 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
-  "env": {
-    "NEXT_PUBLIC_ENVIRONMENT": "@environment"
-  },
   "build": {
     "env": {
-      "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
-      "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
-      "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-      "DATABASE_URL": "@database_url",
-      "OPENAI_API_KEY": "@openai_api_key",
-      "NEXTAUTH_SECRET": "@nextauth_secret",
-      "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "@cloudinary_cloud_name",
-      "CLOUDINARY_API_KEY": "@cloudinary_api_key",
-      "CLOUDINARY_API_SECRET": "@cloudinary_api_secret",
-      "UNSPLASH_ACCESS_KEY": "@unsplash_access_key",
       "ANALYZE": "false"
     }
   },

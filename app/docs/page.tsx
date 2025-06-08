@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { TripNavButton, Button } from '@/components/ui/button'
+import { Button, TripNavButton } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
@@ -276,9 +276,9 @@ export default function Guide() {
                 </Card>
 
                 <div className="text-center">
-                  <TripNavButton className="px-8">
+                  <Button className="px-8">
                     Start Planning Your Trip
-                  </TripNavButton>
+                  </Button>
                 </div>
               </div>
             )}

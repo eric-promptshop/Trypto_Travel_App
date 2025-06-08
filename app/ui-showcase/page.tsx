@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { TripNavButton, Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardImage } from '@/components/ui/card'
+import { Button, TripNavButton } from '@/components/ui/button'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
@@ -31,12 +31,12 @@ export default function UIShowcase() {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card variant="elevated" className="p-6">
+            <Card className="p-6">
               <h3 className="font-medium mb-4 text-[#1B365D]">Primary Actions</h3>
               <div className="space-y-3">
-                <TripNavButton className="w-full">Book Your Trip</TripNavButton>
+                <Button className="w-full">Book Your Trip</Button>
                 <TripNavButton variant="accent" className="w-full">Explore Destinations</TripNavButton>
-                <TripNavButton variant="secondary" className="w-full">View Details</TripNavButton>
+                <Button variant="secondary" className="w-full">View Details</Button>
               </div>
             </Card>
 
@@ -52,9 +52,9 @@ export default function UIShowcase() {
             <Card variant="elevated" className="p-6">
               <h3 className="font-medium mb-4 text-[#1B365D]">Button Sizes</h3>
               <div className="space-y-3">
-                <TripNavButton size="sm" className="w-full">Small Button</TripNavButton>
-                <TripNavButton className="w-full">Default Size</TripNavButton>
-                <TripNavButton size="lg" className="w-full">Large Button</TripNavButton>
+                <Button size="sm" className="w-full">Small Button</Button>
+                <Button className="w-full">Default Size</Button>
+                <Button size="lg" className="w-full">Large Button</Button>
               </div>
             </Card>
           </div>
@@ -68,11 +68,11 @@ export default function UIShowcase() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Trip Card */}
-            <Card variant="trip" className="overflow-hidden">
-              <CardImage 
+            <Card className="overflow-hidden">
+              <img 
                 src="https://images.unsplash.com/photo-1530521954074-e64f6810b32d?w=400&h=200&fit=crop" 
                 alt="Paris" 
-                overlay 
+                className="w-full h-48 object-cover"
               />
               <CardHeader>
                 <CardTitle>Weekend in Paris</CardTitle>
