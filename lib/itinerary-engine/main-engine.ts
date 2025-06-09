@@ -14,7 +14,8 @@ import {
   ValidationError,
   ValidationWarning,
   EngineStatus,
-  SequencingConstraints
+  SequencingConstraints,
+  DayPlanningPreferences
 } from './types'
 import {
   GeneratedItinerary,
@@ -849,16 +850,25 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
       )
 
       // Plan the day using the day planning service
-      const dayPlanningPreferences = {
-        pacing: preferences.pacePreference || 'moderate',
+      const dayPlanningPreferences: DayPlanningPreferences = {
+        pacing: (preferences.pacePreference === 'slow' ? 'relaxed' : 
+                preferences.pacePreference === 'fast' ? 'packed' : 'moderate') as 'relaxed' | 'moderate' | 'packed',
         startTime: '09:00:00',
         endTime: '18:00:00',
         mealPreferences: [
           { type: 'breakfast' as const, timing: '08:00', style: 'casual' as const, budget: { amount: 25, currency: 'USD' } },
           { type: 'lunch' as const, timing: '12:30', style: 'casual' as const, budget: { amount: 35, currency: 'USD' } },
-          { type: 'dinner' as const, timing: '19:00', style: 'moderate' as const, budget: { amount: 50, currency: 'USD' } }
+          { type: 'dinner' as const, timing: '19:00', style: 'casual' as const, budget: { amount: 50, currency: 'USD' } }
         ],
-        includeDowntime: preferences.pacePreference === 'slow'
+        activityTypes: preferences.interests || [],
+        maxActivities: preferences.pacePreference === 'slow' ? 3 : 
+                      preferences.pacePreference === 'fast' ? 6 : 4,
+        budgetForDay: {
+          amount: ((preferences.budgetMax || 1000) - (preferences.budgetMin || 500)) / 
+                  this.calculateTripDuration(preferences),
+          currency: preferences.currency || 'USD'
+        },
+        accessibility: preferences.mobilityRequirements === 'wheelchair' || false
       }
 
       const dayPlan = await this.dayPlanningService.planDay(
@@ -896,7 +906,13 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
         accommodation,
         activities: dayPlan.activities,
         transportation,
-        meals: dayPlan.meals,
+        meals: dayPlan.meals.map(meal => ({
+          type: meal.type,
+          time: meal.time,
+          venue: meal.venue,
+          estimatedCost: meal.cost,
+          dietaryOptions: []
+        })),
         totalEstimatedCost: { amount: 0, currency: 'USD' }, // Will be calculated by pricing service
         pacing: dayPlan.pacing,
         notes: dayPlan.notes || `Exploring ${currentDestination.title}`
