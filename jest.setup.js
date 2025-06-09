@@ -48,58 +48,154 @@ if (typeof global.Request === 'undefined') {
 global.fetch = global.fetch || jest.fn()
 
 // Mock environment variables
+process.env.NODE_ENV = 'test'
+process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test'
 process.env.NEXTAUTH_SECRET = 'test-secret'
-
-// Mock NextResponse
-jest.mock('next/server', () => ({
-  NextRequest: class NextRequest extends global.Request {
-    constructor(url, options) {
-      super(url, options)
-      this.nextUrl = new URL(url)
-    }
-  },
-  NextResponse: {
-    json: (data, init) => {
-      const response = new global.Response(JSON.stringify(data), {
-        ...init,
-        headers: {
-          ...init?.headers,
-          'content-type': 'application/json',
-        }
-      })
-      response.json = async () => data
-      return response
-    },
-    redirect: (url) => {
-      return new global.Response(null, {
-        status: 307,
-        headers: {
-          Location: url.toString()
-        }
-      })
-    }
-  }
-}))
+process.env.NEXTAUTH_URL = 'http://localhost:3000'
 
 // Mock Next.js router
 jest.mock('next/router', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    back: jest.fn(),
-    query: {},
-    pathname: '/',
-    asPath: '/',
-  }),
+  useRouter() {
+    return {
+      route: '/',
+      pathname: '/',
+      query: {},
+      asPath: '/',
+      push: jest.fn(),
+      pop: jest.fn(),
+      reload: jest.fn(),
+      back: jest.fn(),
+      prefetch: jest.fn(),
+      beforePopState: jest.fn(),
+      events: {
+        on: jest.fn(),
+        off: jest.fn(),
+        emit: jest.fn(),
+      },
+    }
+  },
+}))
+
+// Mock Next.js navigation (App Router)
+jest.mock('next/navigation', () => ({
+  useRouter() {
+    return {
+      push: jest.fn(),
+      replace: jest.fn(),
+      refresh: jest.fn(),
+      back: jest.fn(),
+      forward: jest.fn(),
+      prefetch: jest.fn(),
+    }
+  },
+  useSearchParams() {
+    return {
+      get: jest.fn(),
+    }
+  },
+  usePathname() {
+    return '/'
+  },
 }))
 
 // Mock NextAuth
 jest.mock('next-auth/react', () => ({
-  useSession: () => ({
+  useSession: jest.fn(() => ({
     data: null,
     status: 'unauthenticated',
-  }),
+  })),
+  getSession: jest.fn(),
   signIn: jest.fn(),
   signOut: jest.fn(),
   SessionProvider: ({ children }) => children,
-})) 
+}))
+
+// Mock Prisma client
+jest.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    trip: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    // Add other models as needed
+  },
+}))
+
+// Global test utilities
+global.fetch = jest.fn()
+
+// Mock IntersectionObserver
+global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}))
+
+// Mock ResizeObserver
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}))
+
+// Mock matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(), // deprecated
+    removeListener: jest.fn(), // deprecated
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+})
+
+// Mock scrollIntoView
+Element.prototype.scrollIntoView = jest.fn()
+
+// Mock focus method
+Element.prototype.focus = jest.fn()
+
+// Setup console suppressions for tests
+const originalError = console.error
+const originalWarn = console.warn
+
+beforeAll(() => {
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('Warning: ReactDOM.render is deprecated')
+    ) {
+      return
+    }
+    originalError.call(console, ...args)
+  }
+
+  console.warn = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('componentWillReceiveProps')
+    ) {
+      return
+    }
+    originalWarn.call(console, ...args)
+  }
+})
+
+afterAll(() => {
+  console.error = originalError
+  console.warn = originalWarn
+}) 
