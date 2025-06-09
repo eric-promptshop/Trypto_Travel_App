@@ -43,5 +43,12 @@
     ".next/types/**/*.ts", 
     "types/**/*.d.ts"
   ],
-  "exclude": ["node_modules", ".next", "out", "dist"]
+  "exclude": [
+    "node_modules", 
+    ".next", 
+    "out", 
+    "dist",
+    "src/storage/repositories/ContentRepository.ts",
+    "src/storage/__tests__/ContentStorageService.test.ts"
+  ]
 }

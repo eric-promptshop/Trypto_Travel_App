@@ -1,4 +1,27 @@
-import { PrismaClient, ContentType as PrismaContentType, ProcessedContent, ContentTag, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
+// Content processing models not yet in main schema
+// import { ContentType as PrismaContentType, ProcessedContent, ContentTag } from '@prisma/client';
+
+// Temporary type definitions until content processing schema is integrated
+type PrismaContentType = 'activity' | 'accommodation' | 'destination' | 'transportation';
+interface ProcessedContent {
+  id: string;
+  contentType: PrismaContentType;
+  sourceUrl?: string | null;
+  extractedData: any;
+  normalizedData: any;
+  embedding?: number[] | null;
+  tags?: ContentTag[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+interface ContentTag {
+  id: string;
+  tag: string;
+  confidence: number;
+  contentId: string;
+}
+
 import { supabaseAdmin } from '../../../lib/supabase';
 import { NormalizedContent } from '../../normalizers/types';
 import { TagResult } from '../../tagging/ContentTagger';
