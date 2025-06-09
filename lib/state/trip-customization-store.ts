@@ -558,7 +558,7 @@ export function tripCustomizationReducer(
   }
   
   // Add to history if not explicitly skipped and not undo/redo actions
-  const isHistoryAction = action.type === ActionType.UNDO || action.type === ActionType.REDO
+  const isHistoryAction = (action as Action).type === ActionType.UNDO || (action as Action).type === ActionType.REDO
   if (!action.meta?.skipHistory && !isHistoryAction) {
     const { past, present, future, maxHistorySize } = state.history
     const newPast = [...past, present].slice(-maxHistorySize)

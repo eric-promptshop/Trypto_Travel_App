@@ -78,11 +78,11 @@ export const TRAVEL_LANDING_TEMPLATE: TemplateDefinition = {
           justifyContent: 'center',
           alignItems: 'center',
           padding: '4rem 2rem',
+          position: 'relative',
         },
         appearance: {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          position: 'relative',
         },
         typography: {
           textAlign: 'center',
