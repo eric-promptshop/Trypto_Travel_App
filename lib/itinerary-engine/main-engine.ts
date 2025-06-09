@@ -914,8 +914,8 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
           dietaryOptions: []
         })),
         totalEstimatedCost: { amount: 0, currency: 'USD' }, // Will be calculated by pricing service
-        pacing: dayPlan.pacing,
-        notes: dayPlan.notes || `Exploring ${currentDestination.title}`
+        pacing: dayPlan.pacing as 'moderate' | 'relaxed' | 'packed',
+        notes: `Exploring ${currentDestination.title}`
       }
 
     } catch (error) {
@@ -952,12 +952,35 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
    */
   private async checkCache(request: GenerationRequest): Promise<GeneratedItinerary | null> {
     const cacheKey = this.generateCacheKey(request)
-    return await this.cachingService.get(cacheKey)
+    const cachedResult = await this.cachingService.get(cacheKey)
+    return cachedResult?.itinerary || null
   }
 
   private async cacheResult(request: GenerationRequest, itinerary: GeneratedItinerary): Promise<void> {
     const cacheKey = this.generateCacheKey(request)
-    await this.cachingService.set(cacheKey, itinerary)
+    const result: GenerationResult = {
+      itinerary,
+      success: true,
+      metadata: {
+        generationTimeMs: 0,
+        componentsUsed: {
+          destinationsProcessed: 0,
+          activitiesEvaluated: 0,
+          accommodationsConsidered: 0,
+          transportationOptions: 0,
+          totalContentItems: 0
+        },
+        performanceMetrics: {
+          contentLoadingMs: 0,
+          preferencesAnalysisMs: 0,
+          matchingAlgorithmMs: 0,
+          sequencingMs: 0,
+          optimizationMs: 0
+        },
+        optimizationApplied: ['cache']
+      }
+    }
+    await this.cachingService.set(cacheKey, result)
   }
 
   private generateCacheKey(request: GenerationRequest): string {
@@ -999,11 +1022,7 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
       this.config.enableParallelProcessing = originalParallelProcessing
 
       if (result.success) {
-        return {
-          ...result,
-          fallbackUsed: true,
-          originalError: error.message
-        }
+        return result
       }
 
     } catch (fallbackError) {

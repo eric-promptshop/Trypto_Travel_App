@@ -182,7 +182,7 @@ export class DefaultDestinationSequencingService implements DestinationSequencin
         
         if (timeDiff < current.travelTimeFromPrevious) {
           issues.push({
-            type: 'timing',
+            type: 'travel_time',
             severity: 'error',
             message: `Insufficient time for travel from ${previous.title} to ${current.title}`,
             affectedDestinations: [previous.id, current.id]
