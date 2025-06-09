@@ -298,17 +298,18 @@ export class HealthMonitor {
   async logHealthMetrics(health: SystemHealth): Promise<void> {
     try {
       // Store health metrics in database for historical tracking
-      if (process.env.ENABLE_HEALTH_LOGGING === 'true') {
-        await prisma.healthMetric.create({
-          data: {
-            overall: health.overall,
-            timestamp: new Date(health.timestamp),
-            services: health.services,
-            uptime: health.uptime,
-            version: health.version
-          }
-        })
-      }
+      // TODO: Enable when healthMetric model is added to Prisma schema
+      // if (process.env.ENABLE_HEALTH_LOGGING === 'true') {
+      //   await prisma.healthMetric.create({
+      //     data: {
+      //       overall: health.overall,
+      //       timestamp: new Date(health.timestamp),
+      //       services: health.services,
+      //       uptime: health.uptime,
+      //       version: health.version
+      //     }
+      //   })
+      // }
 
       // Send alerts if system is unhealthy
       if (health.overall === 'unhealthy') {

@@ -312,8 +312,8 @@ export class PricingTestDataFactory {
         adults: 2,
         children: 0,
         infants: 0,
-        startDate: '2024-07-15',
-        endDate: '2024-07-16',
+        startDate: new Date('2024-07-15'),
+        endDate: new Date('2024-07-16'),
         budgetMin: 500,
         budgetMax: 1500,
         primaryDestination: 'Paris, France',
@@ -325,7 +325,8 @@ export class PricingTestDataFactory {
           { type: 'adult', count: 2 }
         ],
         budgetCategory: 'mid-range',
-        pacePreference: 'moderate'
+        pacePreference: 'moderate',
+        currency: 'USD'
       },
       generatedAt: new Date('2024-01-01'),
       version: '1.0.0'

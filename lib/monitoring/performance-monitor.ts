@@ -98,12 +98,12 @@ export class PerformanceMonitor {
     if (typeof window === 'undefined') return
 
     // Dynamic import to avoid SSR issues
-    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-      getCLS(this.onCLS.bind(this))
-      getFID(this.onFID.bind(this))
-      getFCP(this.onFCP.bind(this))
-      getLCP(this.onLCP.bind(this))
-      getTTFB(this.onTTFB.bind(this))
+    import('web-vitals').then((webVitals) => {
+      webVitals.onCLS(this.onCLS.bind(this))
+      webVitals.onFID(this.onFID.bind(this))
+      webVitals.onFCP(this.onFCP.bind(this))
+      webVitals.onLCP(this.onLCP.bind(this))
+      webVitals.onTTFB(this.onTTFB.bind(this))
     }).catch(error => {
       console.warn('Failed to load web-vitals:', error)
     })
