@@ -258,8 +258,7 @@ export class DocumentContentTransformer {
         type ActivityWithoutBase = Omit<NormalizedActivity, keyof BaseNormalizedContent>;
         
         const activity: ActivityWithoutBase = {
-          name: activityName,
-          type: 'activity' as const
+          name: activityName
         };
         
         if (duration) {
