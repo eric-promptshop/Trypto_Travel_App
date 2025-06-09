@@ -863,6 +863,7 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
 
       const dayPlan = await this.dayPlanningService.planDay(
         currentDestination,
+        date.toISOString().split('T')[0],
         relevantActivities,
         dayPlanningPreferences
       )
