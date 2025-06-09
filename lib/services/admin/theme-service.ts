@@ -186,7 +186,7 @@ export class ThemeService {
       data: {
         contentType: 'theme',
         title: newName,
-        content: originalTheme.content,
+        content: originalTheme.content as any,
         status: 'draft',
         category: 'custom',
         tenantId: targetTenantId,
@@ -284,13 +284,13 @@ export class ThemeService {
         ...base.colors,
         ...(overrides.colors || {})
       },
-      fonts: {
-        ...base.fonts,
-        ...(overrides.fonts || {})
+      typography: {
+        ...base.typography,
+        ...(overrides.typography || {})
       },
       spacing: overrides.spacing || base.spacing,
-      borderRadius: overrides.borderRadius || base.borderRadius,
-      shadows: overrides.shadows || base.shadows,
+      breakpoints: overrides.breakpoints || base.breakpoints,
+      animations: overrides.animations || base.animations,
     }
   }
 

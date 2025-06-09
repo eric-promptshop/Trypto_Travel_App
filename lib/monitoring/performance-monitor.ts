@@ -100,7 +100,7 @@ export class PerformanceMonitor {
     // Dynamic import to avoid SSR issues
     import('web-vitals').then((webVitals) => {
       webVitals.onCLS(this.onCLS.bind(this))
-      webVitals.onFID(this.onFID.bind(this))
+      webVitals.onINP(this.onINP.bind(this))
       webVitals.onFCP(this.onFCP.bind(this))
       webVitals.onLCP(this.onLCP.bind(this))
       webVitals.onTTFB(this.onTTFB.bind(this))
@@ -116,8 +116,8 @@ export class PerformanceMonitor {
     })
   }
 
-  private onFID(metric: any) {
-    this.recordMetric('web_vitals_fid', metric.value, 'ms', {
+  private onINP(metric: any) {
+    this.recordMetric('web_vitals_inp', metric.value, 'ms', {
       id: metric.id,
       rating: metric.rating
     })
