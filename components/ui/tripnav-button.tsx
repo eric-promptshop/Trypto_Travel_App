@@ -2,7 +2,7 @@ import * as React from "react"
 import { Button, ButtonProps } from "./button"
 import { cn } from "@/lib/utils"
 
-export interface TripNavButtonProps extends ButtonProps {
+export interface TripNavButtonProps extends Omit<ButtonProps, 'variant'> {
   variant?: ButtonProps["variant"] | "accent" | "destination" | "booking" | "delay" | "weather" | "visa" | "currency" | "confirmed" | "pending" | "cancelled" | "business" | "leisure" | "adventure" | "budget" | "premium" | "luxury" | "beach" | "mountain" | "city"
 }
 

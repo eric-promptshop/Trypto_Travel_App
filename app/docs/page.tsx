@@ -235,7 +235,7 @@ export default function Guide() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-slate-600">Start by selecting where you want to go. Our smart search helps you find the perfect destination.</p>
-                    <Alert variant="destination">
+                    <Alert variant="default">
                       <AlertTitle>Destination Tips</AlertTitle>
                       <AlertDescription>
                         Consider factors like weather, local events, and seasonal pricing when choosing your travel dates.
@@ -251,9 +251,9 @@ export default function Guide() {
                   <CardContent className="space-y-4">
                     <p className="text-slate-600">Select your travel dates and set a realistic budget for your trip.</p>
                     <div className="flex gap-2">
-                      <Badge variant="budget" showIcon>Budget-Friendly</Badge>
-                      <Badge variant="premium" showIcon>Premium</Badge>
-                      <Badge variant="luxury" showIcon>Luxury</Badge>
+                      <Badge variant="default">Budget-Friendly</Badge>
+                      <Badge variant="secondary">Premium</Badge>
+                      <Badge variant="outline">Luxury</Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -265,12 +265,12 @@ export default function Guide() {
                   <CardContent className="space-y-4">
                     <p className="text-slate-600">Add activities, accommodations, and experiences that match your interests.</p>
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="adventure" showIcon size="small">Adventure</Badge>
-                      <Badge variant="leisure" showIcon size="small">Leisure</Badge>
-                      <Badge variant="business" showIcon size="small">Business</Badge>
-                      <Badge variant="beach" showIcon size="small">Beach</Badge>
-                      <Badge variant="city" showIcon size="small">City</Badge>
-                      <Badge variant="mountain" showIcon size="small">Mountain</Badge>
+                      <Badge variant="default">Adventure</Badge>
+                      <Badge variant="default">Leisure</Badge>
+                      <Badge variant="default">Business</Badge>
+                      <Badge variant="secondary">Beach</Badge>
+                      <Badge variant="secondary">City</Badge>
+                      <Badge variant="secondary">Mountain</Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -293,7 +293,7 @@ export default function Guide() {
                   </p>
                 </div>
 
-                <Alert variant="booking">
+                <Alert variant="default">
                   <AlertTitle>Component Library</AlertTitle>
                   <AlertDescription>
                     Visit our dedicated UI Showcase page to see all components with live examples and interactive demos.
@@ -301,7 +301,7 @@ export default function Guide() {
                 </Alert>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card variant="elevated">
+                  <Card>
                     <CardHeader>
                       <CardTitle>Buttons & Actions</CardTitle>
                       <CardDescription>Professional buttons with TripNav branding</CardDescription>
@@ -313,43 +313,43 @@ export default function Guide() {
                     </CardContent>
                   </Card>
 
-                  <Card variant="elevated">
+                  <Card>
                     <CardHeader>
                       <CardTitle>Status Badges</CardTitle>
                       <CardDescription>Travel-specific status indicators</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
-                        <Badge variant="confirmed" showIcon>Confirmed</Badge>
-                        <Badge variant="pending" showIcon>Pending</Badge>
-                        <Badge variant="cancelled" showIcon>Cancelled</Badge>
+                        <Badge variant="default">Confirmed</Badge>
+                        <Badge variant="secondary">Pending</Badge>
+                        <Badge variant="destructive">Cancelled</Badge>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card variant="elevated">
+                  <Card>
                     <CardHeader>
                       <CardTitle>Travel Alerts</CardTitle>
                       <CardDescription>Important notifications and updates</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <Alert variant="delay" appearance="outline">
+                      <Alert variant="destructive">
                         <AlertTitle>Flight Update</AlertTitle>
                         <AlertDescription>Your flight has been updated with new departure time.</AlertDescription>
                       </Alert>
                     </CardContent>
                   </Card>
 
-                  <Card variant="elevated">
+                  <Card>
                     <CardHeader>
                       <CardTitle>Trip Categories</CardTitle>
                       <CardDescription>Different types of travel experiences</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
-                        <Badge variant="business" showIcon size="small">Business</Badge>
-                        <Badge variant="leisure" showIcon size="small">Leisure</Badge>
-                        <Badge variant="adventure" showIcon size="small">Adventure</Badge>
+                        <Badge variant="default">Business</Badge>
+                        <Badge variant="secondary">Leisure</Badge>
+                        <Badge variant="outline">Adventure</Badge>
                       </div>
                     </CardContent>
                   </Card>
@@ -427,7 +427,7 @@ export default function Guide() {
                       <p className="text-slate-600 mb-3">
                         View your itineraries even when you don't have internet connection.
                       </p>
-                      <Badge variant="confirmed" showIcon>Available Offline</Badge>
+                      <Badge variant="default">Available Offline</Badge>
                     </CardContent>
                   </Card>
 
@@ -439,7 +439,7 @@ export default function Guide() {
                       <p className="text-slate-600 mb-3">
                         Fast access to check-in, boarding passes, and travel documents.
                       </p>
-                      <Badge variant="default" showIcon>One-Tap Access</Badge>
+                      <Badge variant="default">One-Tap Access</Badge>
                     </CardContent>
                   </Card>
                 </div>

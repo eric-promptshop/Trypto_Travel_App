@@ -119,8 +119,9 @@ export abstract class BaseScraper<T extends ExtractedContent = ExtractedContent>
         }
 
         // Additional wait time if configured
-        if (this.config.browser?.waitTime && this.config.browser.waitTime > 0) {
-          await new Promise(resolve => setTimeout(resolve, this.config.browser.waitTime));
+        const waitTime = this.config.browser?.waitTime;
+        if (waitTime && waitTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, waitTime));
         }
 
         return targetPage;
@@ -239,7 +240,7 @@ export abstract class BaseScraper<T extends ExtractedContent = ExtractedContent>
       'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     ];
 
-    return userAgents[Math.floor(Math.random() * userAgents.length)];
+    return userAgents[Math.floor(Math.random() * userAgents.length)] as string;
   }
 
   /**
@@ -251,7 +252,7 @@ export abstract class BaseScraper<T extends ExtractedContent = ExtractedContent>
     }
     if (this.browser) {
       await this.browser.close();
-      this.browser = undefined;
+      delete this.browser;
     }
     this.logger.info('Scraper disposed');
   }

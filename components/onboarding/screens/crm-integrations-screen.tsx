@@ -75,18 +75,18 @@ export function CrmIntegrationsScreen() {
   const handleContinue = () => {
     updateOnboardingData({
       integrations: {
-        crm: selectedCrm,
-        hubspotApiKey: selectedCrm === "hubspot" ? hubspotApiKey : undefined,
-        hubspotPipeline: selectedCrm === "hubspot" ? hubspotPipeline : undefined,
-        hubspotLeadAssignee: selectedCrm === "hubspot" ? hubspotLeadAssignee : undefined,
-        emailRecipients: selectedCrm === "email" ? emailRecipients : undefined,
-        emailFormat: selectedCrm === "email" ? emailFormat : undefined,
+        ...(selectedCrm && { crm: selectedCrm }),
+        ...(selectedCrm === "hubspot" && hubspotApiKey && { hubspotApiKey }),
+        ...(selectedCrm === "hubspot" && hubspotPipeline && { hubspotPipeline }),
+        ...(selectedCrm === "hubspot" && hubspotLeadAssignee && { hubspotLeadAssignee }),
+        ...(selectedCrm === "email" && emailRecipients && { emailRecipients }),
+        ...(selectedCrm === "email" && emailFormat && { emailFormat }),
       },
     })
     navigateToNextStep()
   }
 
-  const crmOptions: { id: CrmOption; name: string; logo: JSX.Element }[] = [
+  const crmOptions: { id: CrmOption; name: string; logo: React.ReactElement }[] = [
     { id: "hubspot", name: "HubSpot", logo: <HubSpotLogo /> },
     { id: "salesforce", name: "Salesforce", logo: <SalesforceLogo /> },
     { id: "zoho", name: "Zoho CRM", logo: <ZohoLogo /> },

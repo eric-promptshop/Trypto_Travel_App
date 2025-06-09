@@ -8,7 +8,13 @@ import {
   GenerationRequest,
   GenerationResult,
   GenerationMetrics,
-  ExternalDataProvider
+  ExternalDataProvider,
+  GenerationEngineOptions,
+  ValidationResult,
+  ValidationError,
+  ValidationWarning,
+  EngineStatus,
+  SequencingConstraints
 } from './types'
 import {
   GeneratedItinerary,
@@ -137,10 +143,7 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
 
   private initializeServices(): void {
     // Initialize caching service
-    this.cachingService = new MemoryCachingService({
-      maxSize: 1000,
-      ttlMinutes: 30
-    })
+    this.cachingService = new MemoryCachingService(1000, 1800) // 1000 items, 30 minutes TTL
 
     // Initialize core services with optimized configurations
     this.preferenceService = new DefaultPreferenceMatchingService({
@@ -395,28 +398,7 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
 
       // Cache result if successful
       if (this.config.cacheEnabled && itinerary) {
-        await this.cacheResult(request, {
-          itinerary,
-          success: true,
-          metadata: {
-            generationTimeMs: totalTime,
-            componentsUsed: {
-              destinationsProcessed: itinerary.destinations.length,
-              activitiesEvaluated: itinerary.days.reduce((sum, day) => sum + day.activities.length, 0),
-              accommodationsConsidered: itinerary.days.filter(day => day.accommodation).length,
-              transportationOptions: itinerary.days.reduce((sum, day) => sum + day.transportation.length, 0),
-              totalContentItems: request.availableContent.length
-            },
-            performanceMetrics: {
-              contentLoadingMs: 0,
-              preferencesAnalysisMs: 0,
-              matchingAlgorithmMs: 0,
-              sequencingMs: 0,
-              optimizationMs: 0
-            },
-            optimizationApplied: []
-          }
-        })
+        await this.cacheResult(request, itinerary)
       }
 
       // Check if we met performance target
@@ -499,7 +481,7 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
   /**
    * Main method to generate a complete itinerary
    */
-  async generateItinerary(request: GenerationRequest): Promise<GenerationResult> {
+  private async generateItineraryInternal(request: GenerationRequest): Promise<GenerationResult> {
     const overallTimer = this.performanceMonitor.startOperation('generateItinerary')
     const startTime = performance.now()
 
@@ -509,15 +491,32 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
 
       // Check cache first
       if (this.config.cacheEnabled) {
+        const cacheKey = this.generateCacheKey(request)
         const cached = await this.checkCache(request)
         if (cached) {
           this.performanceMonitor.endOperation(overallTimer)
           return {
             success: true,
             itinerary: cached,
-            metrics: this.performanceMonitor.getMetrics(),
-            fromCache: true,
-            generationTime: performance.now() - startTime
+            metadata: {
+              generationTimeMs: performance.now() - startTime,
+              componentsUsed: {
+                destinationsProcessed: cached.destinations.length,
+                activitiesEvaluated: cached.days.reduce((sum, day) => sum + day.activities.length, 0),
+                accommodationsConsidered: cached.days.filter(day => day.accommodation).length,
+                transportationOptions: cached.days.reduce((sum, day) => sum + day.transportation.length, 0),
+                totalContentItems: request.availableContent.length
+              },
+              performanceMetrics: {
+                contentLoadingMs: 0,
+                preferencesAnalysisMs: 0,
+                matchingAlgorithmMs: 0,
+                sequencingMs: 0,
+                optimizationMs: 0
+              },
+              optimizationApplied: ['cache']
+            },
+            cacheKey: cacheKey
           }
         }
       }
@@ -545,10 +544,24 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
       return {
         success: true,
         itinerary,
-        metrics,
-        fromCache: false,
-        generationTime: totalTime,
-        metPerformanceTarget
+        metadata: {
+          generationTimeMs: totalTime,
+          componentsUsed: {
+            destinationsProcessed: itinerary.destinations.length,
+            activitiesEvaluated: itinerary.days.reduce((sum, day) => sum + day.activities.length, 0),
+            accommodationsConsidered: itinerary.days.filter(day => day.accommodation).length,
+            transportationOptions: itinerary.days.reduce((sum, day) => sum + day.transportation.length, 0),
+            totalContentItems: request.availableContent.length
+          },
+          performanceMetrics: {
+            contentLoadingMs: 0,
+            preferencesAnalysisMs: 0,
+            matchingAlgorithmMs: 0,
+            sequencingMs: 0,
+            optimizationMs: 0
+          },
+          optimizationApplied: []
+        }
       }
 
     } catch (error) {
@@ -568,10 +581,30 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        metrics: this.performanceMonitor.getMetrics(),
-        fromCache: false,
-        generationTime: performance.now() - startTime
+        itinerary: null,
+        error: {
+          code: 'GENERATION_FAILED',
+          message: error instanceof Error ? error.message : 'Unknown error occurred',
+          timestamp: new Date()
+        },
+        metadata: {
+          generationTimeMs: performance.now() - startTime,
+          componentsUsed: {
+            destinationsProcessed: 0,
+            activitiesEvaluated: 0,
+            accommodationsConsidered: 0,
+            transportationOptions: 0,
+            totalContentItems: request.availableContent.length
+          },
+          performanceMetrics: {
+            contentLoadingMs: 0,
+            preferencesAnalysisMs: 0,
+            matchingAlgorithmMs: 0,
+            sequencingMs: 0,
+            optimizationMs: 0
+          },
+          optimizationApplied: []
+        }
       }
     }
   }
@@ -594,40 +627,74 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
 
     if (this.config.enableParallelProcessing) {
       // Parallel content matching by type
+      const criteria = this.preferenceService.analyzePreferences(preferences)
       const [activities, accommodations, transportation, destinations] = await Promise.all([
-        this.preferenceService.scoreAndRankContent(
+        this.preferenceService.scoreContent(
           availableContent.filter(c => 'category' in c) as Activity[],
-          preferences
+          criteria
         ),
-        this.preferenceService.scoreAndRankContent(
+        this.preferenceService.scoreContent(
           availableContent.filter(c => 'type' in c && 'roomTypes' in c) as Accommodation[],
-          preferences
+          criteria
         ),
-        this.preferenceService.scoreAndRankContent(
+        this.preferenceService.scoreContent(
           availableContent.filter(c => 'type' in c && 'from' in c) as Transportation[],
-          preferences
+          criteria
         ),
-        this.preferenceService.scoreAndRankContent(
+        this.preferenceService.scoreContent(
           availableContent.filter(c => 'countryCode' in c) as Destination[],
-          preferences
+          criteria
         )
       ])
 
+      // Map scores back to content
+      const activityMap = new Map((availableContent.filter(c => 'category' in c) as Activity[]).map(a => [a.id, a]))
+      const accommodationMap = new Map((availableContent.filter(c => 'type' in c && 'roomTypes' in c) as Accommodation[]).map(a => [a.id, a]))
+      const transportMap = new Map((availableContent.filter(c => 'type' in c && 'from' in c) as Transportation[]).map(t => [t.id, t]))
+      const destinationMap = new Map((availableContent.filter(c => 'countryCode' in c) as Destination[]).map(d => [d.id, d]))
+
       matchedContent = {
-        activities: activities.map(a => a.content) as Activity[],
-        accommodations: accommodations.map(a => a.content) as Accommodation[],
-        transportation: transportation.map(t => t.content) as Transportation[],
-        destinations: destinations.map(d => d.content) as Destination[]
+        activities: activities
+          .filter(score => score.score > 0.5)
+          .map(score => activityMap.get(score.contentId))
+          .filter(Boolean) as Activity[],
+        accommodations: accommodations
+          .filter(score => score.score > 0.5)
+          .map(score => accommodationMap.get(score.contentId))
+          .filter(Boolean) as Accommodation[],
+        transportation: transportation
+          .filter(score => score.score > 0.5)
+          .map(score => transportMap.get(score.contentId))
+          .filter(Boolean) as Transportation[],
+        destinations: destinations
+          .filter(score => score.score > 0.5)
+          .map(score => destinationMap.get(score.contentId))
+          .filter(Boolean) as Destination[]
       }
     } else {
       // Sequential content matching
-      const allResults = await this.preferenceService.scoreAndRankContent(availableContent, preferences)
+      const criteria = this.preferenceService.analyzePreferences(preferences)
+      const allResults = await this.preferenceService.scoreContent(availableContent, criteria)
+      
+      // Create content map for lookup
+      const contentMap = new Map(availableContent.map(c => [c.id, c]))
+      
+      // Filter by score and map back to content
+      const filteredResults = allResults.filter(r => r.score > 0.5)
       
       matchedContent = {
-        activities: allResults.filter(r => 'category' in r.content).map(r => r.content) as Activity[],
-        accommodations: allResults.filter(r => 'roomTypes' in r.content).map(r => r.content) as Accommodation[],
-        transportation: allResults.filter(r => 'from' in r.content).map(r => r.content) as Transportation[],
-        destinations: allResults.filter(r => 'countryCode' in r.content).map(r => r.content) as Destination[]
+        activities: filteredResults
+          .map(r => contentMap.get(r.contentId))
+          .filter(c => c && 'category' in c) as Activity[],
+        accommodations: filteredResults
+          .map(r => contentMap.get(r.contentId))
+          .filter(c => c && 'type' in c && 'roomTypes' in c) as Accommodation[],
+        transportation: filteredResults
+          .map(r => contentMap.get(r.contentId))
+          .filter(c => c && 'type' in c && 'from' in c) as Transportation[],
+        destinations: filteredResults
+          .map(r => contentMap.get(r.contentId))
+          .filter(c => c && 'countryCode' in c) as Destination[]
       }
     }
 
@@ -636,16 +703,16 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
     // Step 2: Destination Sequencing
     const sequencingTimer = this.performanceMonitor.startOperation('destinationSequencing')
     
-    const sequencingConstraints = {
-      maxTravelTime: 8, // hours
+    const sequencingConstraints: SequencingConstraints = {
+      maxTravelTimePerDay: 480, // 8 hours in minutes
+      preferredTransportation: preferences.transportationPreference ? [preferences.transportationPreference] : ['car', 'train', 'flight'],
       startLocation: preferences.primaryDestination,
-      endLocation: preferences.primaryDestination,
-      avoidBacktracking: true,
-      preferDirectRoutes: true
+      endLocation: preferences.primaryDestination
     }
 
-    const sequencedDestinations = await this.sequencingService.optimizeDestinationSequence(
+    const sequencedDestinations = await this.sequencingService.optimizeSequence(
       matchedContent.destinations,
+      preferences,
       sequencingConstraints
     )
 
@@ -791,7 +858,7 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
           { type: 'lunch' as const, timing: '12:30', style: 'casual' as const, budget: { amount: 35, currency: 'USD' } },
           { type: 'dinner' as const, timing: '19:00', style: 'moderate' as const, budget: { amount: 50, currency: 'USD' } }
         ],
-        includeDowntime: preferences.pacePreference === 'relaxed'
+        includeDowntime: preferences.pacePreference === 'slow'
       }
 
       const dayPlan = await this.dayPlanningService.planDay(
@@ -909,7 +976,7 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
       const originalParallelProcessing = this.config.enableParallelProcessing
       this.config.enableParallelProcessing = false
 
-      const result = await this.generateItinerary(simplifiedRequest)
+      const result = await this.generateItineraryInternal(simplifiedRequest)
       
       // Restore original setting
       this.config.enableParallelProcessing = originalParallelProcessing
@@ -1009,7 +1076,7 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
     return 'low'
   }
 
-  private assessCulturalImmersion(days: ItineraryDay[]): 'low' | 'moderate' | 'high' {
+  private assessCulturalImmersion(days: ItineraryDay[]): 'light' | 'moderate' | 'deep' {
     let totalActivities = 0
     let culturalActivities = 0
 
@@ -1023,9 +1090,9 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
 
     const ratio = totalActivities > 0 ? culturalActivities / totalActivities : 0
     
-    if (ratio > 0.5) return 'high'
+    if (ratio > 0.5) return 'deep'
     if (ratio > 0.25) return 'moderate'
-    return 'low'
+    return 'light'
   }
 
   private generateHighlights(days: ItineraryDay[]): string[] {

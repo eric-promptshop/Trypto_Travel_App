@@ -91,11 +91,6 @@ export async function getTrips(
       take: limit,
       orderBy: { startDate: 'desc' },
       include: {
-        activities: {
-          orderBy: { date: 'asc' }
-        },
-        participants: true,
-        documents: true,
         user: {
           select: {
             id: true,
@@ -132,11 +127,6 @@ export async function getTripById(tripId: string): Promise<any | null> {
       }
     },
     include: {
-      activities: {
-        orderBy: { date: 'asc' }
-      },
-      participants: true,
-      documents: true,
       user: {
         select: {
           id: true,
@@ -182,9 +172,6 @@ export async function createTrip(
       }
     },
     include: {
-      activities: true,
-      participants: true,
-      documents: true,
       user: {
         select: {
           id: true,
@@ -226,11 +213,6 @@ export async function updateTrip(
     where: { id: tripId },
     data,
     include: {
-      activities: {
-        orderBy: { date: 'asc' }
-      },
-      participants: true,
-      documents: true,
       user: {
         select: {
           id: true,
@@ -332,18 +314,11 @@ export async function getUpcomingTrips(userId?: string, limit = 5) {
       },
       startDate: {
         gte: now
-      },
-      status: {
-        in: ['PLANNED', 'CONFIRMED', 'ACTIVE']
       }
     },
     take: limit,
     orderBy: { startDate: 'asc' },
     include: {
-      activities: {
-        take: 3,
-        orderBy: { date: 'asc' }
-      },
       user: {
         select: {
           id: true,

@@ -20,7 +20,11 @@
       "Bash(killall:*)",
       "Bash(npx tsx:*)",
       "Bash(npm run:*)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "Bash(find:*)",
+      "Bash(vercel logs:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

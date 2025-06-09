@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
   PricingBreakdown, 
   PricingHistoryTracker, 
@@ -20,7 +21,11 @@ import {
   DollarSign, 
   Sparkles,
   RefreshCw,
-  Wand2
+  Wand2,
+  TrendingUp,
+  TrendingDown,
+  Loader2,
+  AlertCircle
 } from "lucide-react"
 
 // Mock data for demo purposes
@@ -167,6 +172,14 @@ const mockTransportation = [
   }
 ]
 
+interface PricingInsight {
+  type: 'warning' | 'tip' | 'savings'
+  title: string
+  description: string
+  potentialSavings?: number
+  alternativeOptions?: string[]
+}
+
 export default function RealTimePricingDemo() {
   // Trip configuration state
   const [tripDates] = useState({
@@ -179,6 +192,11 @@ export default function RealTimePricingDemo() {
     children: 0,
     infants: 0
   })
+  
+  // AI Pricing insights state
+  const [pricingInsights, setPricingInsights] = useState<PricingInsight[]>([])
+  const [isLoadingInsights, setIsLoadingInsights] = useState(false)
+  const [showInsights, setShowInsights] = useState(false)
 
   // Selected items state
   const [selectedItems, setSelectedItems] = useState<SelectedItems>({
@@ -207,34 +225,111 @@ export default function RealTimePricingDemo() {
         selectedItems.activities.length > 0 || 
         selectedItems.transportation.length > 0) {
       calculatePricing(selectedItems, tripDates, travelers)
+      if (showInsights) {
+        fetchPricingInsights()
+      }
     }
   }, [selectedItems, tripDates, travelers, calculatePricing])
+  
+  // Fetch AI pricing insights
+  const fetchPricingInsights = async () => {
+    setIsLoadingInsights(true)
+    try {
+      const response = await fetch('/api/trips-ai/pricing-insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          selectedItems,
+          tripDates,
+          travelers,
+          currentPricing: typeof currentPricing?.total === 'object' 
+            ? currentPricing.total.amount 
+            : currentPricing?.total || 0,
+          currency: selectedCurrency
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setPricingInsights(data.insights || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch pricing insights:', error)
+      // Fallback insights
+      generateFallbackInsights()
+    } finally {
+      setIsLoadingInsights(false)
+    }
+  }
+  
+  // Generate fallback insights
+  const generateFallbackInsights = () => {
+    const insights: PricingInsight[] = []
+    const totalAmount = typeof currentPricing?.total === 'object' 
+      ? currentPricing.total.amount 
+      : currentPricing?.total || 0
+    
+    // Check for high-season pricing
+    const month = tripDates.startDate.getMonth()
+    if (month >= 5 && month <= 7) {
+      insights.push({
+        type: 'warning',
+        title: 'Peak Season Pricing',
+        description: 'You\'re traveling during peak summer season. Consider shifting dates by 2 weeks to save up to 30%.',
+        potentialSavings: totalAmount * 0.3
+      })
+    }
+    
+    // Check for expensive hotels
+    const luxuryHotel = selectedItems.accommodations.find(a => a.estimatedCost?.amount && a.estimatedCost.amount > 300)
+    if (luxuryHotel && luxuryHotel.estimatedCost) {
+      insights.push({
+        type: 'tip',
+        title: 'Alternative Accommodation Options',
+        description: 'Consider boutique hotels or serviced apartments for similar comfort at 40% less cost.',
+        potentialSavings: luxuryHotel.estimatedCost.amount * 0.4 * travelers.adults,
+        alternativeOptions: ['Boutique Hotel District 9', 'Luxury Serviced Apartment']
+      })
+    }
+    
+    // Activity bundling suggestion
+    if (selectedItems.activities.length >= 2) {
+      insights.push({
+        type: 'savings',
+        title: 'Bundle Activities for Savings',
+        description: 'Book multiple activities together for combo discounts. Many providers offer 15-20% off packages.',
+        potentialSavings: selectedItems.activities.reduce((sum, a) => sum + (a.estimatedCost?.amount || 0), 0) * 0.15
+      })
+    }
+    
+    setPricingInsights(insights)
+  }
 
   // Demo action handlers
   const handleSelectAccommodation = (accommodation: typeof mockAccommodations[0]) => {
-    setSelectedItems(prev => ({
+    setSelectedItems((prev: any) => ({
       ...prev,
-      accommodations: prev.accommodations.find(a => a.id === accommodation.id)
-        ? prev.accommodations.filter(a => a.id !== accommodation.id)
-        : [...prev.accommodations, accommodation]
+      accommodations: prev.accommodations.find((a: any) => a.id === accommodation.id)
+        ? prev.accommodations.filter((a: any) => a.id !== accommodation.id)
+        : [...prev.accommodations, accommodation as any]
     }))
   }
 
   const handleSelectActivity = (activity: typeof mockActivities[0]) => {
-    setSelectedItems(prev => ({
+    setSelectedItems((prev: any) => ({
       ...prev,
-      activities: prev.activities.find(a => a.id === activity.id)
-        ? prev.activities.filter(a => a.id !== activity.id)
-        : [...prev.activities, activity]
+      activities: prev.activities.find((a: any) => a.id === activity.id)
+        ? prev.activities.filter((a: any) => a.id !== activity.id)
+        : [...prev.activities, activity as any]
     }))
   }
 
   const handleSelectTransportation = (transport: typeof mockTransportation[0]) => {
-    setSelectedItems(prev => ({
+    setSelectedItems((prev: any) => ({
       ...prev,
-      transportation: prev.transportation.find(t => t.id === transport.id)
-        ? prev.transportation.filter(t => t.id !== transport.id)
-        : [...prev.transportation, transport]
+      transportation: prev.transportation.find((t: any) => t.id === transport.id)
+        ? prev.transportation.filter((t: any) => t.id !== transport.id)
+        : [...prev.transportation, transport as any]
     }))
   }
 
@@ -276,7 +371,7 @@ export default function RealTimePricingDemo() {
     let scenarioIndex = 0
     const interval = setInterval(() => {
       if (scenarioIndex < scenarios.length) {
-        setSelectedItems(scenarios[scenarioIndex])
+        setSelectedItems(scenarios[scenarioIndex] as any)
         scenarioIndex++
       } else {
         clearInterval(interval)
@@ -305,6 +400,19 @@ export default function RealTimePricingDemo() {
           <Button onClick={handleQuickDemo} className="flex items-center gap-2">
             <Wand2 className="h-4 w-4" />
             Quick Demo
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setShowInsights(!showInsights)
+              if (!showInsights && totalSelectedItems > 0) {
+                fetchPricingInsights()
+              }
+            }}
+            disabled={totalSelectedItems === 0}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            AI Pricing Insights
           </Button>
           <Button variant="outline" onClick={clearPricing}>
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -521,6 +629,96 @@ export default function RealTimePricingDemo() {
 
         {/* Right Column: Pricing */}
         <div className="space-y-6">
+          {/* AI Pricing Insights */}
+          {showInsights && totalSelectedItems > 0 && (
+            <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-orange-500" />
+                    <CardTitle>AI Pricing Insights</CardTitle>
+                  </div>
+                  {isLoadingInsights && (
+                    <Loader2 className="h-5 w-5 animate-spin text-orange-500" />
+                  )}
+                </div>
+                <CardDescription>
+                  Smart recommendations to optimize your travel budget
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {isLoadingInsights ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                  </div>
+                ) : pricingInsights.length > 0 ? (
+                  pricingInsights.map((insight, index) => (
+                    <Alert 
+                      key={index} 
+                      className={`border-l-4 ${
+                        insight.type === 'warning' ? 'border-l-yellow-500 bg-yellow-50' :
+                        insight.type === 'tip' ? 'border-l-blue-500 bg-blue-50' :
+                        'border-l-green-500 bg-green-50'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {insight.type === 'warning' ? (
+                          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                        ) : insight.type === 'savings' ? (
+                          <TrendingDown className="h-5 w-5 text-green-600 mt-0.5" />
+                        ) : (
+                          <TrendingUp className="h-5 w-5 text-blue-600 mt-0.5" />
+                        )}
+                        <div className="flex-1">
+                          <div className="font-semibold mb-1">{insight.title}</div>
+                          <AlertDescription className="text-sm">
+                            {insight.description}
+                          </AlertDescription>
+                          {insight.potentialSavings && (
+                            <div className="mt-2 text-sm font-medium text-green-700">
+                              Potential savings: {selectedCurrency}{Math.round(insight.potentialSavings)}
+                            </div>
+                          )}
+                          {insight.alternativeOptions && insight.alternativeOptions.length > 0 && (
+                            <div className="mt-2">
+                              <div className="text-xs text-gray-600 mb-1">Consider these alternatives:</div>
+                              <div className="flex flex-wrap gap-1">
+                                {insight.alternativeOptions.map((option, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs">
+                                    {option}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Alert>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 py-4">
+                    Add more items to get personalized pricing insights
+                  </div>
+                )}
+                
+                {pricingInsights.length > 0 && (
+                  <div className="pt-3 border-t">
+                    <div className="text-sm text-gray-600">
+                      Total potential savings: 
+                      <span className="font-semibold text-green-700 ml-1">
+                        {selectedCurrency}{Math.round(
+                          pricingInsights.reduce((sum, insight) => 
+                            sum + (insight.potentialSavings || 0), 0
+                          )
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          
           {/* Pricing Breakdown */}
           <PricingBreakdown
             pricing={currentPricing}
@@ -578,9 +776,9 @@ export default function RealTimePricingDemo() {
             
             <div className="text-center p-4 bg-orange-50 rounded-lg">
               <Sparkles className="h-8 w-8 mx-auto mb-2 text-orange-600" />
-              <div className="font-medium mb-1">Multi-Currency</div>
+              <div className="font-medium mb-1">AI Insights</div>
               <div className="text-sm text-muted-foreground">
-                Support for 6 currencies with real-time conversion
+                Smart recommendations to optimize your budget
               </div>
             </div>
           </div>

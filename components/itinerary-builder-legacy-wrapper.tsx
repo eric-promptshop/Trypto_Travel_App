@@ -42,12 +42,18 @@ export function ItineraryBuilder({ formData, isMobile }: ItineraryBuilderProps) 
   const [isChatOpen, setIsChatOpen] = useState(false)
 
   // Convert formData to itinerary format for ModernItineraryViewer
+  const defaultStartDate = new Date().toISOString().split('T')[0];
+  const defaultEndDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  
+  const startDate = formData?.travelDates?.startDate ? formData.travelDates.startDate : defaultStartDate;
+  const endDate = formData?.travelDates?.endDate ? formData.travelDates.endDate : defaultEndDate;
+  
   const mockItinerary: Itinerary = {
     id: "generated-1",
     title: formData?.destinations?.length ? `Trip to ${formData.destinations.join(", ")}` : "Your Custom Trip",
     destination: formData?.destinations?.[0] || "Various Destinations",
-    startDate: formData?.travelDates?.startDate || new Date().toISOString().split('T')[0],
-    endDate: formData?.travelDates?.endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    startDate: startDate as string,
+    endDate: endDate as string,
     totalDays: 7,
     travelers: (formData?.travelers?.adults || 1) + (formData?.travelers?.children || 0),
     totalBudget: formData?.budget?.amount || 2500,
@@ -65,11 +71,11 @@ export function ItineraryBuilder({ formData, isMobile }: ItineraryBuilderProps) 
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-white to-gray-50">
-      <Header activeTab={activeTab} setActiveTab={setActiveTab} isMobile={isMobile} formData={formData} />
+      <Header activeTab={activeTab} setActiveTab={setActiveTab} isMobile={isMobile} {...(formData && { formData })} />
       <div className="flex-1 overflow-hidden">
         <AnimatePresence mode="wait">
           {activeTab === "itinerary" ? (
-            <ConnectedItineraryViewer />
+            <ConnectedItineraryViewer tripId={tripId} formData={formData} />
           ) : (
             // For other tabs, we can add appropriate components here
             <div className="p-8 text-center">
@@ -78,7 +84,7 @@ export function ItineraryBuilder({ formData, isMobile }: ItineraryBuilderProps) 
           )}
         </AnimatePresence>
       </div>
-      <ChatInterface isOpen={isChatOpen} onToggle={() => setIsChatOpen(!isChatOpen)} formData={formData} />
+      <ChatInterface isOpen={isChatOpen} onToggle={() => setIsChatOpen(!isChatOpen)} {...(formData && { formData })} />
     </div>
   )
 }

@@ -394,6 +394,7 @@ export const PricingBreakdown: React.FC<PricingBreakdownProps> = ({
       }, 1100) // Slightly longer than animation duration
       return () => clearTimeout(timer)
     }
+    return undefined
   }, [pricing, previousTotal])
 
   if (error) {

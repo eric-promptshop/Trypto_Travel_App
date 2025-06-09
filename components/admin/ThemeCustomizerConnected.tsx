@@ -211,6 +211,7 @@ export function ThemeCustomizerConnected({ clientId, onThemeApplied }: ThemeCust
     const themeConfig: ThemeConfiguration = {
       id: theme.id,
       name: theme.name,
+      version: '1.0.0',
       colors: theme.colors,
       typography: {
         fontFamily: {
@@ -228,10 +229,71 @@ export function ThemeCustomizerConnected({ clientId, onThemeApplied }: ThemeCust
           '2xl': '1.5rem',
           '3xl': '1.875rem',
           '4xl': '2.25rem',
-          '5xl': '3rem'
+          '5xl': '3rem',
+          '6xl': '3.75rem'
+        },
+        fontWeight: {
+          thin: '100',
+          light: '300',
+          normal: '400',
+          medium: '500',
+          semibold: '600',
+          bold: '700',
+          extrabold: '800'
+        },
+        lineHeight: {
+          tight: '1.25',
+          snug: '1.375',
+          normal: '1.5',
+          relaxed: '1.625',
+          loose: '2'
+        },
+        letterSpacing: {
+          tighter: '-0.05em',
+          tight: '-0.025em',
+          normal: '0',
+          wide: '0.025em',
+          wider: '0.05em',
+          widest: '0.1em'
         }
       },
       spacing: {
+        spacing: {
+          px: '1px',
+          0.5: '0.125rem',
+          1: '0.25rem',
+          1.5: '0.375rem',
+          2: '0.5rem',
+          2.5: '0.625rem',
+          3: '0.75rem',
+          3.5: '0.875rem',
+          4: '1rem',
+          5: '1.25rem',
+          6: '1.5rem',
+          7: '1.75rem',
+          8: '2rem',
+          9: '2.25rem',
+          10: '2.5rem',
+          11: '2.75rem',
+          12: '3rem',
+          14: '3.5rem',
+          16: '4rem',
+          20: '5rem',
+          24: '6rem',
+          28: '7rem',
+          32: '8rem',
+          36: '9rem',
+          40: '10rem',
+          44: '11rem',
+          48: '12rem',
+          52: '13rem',
+          56: '14rem',
+          60: '15rem',
+          64: '16rem',
+          72: '18rem',
+          80: '20rem',
+          96: '24rem'
+        },
         borderRadius: {
           none: '0',
           sm: '0.125rem',
@@ -255,19 +317,38 @@ export function ThemeCustomizerConnected({ clientId, onThemeApplied }: ThemeCust
         }
       },
       animations: {
+        transition: {
+          none: 'none',
+          all: 'all',
+          default: 'background-color, border-color, color, fill, stroke, opacity, box-shadow, transform',
+          colors: 'background-color, border-color, color, fill, stroke',
+          opacity: 'opacity',
+          shadow: 'box-shadow',
+          transform: 'transform'
+        },
         duration: {
-          fast: '150ms',
-          normal: '300ms',
-          slow: '500ms',
-          slower: '700ms'
+          '75': '75ms',
+          '100': '100ms',
+          '150': '150ms',
+          '200': '200ms',
+          '300': '300ms',
+          '500': '500ms',
+          '700': '700ms',
+          '1000': '1000ms'
         },
         timing: {
           linear: 'linear',
-          ease: 'ease',
-          easeIn: 'ease-in',
-          easeOut: 'ease-out',
-          easeInOut: 'ease-in-out'
+          'in': 'ease-in',
+          'out': 'ease-out',
+          'in-out': 'ease-in-out'
         }
+      },
+      breakpoints: {
+        sm: '640px',
+        md: '768px',
+        lg: '1024px',
+        xl: '1280px',
+        '2xl': '1536px'
       }
     };
 

@@ -57,30 +57,33 @@ export class Accommodation implements ExtractedAccommodation {
   details?: AccommodationDetails;
 
   constructor(data: Partial<ExtractedAccommodation> & { url: string; title: string }) {
-    this.id = data.id;
+    // Required properties
     this.url = data.url;
     this.title = data.title;
-    this.description = data.description;
-    this.price = data.price;
-    this.currency = data.currency;
-    this.rating = data.rating;
-    this.reviewCount = data.reviewCount;
-    this.images = data.images || [];
-    this.location = data.location;
-    this.coordinates = data.coordinates;
     this.category = data.category || 'accommodation';
     this.tags = data.tags || [];
     this.metadata = data.metadata || {};
     this.extractedAt = data.extractedAt || new Date();
     
+    // Optional properties - only assign if defined
+    if (data.id !== undefined) this.id = data.id;
+    if (data.description !== undefined) this.description = data.description;
+    if (data.price !== undefined) this.price = data.price;
+    if (data.currency !== undefined) this.currency = data.currency;
+    if (data.rating !== undefined) this.rating = data.rating;
+    if (data.reviewCount !== undefined) this.reviewCount = data.reviewCount;
+    if (data.images !== undefined) this.images = data.images;
+    if (data.location !== undefined) this.location = data.location;
+    if (data.coordinates !== undefined) this.coordinates = data.coordinates;
+    
     // Accommodation-specific
-    this.starRating = data.starRating;
+    if (data.starRating !== undefined) this.starRating = data.starRating;
     this.amenities = data.amenities || [];
-    this.checkIn = data.checkIn;
-    this.checkOut = data.checkOut;
+    if (data.checkIn !== undefined) this.checkIn = data.checkIn;
+    if (data.checkOut !== undefined) this.checkOut = data.checkOut;
     this.roomTypes = data.roomTypes || [];
     this.policies = data.policies || [];
-    this.address = data.address;
+    if (data.address !== undefined) this.address = data.address;
     this.nearbyAttractions = data.nearbyAttractions || [];
   }
 

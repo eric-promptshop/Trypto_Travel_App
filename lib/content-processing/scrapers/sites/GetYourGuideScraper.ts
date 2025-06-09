@@ -93,8 +93,8 @@ export class GetYourGuideScraper extends BaseScraper<ExtractedActivity> {
         }
 
         // Extract structured data
-        const { price, currency } = this.parsePrice(priceText);
-        const rating = this.parseRating(ratingText);
+        const { price, currency } = this.parsePrice(priceText || '');
+        const rating = this.parseRating(ratingText || '');
         const highlights = this.extractList($element, selectors.highlights);
         const includes = this.extractList($element, selectors.includes);
         const excludes = this.extractList($element, selectors.excludes);
@@ -155,7 +155,7 @@ export class GetYourGuideScraper extends BaseScraper<ExtractedActivity> {
   /**
    * Extract text content from element using selector
    */
-  private extractText($parent: cheerio.Cheerio<cheerio.Element>, selector?: string): string | undefined {
+  private extractText($parent: cheerio.Cheerio<any>, selector?: string): string | undefined {
     if (!selector) return undefined;
     const text = $parent.find(selector).first().text().trim();
     return text || undefined;
@@ -164,7 +164,7 @@ export class GetYourGuideScraper extends BaseScraper<ExtractedActivity> {
   /**
    * Extract list of items from elements
    */
-  private extractList($element: cheerio.Cheerio<cheerio.Element>, selector?: string): string[] {
+  private extractList($element: cheerio.Cheerio<any>, selector?: string): string[] {
     if (!selector) return [];
     
     const items: string[] = [];
@@ -181,7 +181,7 @@ export class GetYourGuideScraper extends BaseScraper<ExtractedActivity> {
   /**
    * Extract images from the activity card
    */
-  private extractImages($parent: cheerio.Cheerio<cheerio.Element>, selector?: string): string[] {
+  private extractImages($parent: cheerio.Cheerio<any>, selector?: string): string[] {
     if (!selector) return [];
     
     const images: string[] = [];
@@ -249,7 +249,7 @@ export class GetYourGuideScraper extends BaseScraper<ExtractedActivity> {
   /**
    * Parse group size information
    */
-  private parseGroupSize($element: cheerio.Cheerio<cheerio.Element>, selector?: string): { min?: number; max?: number } | undefined {
+  private parseGroupSize($element: cheerio.Cheerio<any>, selector?: string): { min?: number; max?: number } | undefined {
     if (!selector) return undefined;
 
     const groupText = $element.find(selector).first().text().trim();
@@ -286,7 +286,7 @@ export class GetYourGuideScraper extends BaseScraper<ExtractedActivity> {
   /**
    * Build activity URL from the element
    */
-  private buildActivityUrl($element: cheerio.Cheerio<cheerio.Element>): string | undefined {
+  private buildActivityUrl($element: cheerio.Cheerio<any>): string | undefined {
     // Try different possible link selectors
     const href = $element.find('a[data-test-id="tour-link"]').attr('href') ||
                  $element.find('a[href*="/activity/"]').attr('href') ||

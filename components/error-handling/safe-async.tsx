@@ -263,6 +263,7 @@ export function useSafeAsync<T>(
       const timer = setTimeout(checkStale, options.staleTime);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [state.lastUpdated, options.staleTime]);
   
   // Auto-execute on dependency changes

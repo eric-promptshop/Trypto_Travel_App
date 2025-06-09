@@ -145,6 +145,9 @@ export default function ItineraryDisplay() {
     }
   }
 
+  const activitiesCost = currentDay?.activities?.reduce((sum, a) => sum + (a.price || 0), 0) || 0;
+  const mealsCost = currentDay?.meals?.reduce((sum, m) => sum + m.price, 0) || 0;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -275,25 +278,25 @@ export default function ItineraryDisplay() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-xl">
-                      Day {currentDay.day} - {currentDay.title}
+                      Day {currentDay?.day} - {currentDay?.title}
                     </CardTitle>
                     <CardDescription className="mt-2">
-                      {formatDate(currentDay.date)}
+                      {currentDay && formatDate(currentDay.date)}
                     </CardDescription>
                   </div>
                   <Badge variant="secondary" className="text-sm">
-                    ${currentDay.totalCost}/person
+                    ${currentDay?.totalCost}/person
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Day description */}
                 <p className="text-gray-700 leading-relaxed">
-                  {currentDay.description}
+                  {currentDay?.description}
                 </p>
 
                 {/* Accommodation */}
-                {currentDay.accommodation && (
+                {currentDay?.accommodation && (
                   <div className="space-y-3">
                     <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Hotel className="w-4 h-4" />
@@ -302,13 +305,13 @@ export default function ItineraryDisplay() {
                     <Card className="p-4 bg-gray-50">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h5 className="font-medium">{currentDay.accommodation.name}</h5>
-                          <p className="text-sm text-gray-600 mt-1">{currentDay.accommodation.location}</p>
+                          <h5 className="font-medium">{currentDay?.accommodation?.name}</h5>
+                          <p className="text-sm text-gray-600 mt-1">{currentDay?.accommodation?.location}</p>
                           <Badge variant="outline" className="mt-2 text-xs">
-                            {currentDay.accommodation.type}
+                            {currentDay?.accommodation?.type}
                           </Badge>
                         </div>
-                        <p className="text-lg font-semibold">${currentDay.accommodation.price}/night</p>
+                        <p className="text-lg font-semibold">${currentDay?.accommodation?.price}/night</p>
                       </div>
                     </Card>
                   </div>
@@ -322,7 +325,7 @@ export default function ItineraryDisplay() {
                   </h4>
                   
                   <div className="space-y-4">
-                    {currentDay.activities.map((activity, index) => (
+                    {currentDay?.activities?.map((activity, index) => (
                       <Card key={index} className="p-4 hover:shadow-md transition-shadow">
                         <div className="flex items-start gap-4">
                           <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -354,7 +357,7 @@ export default function ItineraryDisplay() {
                 </div>
 
                 {/* Meals */}
-                {currentDay.meals && currentDay.meals.length > 0 && (
+                {currentDay?.meals && currentDay.meals.length > 0 && (
                   <div className="space-y-4">
                     <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Utensils className="w-4 h-4" />
@@ -362,7 +365,7 @@ export default function ItineraryDisplay() {
                     </h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {currentDay.meals.map((meal, index) => (
+                      {currentDay?.meals?.map((meal, index) => (
                         <Card key={index} className="p-3">
                           <h5 className="font-medium text-sm capitalize mb-1">{meal.type}</h5>
                           <p className="text-sm text-gray-600">{meal.venue}</p>
@@ -387,30 +390,30 @@ export default function ItineraryDisplay() {
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Activities</span>
-                  <span className="font-semibold">{currentDay.activities.length}</span>
+                  <span className="font-semibold">{currentDay?.activities?.length || 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Accommodation</span>
                   <span className="font-semibold">
-                    ${currentDay.accommodation?.price || 0}
+                    ${currentDay?.accommodation?.price || 0}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Activities</span>
                   <span className="font-semibold">
-                    ${currentDay.activities.reduce((sum, a) => sum + (a.price || 0), 0)}
+                    ${activitiesCost}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Meals</span>
-                  <span className="font-semibold">
-                    ${currentDay.meals.reduce((sum, m) => sum + m.price, 0)}
-                  </span>
-                </div>
+                                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Meals</span>
+                    <span className="font-semibold">
+                      ${mealsCost}
+                    </span>
+                  </div>
                 <Separator />
                 <div className="flex items-center justify-between">
                   <span className="font-medium">Total per person</span>
-                  <span className="font-bold text-lg">${currentDay.totalCost}</span>
+                  <span className="font-bold text-lg">${currentDay?.totalCost || 0}</span>
                 </div>
               </CardContent>
             </Card>

@@ -82,13 +82,19 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
 
   const navigateToNextStep = () => {
     if (currentStepIndex < onboardingSteps.length - 1) {
-      router.push(onboardingSteps[currentStepIndex + 1].path)
+      const nextStep = onboardingSteps[currentStepIndex + 1]
+      if (nextStep) {
+        router.push(nextStep.path)
+      }
     }
   }
 
   const navigateToPrevStep = () => {
     if (currentStepIndex > 0) {
-      router.push(onboardingSteps[currentStepIndex - 1].path)
+      const prevStep = onboardingSteps[currentStepIndex - 1]
+      if (prevStep) {
+        router.push(prevStep.path)
+      }
     }
   }
 

@@ -135,7 +135,7 @@ export class PrefetchManager {
         const task: LoadingTask = {
           id: `prefetch_${item.id}`,
           priority: this.adjustPriorityBasedOnContext(item),
-          dependencies: item.dependencies,
+          dependencies: item.dependencies || [],
           load: async () => {
             await item.loadFn();
             this.prefetchedItems.add(item.id);

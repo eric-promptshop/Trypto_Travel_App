@@ -55,10 +55,10 @@ export class RateLimiter {
     });
 
     // Log retry events
-    this.limiter.on('retry', (error, jobInfo) => {
+    this.limiter.on('retry', (error: any, jobInfo: any) => {
       this.logger.info('Retrying failed request', {
         retryCount: jobInfo.retryCount,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       });
     });
 
@@ -85,10 +85,9 @@ export class RateLimiter {
    * Schedule a function to be executed with rate limiting
    */
   async schedule<T>(fn: () => Promise<T>, priority?: number): Promise<T> {
-    const options: Bottleneck.JobOptions = {};
-    if (priority !== undefined) {
-      options.priority = priority;
-    }
+    const options: Bottleneck.JobOptions = priority !== undefined 
+      ? { priority } 
+      : {};
 
     return this.limiter.schedule(options, fn);
   }
@@ -123,11 +122,11 @@ export class RateLimiter {
   } {
     const counts = this.limiter.counts();
     return {
-      queued: counts.QUEUED,
-      running: counts.RUNNING,
-      done: counts.DONE,
+      queued: counts.QUEUED || 0,
+      running: counts.RUNNING || 0,
+      done: counts.DONE || 0,
       capacity: this.options.maxConcurrent,
-      reservoir: this.limiter.reservoir() || 0
+      reservoir: this.options.reservoir || 0
     };
   }
 

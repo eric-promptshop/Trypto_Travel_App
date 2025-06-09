@@ -123,8 +123,11 @@ const HeavyComputationComponent = memo(({
     // Simulate heavy computation
     let result = 0;
     for (let i = 0; i < data.length; i++) {
-      for (let j = 0; j < 1000; j++) {
-        result += Math.sqrt(data[i] * multiplier) / (j + 1);
+      const value = data[i];
+      if (value !== undefined) {
+        for (let j = 0; j < 1000; j++) {
+          result += Math.sqrt(value * multiplier) / (j + 1);
+        }
       }
     }
     

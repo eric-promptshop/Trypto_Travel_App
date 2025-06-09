@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { AIRequestForm } from '@/components/ai-request-form'
+import { AIRequestFormEnhanced } from '@/components/ai-request-form-enhanced'
 import { ConnectedItineraryViewer } from '@/components/itinerary/ConnectedItineraryViewer'
 import { motion } from 'framer-motion'
 import { useAnalytics } from '@/lib/analytics/analytics-service'
@@ -48,7 +48,7 @@ export default function PlanTripPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <AIRequestForm onComplete={handleFormComplete} />
+          <AIRequestFormEnhanced onComplete={handleFormComplete} />
         </motion.div>
       )}
 

@@ -1,322 +1,411 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { z } from 'zod'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { withTenantIsolation, createAuditLog } from '@/lib/middleware/tenant';
+import { hasPermission, RESOURCES, ACTIONS } from '@/lib/auth/rbac';
+import { 
+  createTenantEnvironmentConfig, 
+  getEnvironmentConfig, 
+  validateEnvironmentConfig,
+  generateDeploymentConfig,
+  mergeEnvironmentVariables
+} from '@/lib/config/environment';
 
-// Deployment configuration schema
-const DeploymentSchema = z.object({
-  tenantId: z.string(),
-  deploymentType: z.enum(['subdomain', 'custom-domain', 'path-based']),
-  domain: z.string().optional(),
-  subdomain: z.string().optional(),
-  environment: z.enum(['staging', 'production']).default('staging'),
-  features: z.array(z.string()).default([]),
-  theme: z.object({
-    primaryColor: z.string().optional(),
-    secondaryColor: z.string().optional(),
-    accentColor: z.string().optional(),
-    backgroundColor: z.string().optional(),
-    logo: z.string().optional(),
-    brandName: z.string().optional(),
-  }).optional(),
-  settings: z.record(z.any()).optional()
-})
-
-/**
- * Deploy a white-label instance for a tenant
- * POST /api/admin/deploy
- */
-export async function POST(request: NextRequest) {
+// POST /api/admin/deploy - Deploy white-label instance
+export const POST = withTenantIsolation(async (tenantContext, request: NextRequest) => {
   try {
-    const body = await request.json()
-    
-    // Validate request body
-    const deploymentConfig = DeploymentSchema.parse(body)
-    
-    console.log(`🚀 Starting deployment for tenant: ${deploymentConfig.tenantId}`)
-    
-    // Get tenant information
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: deploymentConfig.tenantId },
-      include: {
-        users: true,
-        leads: true
-      }
-    })
-    
-    if (!tenant) {
+    // Check permissions
+    if (tenantContext.userContext && !hasPermission(
+      tenantContext.userContext, 
+      RESOURCES.DEPLOYMENT, 
+      ACTIONS.CREATE
+    )) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { 
+      environment = 'production', 
+      customDomain,
+      customEnvironmentVariables = {},
+      features = [],
+      deploymentProvider = 'vercel'
+    } = body;
+
+    // Validate environment
+    const validEnvironments = ['development', 'staging', 'production'];
+    if (!validEnvironments.includes(environment)) {
       return NextResponse.json(
-        { error: 'Tenant not found' },
+        { error: 'Invalid environment. Must be one of: development, staging, production' },
+        { status: 400 }
+      );
+    }
+
+    // Get tenant configuration
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantContext.tenantId },
+    });
+
+    if (!tenant || !tenant.isActive) {
+      return NextResponse.json(
+        { error: 'Tenant not found or inactive' },
         { status: 404 }
-      )
+      );
     }
-    
-    // Prepare deployment settings
-    const deploymentSettings = {
-      deployment: {
-        type: deploymentConfig.deploymentType,
-        domain: deploymentConfig.domain,
-        subdomain: deploymentConfig.subdomain,
-        environment: deploymentConfig.environment,
-        features: deploymentConfig.features,
-        deployedAt: new Date().toISOString(),
-        status: 'deploying'
+
+    // Create environment configuration for tenant
+    const tenantEnvConfig = createTenantEnvironmentConfig(
+      tenant.id,
+      tenant.slug,
+      customDomain
+    );
+
+    // Get specific environment config
+    const envConfig = getEnvironmentConfig(tenantEnvConfig, environment);
+    if (!envConfig) {
+      return NextResponse.json(
+        { error: `Environment configuration not found: ${environment}` },
+        { status: 400 }
+      );
+    }
+
+    // Merge custom environment variables
+    envConfig.environmentVariables = mergeEnvironmentVariables(
+      envConfig.environmentVariables,
+      customEnvironmentVariables
+    );
+
+    // Override features if provided
+    if (features.length > 0) {
+      envConfig.features = features;
+    }
+
+    // Validate environment configuration
+    const validation = validateEnvironmentConfig(envConfig);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid environment configuration', 
+          details: validation.errors 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Get published content for deployment
+    const publishedContent = await prisma.tenantContent.findMany({
+      where: { 
+        tenantId: tenantContext.tenantId,
+        status: 'published' 
       },
-      theme: deploymentConfig.theme || getDefaultThemeForTenant(tenant.slug),
-      ...deploymentConfig.settings
-    }
+      select: {
+        id: true,
+        title: true,
+        contentType: true,
+        content: true,
+        metadata: true,
+        createdAt: true,
+      }
+    });
+
+    // Generate deployment configuration for the specified provider
+    const deploymentConfig = generateDeploymentConfig(envConfig, deploymentProvider);
+
+    // Build comprehensive deployment package
+    const deploymentPackage = {
+      tenantId: tenant.id,
+      environment,
+      domain: envConfig.domain,
+      subdomain: envConfig.subdomain,
+      provider: deploymentProvider,
+      config: deploymentConfig,
+      environmentVariables: envConfig.environmentVariables,
+      features: envConfig.features,
+      content: publishedContent,
+      settings: {
+        ...(tenant.settings as any),
+        deployment: {
+          environment,
+          deployedAt: new Date().toISOString(),
+          deployedBy: tenantContext.userId,
+          provider: deploymentProvider,
+          version: `v${Date.now()}`,
+        }
+      },
+    };
+
+    // Create deployment record
+    const deployment = await prisma.tenantContent.create({
+      data: {
+        title: `Deployment - ${environment} - ${new Date().toISOString()}`,
+        content: deploymentPackage,
+        contentType: 'deployment',
+        status: 'pending',
+        tenantId: tenant.id,
+        authorId: tenantContext.userId || null,
+        metadata: {
+          deploymentId: `deploy-${Date.now()}`,
+          environment,
+          domain: envConfig.domain,
+          provider: deploymentProvider,
+          timestamp: new Date().toISOString(),
+          contentCount: publishedContent.length,
+          features: envConfig.features,
+        }
+      }
+    });
+
+    // TODO: Integrate with actual deployment service
+    // This would call the appropriate deployment API (Vercel, Netlify, etc.)
+    const deploymentUrl = `https://${envConfig.domain}`;
     
-    // Update tenant with deployment configuration
-    const updatedTenant = await prisma.tenant.update({
+    // Update tenant with deployment info
+    const currentSettings = (tenant.settings as any) || {};
+    await prisma.tenant.update({
       where: { id: tenant.id },
       data: {
-        domain: deploymentConfig.domain || tenant.domain,
         settings: {
-          ...tenant.settings as any,
-          ...deploymentSettings
+          ...currentSettings,
+          environments: {
+            ...currentSettings.environments,
+            [environment]: {
+              ...envConfig,
+              lastDeployment: {
+                id: deployment.id,
+                url: deploymentUrl,
+                deployedAt: new Date().toISOString(),
+                deployedBy: tenantContext.userId,
+                status: 'pending',
+                provider: deploymentProvider,
+              }
+            }
+          }
         }
       }
-    })
-    
-    // Create deployment record
-    const deploymentRecord = await createDeploymentRecord(updatedTenant, deploymentConfig)
-    
-    // Execute deployment based on type
-    let deploymentResult
-    switch (deploymentConfig.deploymentType) {
-      case 'subdomain':
-        deploymentResult = await deploySubdomain(updatedTenant, deploymentConfig)
-        break
-      case 'custom-domain':
-        deploymentResult = await deployCustomDomain(updatedTenant, deploymentConfig)
-        break
-      case 'path-based':
-        deploymentResult = await deployPathBased(updatedTenant, deploymentConfig)
-        break
-      default:
-        throw new Error(`Unsupported deployment type: ${deploymentConfig.deploymentType}`)
-    }
-    
-    // Update deployment status
-    await updateDeploymentStatus(deploymentRecord.id, 'deployed', deploymentResult)
-    
-    console.log(`✅ Deployment completed for tenant: ${tenant.name}`)
-    
+    });
+
+    // Create audit log
+    await createAuditLog(
+      tenantContext,
+      'DEPLOY',
+      'deployment',
+      deployment.id,
+      {
+        environment,
+        domain: envConfig.domain,
+        provider: deploymentProvider,
+        contentCount: publishedContent.length,
+      }
+    );
+
     return NextResponse.json({
-      success: true,
+      message: 'Deployment initiated successfully',
       deployment: {
-        id: deploymentRecord.id,
-        tenant: updatedTenant.name,
-        type: deploymentConfig.deploymentType,
-        url: deploymentResult.url,
-        status: 'deployed',
-        features: deploymentConfig.features,
-        environment: deploymentConfig.environment
-      }
-    })
-    
-  } catch (error) {
-    console.error('❌ Deployment error:', error)
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid deployment configuration', details: error.errors },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { error: 'Deployment failed', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
-  }
-}
-
-/**
- * Get deployment status for a tenant
- * GET /api/admin/deploy?tenantId=xxx
- */
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const tenantId = searchParams.get('tenantId')
-    
-    if (!tenantId) {
-      return NextResponse.json(
-        { error: 'tenantId is required' },
-        { status: 400 }
-      )
-    }
-    
-    // Get tenant with deployment info
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
-      include: {
-        content: {
-          where: { contentType: 'deployment' },
-          orderBy: { createdAt: 'desc' },
-          take: 5
+        id: deployment.id,
+        environment,
+        url: deploymentUrl,
+        status: 'pending',
+        estimatedTime: '5-10 minutes',
+        provider: deploymentProvider,
+        config: {
+          domain: envConfig.domain,
+          subdomain: envConfig.subdomain,
+          features: envConfig.features,
+          contentItems: publishedContent.length,
+          environmentVariables: Object.keys(envConfig.environmentVariables).length,
         }
       }
-    })
-    
-    if (!tenant) {
-      return NextResponse.json(
-        { error: 'Tenant not found' },
-        { status: 404 }
-      )
-    }
-    
-    const deploymentSettings = tenant.settings as any
-    const deploymentInfo = deploymentSettings?.deployment || null
-    
-    return NextResponse.json({
-      tenant: {
-        id: tenant.id,
-        name: tenant.name,
-        slug: tenant.slug,
-        domain: tenant.domain,
-        isActive: tenant.isActive
-      },
-      deployment: deploymentInfo,
-      deployments: tenant.content.map((d: any) => ({
-        id: d.id,
-        status: d.status,
-        createdAt: d.createdAt,
-        metadata: d.metadata
-      }))
-    })
-    
+    });
+
   } catch (error) {
-    console.error('❌ Error fetching deployment status:', error)
+    console.error('Error initiating deployment:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch deployment status' },
+      { error: 'Failed to initiate deployment' },
       { status: 500 }
-    )
+    );
   }
-}
+});
 
-// Helper Functions
-
-function getDefaultThemeForTenant(slug: string) {
-  const themes: Record<string, any> = {
-    'adventure-tours': {
-      primaryColor: '#059669',
-      secondaryColor: '#10b981',
-      accentColor: '#f59e0b',
-      backgroundColor: '#ecfdf5',
-      brandName: 'Adventure Tours Co'
-    },
-    'luxury-escapes': {
-      primaryColor: '#7c3aed',
-      secondaryColor: '#a855f7',
-      accentColor: '#fbbf24',
-      backgroundColor: '#faf5ff',
-      brandName: 'Luxury Escapes'
-    },
-    'budget-backpackers': {
-      primaryColor: '#dc2626',
-      secondaryColor: '#ef4444',
-      accentColor: '#f97316',
-      backgroundColor: '#fef2f2',
-      brandName: 'Budget Backpackers'
+// GET /api/admin/deploy - Get deployment status and history
+export const GET = withTenantIsolation(async (tenantContext, request: NextRequest) => {
+  try {
+    // Check permissions
+    if (tenantContext.userContext && !hasPermission(
+      tenantContext.userContext, 
+      RESOURCES.DEPLOYMENT, 
+      ACTIONS.READ
+    )) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
-  }
-  
-  return themes[slug] || {
-    primaryColor: '#2563eb',
-    secondaryColor: '#64748b',
-    accentColor: '#f59e0b',
-    backgroundColor: '#ffffff'
-  }
-}
 
-async function createDeploymentRecord(tenant: any, config: any) {
-  return await prisma.tenantContent.create({
-    data: {
-      contentType: 'deployment',
-      title: `Deployment - ${config.deploymentType}`,
-      content: {
-        type: config.deploymentType,
-        domain: config.domain,
-        subdomain: config.subdomain,
-        environment: config.environment,
-        features: config.features,
-        startedAt: new Date().toISOString()
+    const { searchParams } = new URL(request.url);
+    const deploymentId = searchParams.get('deploymentId');
+    const environment = searchParams.get('environment');
+
+    if (deploymentId) {
+      // Get specific deployment
+      const deployment = await prisma.tenantContent.findFirst({
+        where: {
+          id: deploymentId,
+          tenantId: tenantContext.tenantId,
+          contentType: 'deployment',
+        },
+        include: {
+          author: {
+            select: { id: true, name: true, email: true }
+          }
+        }
+      });
+
+      if (!deployment) {
+        return NextResponse.json(
+          { error: 'Deployment not found' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        deployment: {
+          id: deployment.id,
+          status: deployment.status,
+          config: deployment.content,
+          metadata: deployment.metadata,
+          author: deployment.author,
+          createdAt: deployment.createdAt,
+          updatedAt: deployment.updatedAt,
+        }
+      });
+    } else {
+      // Get deployments for tenant (optionally filtered by environment)
+      const where = {
+        tenantId: tenantContext.tenantId,
+        contentType: 'deployment',
+        ...(environment && {
+          metadata: {
+            path: ['environment'],
+            equals: environment
+          }
+        })
+      };
+
+      const [deployments, total] = await Promise.all([
+        prisma.tenantContent.findMany({
+          where,
+          take: 20,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            status: true,
+            metadata: true,
+            createdAt: true,
+            updatedAt: true,
+            author: {
+              select: { id: true, name: true, email: true }
+            }
+          }
+        }),
+        prisma.tenantContent.count({ where })
+      ]);
+
+      // Get current environment configurations from tenant settings
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: tenantContext.tenantId },
+        select: { settings: true }
+      });
+
+      const environmentConfigs = (tenant?.settings as any)?.environments || {};
+
+      return NextResponse.json({
+        deployments: deployments.map((d: any) => ({
+          id: d.id,
+          environment: d.metadata?.environment,
+          domain: d.metadata?.domain,
+          provider: d.metadata?.provider,
+          status: d.status,
+          deployedAt: d.createdAt,
+          updatedAt: d.updatedAt,
+          author: d.author,
+          contentCount: d.metadata?.contentCount || 0,
+          features: d.metadata?.features || [],
+        })),
+        total,
+        environments: environmentConfigs,
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching deployments:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch deployments' },
+      { status: 500 }
+    );
+  }
+});
+
+// PUT /api/admin/deploy/:id - Update deployment status
+export const PUT = withTenantIsolation(async (tenantContext, request: NextRequest) => {
+  try {
+    // Check permissions
+    if (tenantContext.userContext && !hasPermission(
+      tenantContext.userContext, 
+      RESOURCES.DEPLOYMENT, 
+      ACTIONS.UPDATE
+    )) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { deploymentId, status, url, error } = body;
+
+    if (!deploymentId || !status) {
+      return NextResponse.json(
+        { error: 'Deployment ID and status are required' },
+        { status: 400 }
+      );
+    }
+
+    // Update deployment record
+    const deployment = await prisma.tenantContent.update({
+      where: {
+        id: deploymentId,
+        tenantId: tenantContext.tenantId,
+        contentType: 'deployment',
       },
-      status: 'deploying',
-      tenantId: tenant.id,
-      metadata: {
-        deploymentId: `deploy_${Date.now()}`,
-        tenantSlug: tenant.slug
+      data: {
+        status,
+        metadata: {
+          ...(await prisma.tenantContent.findUnique({
+            where: { id: deploymentId },
+            select: { metadata: true }
+          }))?.metadata as any,
+          ...(url && { deploymentUrl: url }),
+          ...(error && { error }),
+          updatedAt: new Date().toISOString(),
+        }
       }
-    }
-  })
-}
+    });
 
-async function updateDeploymentStatus(deploymentId: string, status: string, result: any) {
-  await prisma.tenantContent.update({
-    where: { id: deploymentId },
-    data: {
-      status,
-      content: {
-        ...result,
-        completedAt: new Date().toISOString()
+    // Create audit log
+    await createAuditLog(
+      tenantContext,
+      'UPDATE',
+      'deployment',
+      deploymentId,
+      { status, url, error }
+    );
+
+    return NextResponse.json({
+      message: 'Deployment status updated',
+      deployment: {
+        id: deployment.id,
+        status: deployment.status,
+        metadata: deployment.metadata,
       }
-    }
-  })
-}
+    });
 
-async function deploySubdomain(tenant: any, config: any) {
-  console.log(`🌐 Deploying subdomain: ${config.subdomain}`)
-  
-  // In a real deployment, this would:
-  // 1. Configure DNS records
-  // 2. Set up SSL certificates
-  // 3. Configure load balancer/CDN
-  // 4. Deploy application code
-  
-  // For demo purposes, we'll simulate this
-  const subdomainUrl = `https://${config.subdomain}.yourdomain.com`
-  
-  return {
-    type: 'subdomain',
-    url: subdomainUrl,
-    subdomain: config.subdomain,
-    ssl: true,
-    cdn: true,
-    status: 'active'
+  } catch (error) {
+    console.error('Error updating deployment:', error);
+    return NextResponse.json(
+      { error: 'Failed to update deployment' },
+      { status: 500 }
+    );
   }
-}
-
-async function deployCustomDomain(tenant: any, config: any) {
-  console.log(`🌐 Deploying custom domain: ${config.domain}`)
-  
-  // In a real deployment, this would:
-  // 1. Verify domain ownership
-  // 2. Configure DNS
-  // 3. Set up SSL certificates
-  // 4. Configure reverse proxy
-  
-  return {
-    type: 'custom-domain',
-    url: `https://${config.domain}`,
-    domain: config.domain,
-    ssl: true,
-    verified: true,
-    status: 'active'
-  }
-}
-
-async function deployPathBased(tenant: any, config: any) {
-  console.log(`🌐 Deploying path-based: /client/${tenant.slug}`)
-  
-  // Path-based deployment is immediate since it's handled by middleware
-  const pathUrl = `https://yourdomain.com/client/${tenant.slug}`
-  
-  return {
-    type: 'path-based',
-    url: pathUrl,
-    path: `/client/${tenant.slug}`,
-    status: 'active'
-  }
-} 
+}); 

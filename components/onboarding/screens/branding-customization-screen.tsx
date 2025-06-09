@@ -45,10 +45,10 @@ export function BrandingCustomizationScreen() {
   const handleContinue = () => {
     updateOnboardingData({
       branding: {
-        logoUrl,
-        logoFile,
+        ...(logoUrl && { logoUrl }),
+        ...(logoFile && { logoFile }),
         primaryColor,
-        secondaryColor,
+        ...(secondaryColor && { secondaryColor }),
         font,
       },
     })
@@ -179,7 +179,7 @@ export function BrandingCustomizationScreen() {
               <Label htmlFor="fontSelection" className="block text-sm font-medium text-slate-700 mb-1">
                 Font Selection
               </Label>
-              <Select value={font} onValueChange={setFont}>
+              <Select value={font} onValueChange={(value) => setFont(value as "Inter" | "Georgia" | "Open Sans" | "Roboto")}>
                 <SelectTrigger id="fontSelection">
                   <SelectValue placeholder="Select font" />
                 </SelectTrigger>

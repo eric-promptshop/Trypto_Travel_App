@@ -87,7 +87,7 @@ export function useTrips(filters: TripFilters = {}) {
 
     try {
       const queryParams = buildQueryString(requestFilters || filters)
-      const url = `/api/v1/trips${queryParams ? `?${queryParams}` : ''}`
+      const url = `/api/trips${queryParams ? `?${queryParams}` : ''}`
       
       const response = await fetch(url, {
         method: 'GET',
@@ -125,7 +125,7 @@ export function useTrips(filters: TripFilters = {}) {
     setError(null)
 
     try {
-      const response = await fetch('/api/v1/trips', {
+      const response = await fetch('/api/trips', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -166,7 +166,7 @@ export function useTrips(filters: TripFilters = {}) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/v1/trips/${tripId}`, {
+      const response = await fetch(`/api/trips/${tripId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -209,7 +209,7 @@ export function useTrips(filters: TripFilters = {}) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/v1/trips/${tripId}`, {
+      const response = await fetch(`/api/trips/${tripId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -275,7 +275,7 @@ export function useTrip(tripId: string | null) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/v1/trips/${tripId}`, {
+      const response = await fetch(`/api/trips/${tripId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

@@ -22,6 +22,7 @@ export function OrientationBanner() {
       const timer = setTimeout(() => setShowBanner(false), 3000)
       return () => clearTimeout(timer)
     }
+    return undefined
   }, [orientation, isMobile])
 
   if (!isMobile || !showBanner) return null

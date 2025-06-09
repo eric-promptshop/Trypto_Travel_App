@@ -153,20 +153,22 @@ export async function validateImageDimensions(
 
   // Check aspect ratio if specified
   if (recommendedDimensions.aspectRatio) {
-    const ratioParts = recommendedDimensions.aspectRatio.split(':').map(Number);
-    if (ratioParts.length === 2 && !isNaN(ratioParts[0]) && !isNaN(ratioParts[1])) {
-      const ratioW = ratioParts[0];
-      const ratioH = ratioParts[1];
-      const expectedRatio = ratioW / ratioH;
-      const actualRatio = dimensions.width / dimensions.height;
-      const tolerance = 0.1; // 10% tolerance
+    const ratioParts = recommendedDimensions.aspectRatio.split(':');
+    if (ratioParts.length === 2) {
+      const ratioW = Number(ratioParts[0]);
+      const ratioH = Number(ratioParts[1]);
+      if (!isNaN(ratioW) && !isNaN(ratioH) && ratioH !== 0) {
+        const expectedRatio = ratioW / ratioH;
+        const actualRatio = dimensions.width / dimensions.height;
+        const tolerance = 0.1; // 10% tolerance
 
-      if (Math.abs(actualRatio - expectedRatio) > tolerance) {
-        errors.push({
-          field: 'dimensions.aspectRatio',
-          message: `Image aspect ratio ${actualRatio.toFixed(2)} doesn't match recommended ${recommendedDimensions.aspectRatio}`,
-          code: 'INVALID_ASPECT_RATIO',
-        });
+        if (Math.abs(actualRatio - expectedRatio) > tolerance) {
+          errors.push({
+            field: 'dimensions.aspectRatio',
+            message: `Image aspect ratio ${actualRatio.toFixed(2)} doesn't match recommended ${recommendedDimensions.aspectRatio}`,
+            code: 'INVALID_ASPECT_RATIO',
+          });
+        }
       }
     }
   }
@@ -302,8 +304,6 @@ export async function createAssetMetadata(
     originalName: request.file.name,
     mimeType: request.file.type,
     size: request.file.size,
-    altText: request.altText,
-    description: request.description,
     tags: request.tags || [],
     usage: [request.category],
     clientId: request.clientId,
@@ -313,6 +313,14 @@ export async function createAssetMetadata(
     version: 1,
     isActive: true,
   };
+  
+  // Add optional fields only if they exist
+  if (request.altText !== undefined) {
+    metadata.altText = request.altText;
+  }
+  if (request.description !== undefined) {
+    metadata.description = request.description;
+  }
 
   // Only add dimensions if they exist
   if (dimensions) {

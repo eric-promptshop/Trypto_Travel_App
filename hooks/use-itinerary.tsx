@@ -88,7 +88,7 @@ export function useItinerary(tripId: string | null) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/v1/trips/${tripId}/itinerary`, {
+      const response = await fetch(`/api/trips/${tripId}/itinerary`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export function useItinerary(tripId: string | null) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/v1/trips/${tripId}/itinerary`, {
+      const response = await fetch(`/api/trips/${tripId}/itinerary`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ export function useItinerary(tripId: string | null) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/v1/trips/${tripId}/itinerary/activities`, {
+      const response = await fetch(`/api/trips/${tripId}/itinerary/activities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -203,7 +203,7 @@ export function useItinerary(tripId: string | null) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/v1/trips/${tripId}/itinerary/activities/${activityId}`, {
+      const response = await fetch(`/api/trips/${tripId}/itinerary/activities/${activityId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -241,7 +241,7 @@ export function useItinerary(tripId: string | null) {
     setError(null)
 
     try {
-      const response = await fetch(`/api/v1/trips/${tripId}/itinerary/activities/${activityId}`, {
+      const response = await fetch(`/api/trips/${tripId}/itinerary/activities/${activityId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -322,7 +322,7 @@ export function useItinerary(tripId: string | null) {
     }
 
     try {
-      const response = await fetch(`/api/v1/trips/${tripId}/itinerary/export?format=${format}`, {
+      const response = await fetch(`/api/trips/${tripId}/itinerary/export?format=${format}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -366,7 +366,7 @@ export function useItinerary(tripId: string | null) {
     }
 
     try {
-      const response = await fetch(`/api/v1/trips/${tripId}/itinerary/share`, {
+      const response = await fetch(`/api/trips/${tripId}/itinerary/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

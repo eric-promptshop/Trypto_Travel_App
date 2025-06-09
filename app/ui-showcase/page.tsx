@@ -40,7 +40,7 @@ export default function UIShowcase() {
               </div>
             </Card>
 
-            <Card variant="elevated" className="p-6">
+            <Card className="p-6 shadow-lg">
               <h3 className="font-medium mb-4 text-[#1B365D]">Secondary Actions</h3>
               <div className="space-y-3">
                 <Button variant="outline" className="w-full">Learn More</Button>
@@ -49,7 +49,7 @@ export default function UIShowcase() {
               </div>
             </Card>
 
-            <Card variant="elevated" className="p-6">
+            <Card className="p-6">
               <h3 className="font-medium mb-4 text-[#1B365D]">Button Sizes</h3>
               <div className="space-y-3">
                 <Button size="sm" className="w-full">Small Button</Button>
@@ -95,7 +95,7 @@ export default function UIShowcase() {
             </Card>
 
             {/* Destination Card */}
-            <Card variant="destination">
+            <Card>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
@@ -118,7 +118,7 @@ export default function UIShowcase() {
             </Card>
 
             {/* Booking Card */}
-            <Card variant="booking">
+            <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle>Flight to Barcelona</CardTitle>
@@ -160,20 +160,21 @@ export default function UIShowcase() {
             <Card className="p-6">
               <h3 className="font-medium mb-4 text-[#1B365D]">Search & Selection</h3>
               <div className="space-y-4">
-                <Input 
-                  variant="search" 
-                  label="Search Destinations" 
-                  placeholder="Where would you like to go?" 
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                  onClear={() => setSearchValue('')}
-                />
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Search Destinations</label>
+                  <Input 
+                    placeholder="Where would you like to go?" 
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                  />
+                </div>
                 
-                <Input 
-                  variant="destination" 
-                  label="Primary Destination" 
-                  placeholder="Enter your main destination" 
-                />
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Primary Destination</label>
+                  <Input 
+                    placeholder="Enter your main destination" 
+                  />
+                </div>
                 
                 <Select>
                   <SelectTrigger>
@@ -192,24 +193,29 @@ export default function UIShowcase() {
             <Card className="p-6">
               <h3 className="font-medium mb-4 text-[#1B365D]">Trip Details</h3>
               <div className="space-y-4">
-                <Input 
-                  variant="date" 
-                  label="Departure Date" 
-                  type="date" 
-                />
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Departure Date</label>
+                  <Input 
+                    type="date" 
+                  />
+                </div>
                 
-                <Input 
-                  variant="email" 
-                  label="Contact Email" 
-                  placeholder="your@email.com" 
-                />
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Contact Email</label>
+                  <Input 
+                    type="email"
+                    placeholder="your@email.com" 
+                  />
+                </div>
                 
-                <Input 
-                  label="Confirmation Number" 
-                  placeholder="Enter confirmation" 
-                  success="Booking confirmed!"
-                  defaultValue="TN-123456"
-                />
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Confirmation Number</label>
+                  <Input 
+                    placeholder="Enter confirmation" 
+                    defaultValue="TN-123456"
+                  />
+                  <p className="text-sm text-green-600 mt-1">Booking confirmed!</p>
+                </div>
               </div>
             </Card>
           </div>

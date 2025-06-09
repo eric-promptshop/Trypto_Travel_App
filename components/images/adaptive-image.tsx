@@ -76,8 +76,8 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
     estimatedLoadTime: 0,
   });
 
-  const retryTimeoutRef = useRef<NodeJS.Timeout>();
-  const loadTimeoutRef = useRef<NodeJS.Timeout>();
+  const retryTimeoutRef = useRef<number | undefined>(undefined);
+  const loadTimeoutRef = useRef<number | undefined>(undefined);
 
   // Get the appropriate image source based on quality
   const getImageSource = useCallback((quality: string): ImageSource | null => {
@@ -161,9 +161,9 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
       clearTimeout(loadTimeoutRef.current);
     }
 
-    loadTimeoutRef.current = setTimeout(() => {
+    loadTimeoutRef.current = window.setTimeout(() => {
       handleLoadError(new Error('Load timeout'), currentIndex);
-    }, Math.max(estimatedTime * 2, 10000)); // 2x estimated time or 10s max
+    }, Math.max(estimatedTime * 2, 10000)) as unknown as number; // 2x estimated time or 10s max
   }, [
     getProgressiveSequence, 
     getImageSource, 
@@ -216,9 +216,9 @@ export const AdaptiveImage: React.FC<AdaptiveImageProps> = ({
         isLoading: false,
       }));
 
-      retryTimeoutRef.current = setTimeout(() => {
+      retryTimeoutRef.current = window.setTimeout(() => {
         loadNextQuality(currentIndex - 1); // Retry current quality
-      }, retryDelay);
+      }, retryDelay) as unknown as number;
     } else {
       setLoadingState(prev => ({
         ...prev,

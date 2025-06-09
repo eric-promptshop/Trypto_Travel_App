@@ -404,7 +404,7 @@ export function TemplateEditor({ instanceId, onPublish, onSave }: TemplateEditor
         <TemplatePreview
           instance={currentInstance}
           previewMode={editor.previewMode}
-          selectedComponentId={selectedComponent?.id}
+          {...(selectedComponent?.id && { selectedComponentId: selectedComponent.id })}
           onComponentSelect={handleComponentSelect}
         />
       </div>

@@ -36,7 +36,7 @@ export function ContentManagement({ tenantId }: ContentManagementProps) {
       if (selectedType !== 'all') params.append('type', selectedType);
       if (selectedStatus !== 'all') params.append('status', selectedStatus);
 
-      const response = await fetch(`/api/v1/content?${params.toString()}`, {
+      const response = await fetch(`/api/content?${params.toString()}`, {
         headers: {
           'x-tenant-slug': tenantId, // Assuming tenant slug is used for identification
         },
@@ -57,7 +57,7 @@ export function ContentManagement({ tenantId }: ContentManagementProps) {
 
   const handleCreate = async () => {
     try {
-      const response = await fetch('/api/v1/content', {
+      const response = await fetch('/api/content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ export function ContentManagement({ tenantId }: ContentManagementProps) {
 
   const handleUpdate = async (id: string, updates: UpdateContentRequest) => {
     try {
-      const response = await fetch(`/api/v1/content/${id}`, {
+      const response = await fetch(`/api/content/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ export function ContentManagement({ tenantId }: ContentManagementProps) {
     if (!confirm('Are you sure you want to delete this content?')) return;
 
     try {
-      const response = await fetch(`/api/v1/content/${id}`, {
+      const response = await fetch(`/api/content/${id}`, {
         method: 'DELETE',
         headers: {
           'x-tenant-slug': tenantId,

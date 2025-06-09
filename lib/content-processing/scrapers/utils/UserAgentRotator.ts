@@ -99,7 +99,6 @@ export class UserAgentRotator {
   constructor(options: UserAgentRotatorOptions, logger?: ScraperLogger) {
     this.options = {
       mobileRatio: 0.3, // 30% mobile by default
-      strategy: 'random',
       avoidRecentlyUsed: true,
       recentUsageWindow: 60 * 1000, // 1 minute
       ...options

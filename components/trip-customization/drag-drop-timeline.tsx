@@ -575,7 +575,7 @@ export const DragDropTimeline: React.FC<DragDropTimelineProps> = ({
     
     const currentDate = new Date(startDate)
     while (currentDate <= endDate) {
-      const dateString = currentDate.toISOString().split('T')[0]
+      const dateString = currentDate.toISOString().split('T')[0] || ''
       const dayActivities = selectedActivities.filter(
         activity => activity.selectedDate === dateString
       )
@@ -689,7 +689,9 @@ export const DragDropTimeline: React.FC<DragDropTimelineProps> = ({
       if (activeIndex !== overIndex && activeIndex !== -1 && overIndex !== -1) {
         const reorderedActivities = [...selectedActivities]
         const [movedActivity] = reorderedActivities.splice(activeIndex, 1)
-        reorderedActivities.splice(overIndex, 0, movedActivity)
+        if (movedActivity) {
+          reorderedActivities.splice(overIndex, 0, movedActivity)
+        }
 
         onActivityReorder(reorderedActivities)
 
@@ -783,7 +785,7 @@ export const DragDropTimeline: React.FC<DragDropTimelineProps> = ({
                   <DroppableDaySchedule
                     daySchedule={daySchedule}
                     onActivityRemove={onActivityRemove}
-                    onAddActivity={onAddActivityClick}
+                    {...(onAddActivityClick && { onAddActivity: onAddActivityClick })}
                     isOver={isOver}
                     canDrop={canDrop}
                   />
@@ -805,7 +807,7 @@ export const DragDropTimeline: React.FC<DragDropTimelineProps> = ({
             </p>
             {onAddActivityClick && (
               <Button 
-                onClick={() => onAddActivityClick(daySchedules[0]?.date || new Date().toISOString().split('T')[0])}
+                onClick={() => onAddActivityClick(daySchedules[0]?.date || new Date().toISOString().split('T')[0] || '')}
                 className="gap-2"
               >
                 <Plus className="h-4 w-4" />

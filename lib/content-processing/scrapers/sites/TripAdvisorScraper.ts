@@ -121,7 +121,7 @@ export class TripAdvisorScraper extends BaseScraper<ExtractedActivity> {
   /**
    * Extract text content from an element using a selector
    */
-  private extractText($element: cheerio.Cheerio<cheerio.Element>, selector?: string): string | undefined {
+  private extractText($element: cheerio.Cheerio<any>, selector?: string): string | undefined {
     if (!selector) return undefined;
     
     const text = $element.find(selector).first().text().trim();
@@ -131,7 +131,7 @@ export class TripAdvisorScraper extends BaseScraper<ExtractedActivity> {
   /**
    * Extract URL from an element
    */
-  private extractUrl($element: cheerio.Cheerio<cheerio.Element>, selector: string): string | undefined {
+  private extractUrl($element: cheerio.Cheerio<any>, selector: string): string | undefined {
     const href = $element.find(selector).first().attr('href');
     return href || undefined;
   }
@@ -139,7 +139,7 @@ export class TripAdvisorScraper extends BaseScraper<ExtractedActivity> {
   /**
    * Extract and parse price information
    */
-  private extractPrice($element: cheerio.Cheerio<cheerio.Element>, selector?: string): string | undefined {
+  private extractPrice($element: cheerio.Cheerio<any>, selector?: string): string | undefined {
     if (!selector) return undefined;
     
     const priceText = $element.find(selector).first().text().trim();
@@ -155,7 +155,7 @@ export class TripAdvisorScraper extends BaseScraper<ExtractedActivity> {
   /**
    * Extract and parse rating
    */
-  private extractRating($element: cheerio.Cheerio<cheerio.Element>, selector?: string): number | undefined {
+  private extractRating($element: cheerio.Cheerio<any>, selector?: string): number | undefined {
     if (!selector) return undefined;
     
     // Try to extract from aria-label or data attributes
@@ -189,7 +189,7 @@ export class TripAdvisorScraper extends BaseScraper<ExtractedActivity> {
   /**
    * Extract list of items from elements
    */
-  private extractList($element: cheerio.Cheerio<cheerio.Element>, selector?: string): string[] {
+  private extractList($element: cheerio.Cheerio<any>, selector?: string): string[] {
     if (!selector) return [];
     
     const items: string[] = [];
@@ -206,7 +206,7 @@ export class TripAdvisorScraper extends BaseScraper<ExtractedActivity> {
   /**
    * Extract image URLs
    */
-  private extractImages($element: cheerio.Cheerio<cheerio.Element>, selector?: string): string[] {
+  private extractImages($element: cheerio.Cheerio<any>, selector?: string): string[] {
     if (!selector) return [];
     
     const images: string[] = [];

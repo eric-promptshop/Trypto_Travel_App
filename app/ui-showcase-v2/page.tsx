@@ -26,28 +26,35 @@ export default function UIShowcaseV2() {
   const mockActivities = [
     {
       id: '1',
+      title: 'Machu Picchu Sunrise Tour',
       name: 'Machu Picchu Sunrise Tour',
       type: 'activity' as const,
       date: '2024-05-15',
       time: '05:00',
       location: 'Machu Picchu, Peru',
+      duration: '4 hours',
       cost: 150,
       notes: 'Early morning hike to catch the sunrise',
       rating: 4.9,
       bookingRequired: true,
-      contactInfo: 'tour@machupicchu.com',
-      tips: 'Bring warm clothes for early morning'
+      contactInfo: { email: 'tour@machupicchu.com' },
+      tips: ['Bring warm clothes for early morning']
     },
     {
       id: '2',
+      title: 'Hotel Belmond Sanctuary Lodge',
       name: 'Hotel Belmond Sanctuary Lodge',
       type: 'accommodation' as const,
       date: '2024-05-14',
       time: '15:00',
       location: 'Aguas Calientes, Peru',
+      duration: '1 night',
       cost: 450,
       notes: 'Luxury accommodation near Machu Picchu',
-      rating: 4.8
+      rating: 4.8,
+      bookingRequired: false,
+      contactInfo: { website: 'belmond.com' },
+      tips: []
     }
   ]
 
@@ -194,11 +201,22 @@ export default function UIShowcaseV2() {
               </CardHeader>
               <CardContent>
                 <PricingInsights 
-                  tripId="demo-trip"
-                  budget={mockFormData.budget}
-                  startDate={mockFormData.startDate}
-                  endDate={mockFormData.endDate}
-                  destination={mockFormData.destination}
+                  tripData={{
+                    destination: mockFormData.destination,
+                    startDate: mockFormData.startDate,
+                    endDate: mockFormData.endDate,
+                    groupSize: 2,
+                    targetBudget: mockFormData.budget
+                  }}
+                  activities={[
+                    {
+                      id: '1',
+                      title: 'Eiffel Tower Tour',
+                      type: 'sightseeing',
+                      basePrice: 25,
+                      currentPrice: 28
+                    }
+                  ]}
                 />
               </CardContent>
             </Card>
@@ -215,6 +233,8 @@ export default function UIShowcaseV2() {
               </CardHeader>
               <CardContent>
                 <ActivityManager 
+                  tripId="demo-trip"
+                  dayNumber={1}
                   activities={mockActivities}
                   onActivitiesChange={(activities) => console.log('Activities updated:', activities)}
                 />
@@ -320,7 +340,25 @@ export default function UIShowcaseV2() {
                 </AlertDescription>
               </Alert>
               <div className="h-[600px] overflow-auto border rounded-lg">
-                <ConnectedItineraryViewer />
+                <ConnectedItineraryViewer 
+                  tripId="demo-trip-1"
+                  formData={{
+                    destinations: [mockFormData.destination],
+                    travelDates: {
+                      startDate: mockFormData.startDate,
+                      endDate: mockFormData.endDate
+                    },
+                    travelers: {
+                      adults: mockFormData.travelers,
+                      children: 0
+                    },
+                    budget: {
+                      amount: mockFormData.budget,
+                      currency: 'USD'
+                    },
+                    interests: mockFormData.interests
+                  }}
+                />
               </div>
             </CardContent>
           </Card>

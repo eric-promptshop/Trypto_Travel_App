@@ -836,12 +836,12 @@ export const ActivitySelector: React.FC<ActivitySelectorProps> = ({
   // Event handlers
   const handleActivitySelect = (activity: Activity) => {
     // Get the first available time slot or default to '09:00'
-    const defaultTimeSlot: string = Array.isArray(activity.timeSlots) && activity.timeSlots.length > 0 ? activity.timeSlots[0].start : '09:00'
+    const defaultTimeSlot: string = Array.isArray(activity.timeSlots) && activity.timeSlots.length > 0 && activity.timeSlots[0] ? activity.timeSlots[0].start : '09:00'
     // For demo purposes, we'll select the first available time slot
     const selectedActivity: SelectedActivity = {
       ...activity,
       selectedDate: tripDates.startDate instanceof Date && !isNaN(tripDates.startDate.getTime())
-        ? tripDates.startDate.toISOString().split('T')[0]
+        ? tripDates.startDate.toISOString().split('T')[0] || ''
         : '',
       selectedTimeSlot: defaultTimeSlot,
       participants,

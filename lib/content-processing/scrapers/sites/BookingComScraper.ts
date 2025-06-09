@@ -187,7 +187,7 @@ export class BookingComScraper extends BaseScraper<ExtractedAccommodation> {
   /**
    * Extract text content from element using selector
    */
-  private extractText($parent: cheerio.Cheerio<cheerio.Element>, selector?: string): string {
+  private extractText($parent: cheerio.Cheerio<any>, selector?: string): string {
     if (!selector) return '';
     return $parent.find(selector).first().text().trim();
   }
@@ -195,7 +195,7 @@ export class BookingComScraper extends BaseScraper<ExtractedAccommodation> {
   /**
    * Extract array of text content from elements
    */
-  private extractTextArray($parent: cheerio.Cheerio<cheerio.Element>, selector?: string): string[] {
+  private extractTextArray($parent: cheerio.Cheerio<any>, selector?: string): string[] {
     if (!selector) return [];
     const items: string[] = [];
     $parent.find(selector).each((_, element) => {
@@ -208,7 +208,7 @@ export class BookingComScraper extends BaseScraper<ExtractedAccommodation> {
   /**
    * Extract images from the accommodation card
    */
-  private extractImages($parent: cheerio.Cheerio<cheerio.Element>, selector?: string): string[] {
+  private extractImages($parent: cheerio.Cheerio<any>, selector?: string): string[] {
     if (!selector) return [];
     const images: string[] = [];
     $parent.find(selector).each((_, element) => {
@@ -258,7 +258,7 @@ export class BookingComScraper extends BaseScraper<ExtractedAccommodation> {
     if (!ratingText) return undefined;
 
     const ratingMatch = ratingText.match(/(\d+(?:\.\d+)?)/);
-    if (ratingMatch) {
+    if (ratingMatch && ratingMatch[1]) {
       const rating = parseFloat(ratingMatch[1]);
       // Booking.com uses 10-point scale, convert to 5-point
       return rating <= 10 ? (rating / 2) : rating;
@@ -270,7 +270,7 @@ export class BookingComScraper extends BaseScraper<ExtractedAccommodation> {
   /**
    * Parse star rating from star rating element
    */
-  private parseStarRating($parent: cheerio.Cheerio<cheerio.Element>, selector?: string): number | undefined {
+  private parseStarRating($parent: cheerio.Cheerio<any>, selector?: string): number | undefined {
     if (!selector) return undefined;
 
     const $starElement = $parent.find(selector).first();
@@ -289,7 +289,7 @@ export class BookingComScraper extends BaseScraper<ExtractedAccommodation> {
   /**
    * Extract room types information
    */
-  private extractRoomTypes($parent: cheerio.Cheerio<cheerio.Element>, selector?: string): Array<{
+  private extractRoomTypes($parent: cheerio.Cheerio<any>, selector?: string): Array<{
     name: string;
     price?: string;
     capacity?: number;
@@ -309,7 +309,7 @@ export class BookingComScraper extends BaseScraper<ExtractedAccommodation> {
       const name = $room.find('[data-testid="room-name"]').text().trim();
       const priceText = $room.find('[data-testid="room-price"]').text().trim();
       const capacityText = $room.find('[data-testid="room-capacity"]').text().trim();
-      const amenities = this.extractTextArray($room, '[data-testid="room-amenity"]');
+      const amenities = this.extractTextArray($room as any, '[data-testid="room-amenity"]');
 
       if (name) {
         const capacityMatch = capacityText.match(/(\d+)/);
@@ -336,7 +336,7 @@ export class BookingComScraper extends BaseScraper<ExtractedAccommodation> {
   /**
    * Build accommodation URL from the element
    */
-  private buildAccommodationUrl($element: cheerio.Cheerio<cheerio.Element>): string | undefined {
+  private buildAccommodationUrl($element: cheerio.Cheerio<any>): string | undefined {
     const href = $element.find('a[data-testid="title-link"]').attr('href') ||
                  $element.find('a').first().attr('href');
     

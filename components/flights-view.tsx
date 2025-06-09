@@ -320,9 +320,9 @@ export function FlightsView({ tripId, editable = false, onBookFlight, onSearchFl
             <div className="text-sm">
               {flight.stops === 0 ? 'Direct' : `${flight.stops} stop${flight.stops > 1 ? 's' : ''}`}
             </div>
-            {flight.stopDetails && (
+            {flight.stopDetails && flight.stopDetails.length > 0 && (
               <div className="text-xs text-gray-500">
-                via {flight.stopDetails[0].airport}
+                via {flight.stopDetails[0]?.airport}
               </div>
             )}
           </div>

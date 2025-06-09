@@ -142,7 +142,7 @@ test.describe('Multi-tenant Functionality', () => {
 
   test('tenant API isolation', async ({ request }) => {
     // Create trip via API for default tenant
-    const defaultResponse = await request.post('http://localhost:3000/api/v1/trips', {
+    const defaultResponse = await request.post('http://localhost:3000/api/trips', {
       headers: { 'X-Tenant-ID': 'default' },
       data: {
         name: 'API Test Trip - Default',
@@ -155,13 +155,13 @@ test.describe('Multi-tenant Functionality', () => {
     const defaultTrip = await defaultResponse.json()
     
     // Try to access from different tenant
-    const demoResponse = await request.get(`http://demo.localhost:3000/api/v1/trips/${defaultTrip.id}`, {
+    const demoResponse = await request.get(`http://demo.localhost:3000/api/trips/${defaultTrip.id}`, {
       headers: { 'X-Tenant-ID': 'demo' }
     })
     expect(demoResponse.status()).toBe(404) // Should not find trip from other tenant
     
     // Create trip for demo tenant
-    const demoCreateResponse = await request.post('http://demo.localhost:3000/api/v1/trips', {
+    const demoCreateResponse = await request.post('http://demo.localhost:3000/api/trips', {
       headers: { 'X-Tenant-ID': 'demo' },
       data: {
         name: 'API Test Trip - Demo',
@@ -173,14 +173,14 @@ test.describe('Multi-tenant Functionality', () => {
     expect(demoCreateResponse.ok()).toBeTruthy()
     
     // List trips for each tenant
-    const defaultList = await request.get('http://localhost:3000/api/v1/trips', {
+    const defaultList = await request.get('http://localhost:3000/api/trips', {
       headers: { 'X-Tenant-ID': 'default' }
     })
     const defaultTrips = await defaultList.json()
     expect(defaultTrips.data.some(t => t.name === 'API Test Trip - Default')).toBeTruthy()
     expect(defaultTrips.data.some(t => t.name === 'API Test Trip - Demo')).toBeFalsy()
     
-    const demoList = await request.get('http://demo.localhost:3000/api/v1/trips', {
+    const demoList = await request.get('http://demo.localhost:3000/api/trips', {
       headers: { 'X-Tenant-ID': 'demo' }
     })
     const demoTrips = await demoList.json()

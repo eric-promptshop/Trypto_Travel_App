@@ -25,7 +25,10 @@ describe('Itinerary Creation Flow', () => {
         })
         
         // Check for validation messages
-        cy.get('body').should('contain.text', 'required').or('contain.text', 'error').or('contain.text', 'invalid')
+        cy.get('body').should(($body) => {
+          const text = $body.text()
+          expect(text).to.match(/required|error|invalid/i)
+        })
       }
     })
   })

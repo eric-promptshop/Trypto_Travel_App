@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { CheckCircle, AlertTriangle } from 'lucide-react';
 
 interface OnboardingStep {
   id: string;
@@ -40,7 +40,7 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
         },
         validation: async () => {
           // Check if basic info is complete
-          const response = await fetch(`/api/v1/tenants/${tenantId}/validation/basic-info`);
+          const response = await fetch(`/api/admin/tenants/${tenantId}/validation/basic-info`);
           return response.ok;
         }
       },
@@ -54,7 +54,7 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
           window.location.href = '/admin/white-label?tab=themes';
         },
         validation: async () => {
-          const response = await fetch(`/api/v1/tenants/${tenantId}/validation/theme`);
+          const response = await fetch(`/api/admin/tenants/${tenantId}/validation/theme`);
           return response.ok;
         }
       },
@@ -68,7 +68,7 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
           window.location.href = '/admin/white-label?tab=content&wizard=true';
         },
         validation: async () => {
-          const response = await fetch(`/api/v1/content?status=published`, {
+          const response = await fetch(`/api/content?status=published`, {
             headers: { 'x-tenant-slug': tenantId }
           });
           const data = await response.json();
@@ -85,7 +85,7 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
           window.location.href = '/admin/white-label?tab=domains';
         },
         validation: async () => {
-          const response = await fetch(`/api/v1/domains`, {
+          const response = await fetch(`/api/admin/domains`, {
             headers: { 'x-tenant-slug': tenantId }
           });
           const data = await response.json();
@@ -102,7 +102,7 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
           window.location.href = '/admin/white-label?tab=users';
         },
         validation: async () => {
-          const response = await fetch(`/api/v1/roles/users`, {
+          const response = await fetch(`/api/admin/roles/users`, {
             headers: { 'x-tenant-slug': tenantId }
           });
           const data = await response.json();
@@ -118,7 +118,7 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
           await deployToStaging();
         },
         validation: async () => {
-          const response = await fetch(`/api/v1/deploy?environment=staging`, {
+          const response = await fetch(`/api/admin/deploy?environment=staging`, {
             headers: { 'x-tenant-slug': tenantId }
           });
           const data = await response.json();
@@ -136,7 +136,7 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
           await deployToProduction();
         },
         validation: async () => {
-          const response = await fetch(`/api/v1/deploy?environment=production`, {
+          const response = await fetch(`/api/admin/deploy?environment=production`, {
             headers: { 'x-tenant-slug': tenantId }
           });
           const data = await response.json();
@@ -155,13 +155,14 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
     const updatedSteps = [...stepsToValidate];
     
     for (let i = 0; i < updatedSteps.length; i++) {
-      if (updatedSteps[i].validation) {
+      const step = updatedSteps[i];
+      if (step && step.validation) {
         try {
-          const isValid = await updatedSteps[i].validation!();
-          updatedSteps[i].status = isValid ? 'completed' : 'pending';
+          const isValid = await step.validation();
+          step.status = isValid ? 'completed' : 'pending';
         } catch (error) {
-          updatedSteps[i].status = 'error';
-          updatedSteps[i].errorMessage = 'Validation failed';
+          step.status = 'error';
+          step.errorMessage = 'Validation failed';
         }
       }
     }
@@ -174,29 +175,39 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
   };
 
   const executeStep = async (stepIndex: number) => {
-    if (!steps[stepIndex].action) return;
+    const step = steps[stepIndex];
+    if (!step || !step.action) return;
 
     setLoading(true);
     const updatedSteps = [...steps];
-    updatedSteps[stepIndex].status = 'in_progress';
+    const updatedStep = updatedSteps[stepIndex];
+    if (updatedStep) {
+      updatedStep.status = 'in_progress';
+    }
     setSteps(updatedSteps);
 
     try {
-      await steps[stepIndex].action!();
+      await step.action();
       
       // Validate the step after execution
-      if (steps[stepIndex].validation) {
-        const isValid = await steps[stepIndex].validation!();
-        updatedSteps[stepIndex].status = isValid ? 'completed' : 'error';
-        updatedSteps[stepIndex].errorMessage = isValid ? undefined : 'Step validation failed';
-      } else {
-        updatedSteps[stepIndex].status = 'completed';
+      const currentStep = updatedSteps[stepIndex];
+      if (currentStep) {
+        if (step.validation) {
+          const isValid = await step.validation();
+          currentStep.status = isValid ? 'completed' : 'error';
+          if (!isValid) {
+            currentStep.errorMessage = 'Step validation failed';
+          }
+        } else {
+          currentStep.status = 'completed';
+        }
       }
       
       setSteps(updatedSteps);
       
       // Move to next step if current step is completed
-      if (updatedSteps[stepIndex].status === 'completed' && stepIndex < steps.length - 1) {
+      const finalStep = updatedSteps[stepIndex];
+      if (finalStep && finalStep.status === 'completed' && stepIndex < steps.length - 1) {
         setCurrentStep(stepIndex + 1);
       }
       
@@ -205,8 +216,11 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
         onComplete?.();
       }
     } catch (error) {
-      updatedSteps[stepIndex].status = 'error';
-      updatedSteps[stepIndex].errorMessage = error instanceof Error ? error.message : 'Step execution failed';
+      const errorStep = updatedSteps[stepIndex];
+      if (errorStep) {
+        errorStep.status = 'error';
+        errorStep.errorMessage = error instanceof Error ? error.message : 'Step execution failed';
+      }
       setSteps(updatedSteps);
     } finally {
       setLoading(false);
@@ -214,7 +228,7 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
   };
 
   const deployToStaging = async () => {
-    const response = await fetch('/api/v1/deploy', {
+    const response = await fetch('/api/admin/deploy', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -235,7 +249,7 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
   };
 
   const deployToProduction = async () => {
-    const response = await fetch('/api/v1/deploy', {
+    const response = await fetch('/api/admin/deploy', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -257,9 +271,9 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
   const getStepIcon = (status: OnboardingStep['status']) => {
     switch (status) {
       case 'completed':
-        return <CheckCircleIcon className="w-6 h-6 text-green-500" />;
+        return <CheckCircle className="w-6 h-6 text-green-500" />;
       case 'error':
-        return <ExclamationTriangleIcon className="w-6 h-6 text-red-500" />;
+        return <AlertTriangle className="w-6 h-6 text-red-500" />;
       case 'in_progress':
         return <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />;
       default:
@@ -362,7 +376,7 @@ export function WhiteLabelOnboarding({ tenantId, onComplete }: WhiteLabelOnboard
       {steps.every(step => step.status === 'completed') && (
         <div className="mt-8 p-6 bg-green-100 border border-green-200 rounded-lg">
           <div className="flex items-center gap-3">
-            <CheckCircleIcon className="w-8 h-8 text-green-500" />
+            <CheckCircle className="w-8 h-8 text-green-500" />
             <div>
               <h3 className="text-lg font-semibold text-green-900">
                 🎉 Congratulations! Your white-label platform is ready!

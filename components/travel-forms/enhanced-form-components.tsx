@@ -359,6 +359,7 @@ export const ValidationToast: React.FC<ValidationToastProps> = ({
       const timer = setTimeout(onClose, duration)
       return () => clearTimeout(timer)
     }
+    return undefined
   }, [autoClose, duration, onClose])
 
   const getStyles = () => {

@@ -75,19 +75,32 @@ export class AnalyticsService {
 
   track(event: string, properties?: Record<string, any>, userId?: string) {
     if (!this.isInitialized) {
-      this.queue.push({ event, properties, userId, timestamp: new Date().toISOString() })
+      const analyticsEvent: AnalyticsEvent = { 
+        event, 
+        timestamp: new Date().toISOString() 
+      }
+      if (properties !== undefined) {
+        analyticsEvent.properties = properties
+      }
+      if (userId !== undefined) {
+        analyticsEvent.userId = userId
+      }
+      this.queue.push(analyticsEvent)
       return
     }
 
-    const eventData = {
+    const eventData: AnalyticsEvent = {
       event,
       properties: {
         ...properties,
         timestamp: new Date().toISOString(),
         url: typeof window !== 'undefined' ? window.location.href : '',
         userAgent: typeof window !== 'undefined' ? navigator.userAgent : '',
-      },
-      userId
+      }
+    }
+    
+    if (userId !== undefined) {
+      eventData.userId = userId
     }
 
     // Send to Google Analytics

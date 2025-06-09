@@ -94,7 +94,7 @@ export function AssetUpload({
       id: Math.random().toString(36).substring(2),
       progress: 0,
       status: 'pending' as const,
-      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : '',
     }));
 
     setFiles(prev => [...prev, ...processedFiles]);
@@ -147,12 +147,20 @@ export function AssetUpload({
       const request: AssetUploadRequest = {
         file: uploadFile.file,
         category: selectedUsage,
-        altText: altText.trim() || undefined,
-        description: description.trim() || undefined,
-        tags: tags.length > 0 ? tags : undefined,
         clientId,
         replaceExisting,
       };
+      
+      // Add optional fields only if they have values
+      if (altText.trim()) {
+        request.altText = altText.trim();
+      }
+      if (description.trim()) {
+        request.description = description.trim();
+      }
+      if (tags.length > 0) {
+        request.tags = tags;
+      }
 
       // Create FormData
       const formData = new FormData();

@@ -295,7 +295,7 @@ const DayScheduleCard: React.FC<{
             <p className="text-sm text-gray-600">{dateString}</p>
           </div>
         </div>
-        <EmptyDayState date={daySchedule.date} onAddActivity={onAddActivity} />
+        <EmptyDayState date={daySchedule.date} {...(onAddActivity && { onAddActivity })} />
       </div>
     )
   }
@@ -384,7 +384,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     // Generate schedule for each day of the trip
     const currentDate = new Date(startDate)
     while (currentDate <= endDate) {
-      const dateString = currentDate.toISOString().split('T')[0]
+      const dateString = currentDate.toISOString().split('T')[0] || ''
       const dayActivities = selectedActivities.filter(
         activity => activity.selectedDate === dateString
       )
@@ -460,7 +460,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
             key={daySchedule.date}
             daySchedule={daySchedule}
             onActivityRemove={onActivityRemove}
-            onAddActivity={onAddActivityClick}
+            {...(onAddActivityClick && { onAddActivity: onAddActivityClick })}
           />
         ))}
       </div>
@@ -477,7 +477,7 @@ export const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
           </p>
           {onAddActivityClick && (
             <Button 
-              onClick={() => onAddActivityClick(daySchedules[0]?.date || new Date().toISOString().split('T')[0])}
+              onClick={() => onAddActivityClick(daySchedules[0]?.date || new Date().toISOString().split('T')[0] || '')}
               className="gap-2"
             >
               <Plus className="h-4 w-4" />

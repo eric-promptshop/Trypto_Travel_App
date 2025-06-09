@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { CrmIntegrationFactory } from '@/lib/crm/crm-factory';
-import { CrmConfig, CrmType } from '@/lib/crm/types/crm-integration';
+import { CrmAuthConfig, CrmType } from '@/lib/crm/types/crm-integration';
 import { EmailService } from './email-service';
 
 export interface LeadSyncResult {
@@ -31,14 +31,7 @@ export class LeadSyncService {
     try {
       // Get lead data
       const lead = await prisma.lead.findUnique({
-        where: { id: leadId },
-        include: {
-          // Include related itinerary if exists
-          itineraries: {
-            take: 1,
-            orderBy: { createdAt: 'desc' }
-          }
-        }
+        where: { id: leadId }
       });
 
       if (!lead) {
@@ -65,15 +58,15 @@ export class LeadSyncService {
       const factory = CrmIntegrationFactory.getInstance();
       const crmConnector = factory.create(crmConfig.type, crmConfig);
 
-      // Prepare lead data for CRM
-      const crmLead = {
-        id: lead.id,
+      // Prepare contact data for CRM
+      const crmContact = {
         email: lead.email,
         firstName: lead.name?.split(' ')[0] || '',
         lastName: lead.name?.split(' ').slice(1).join(' ') || '',
         phone: lead.phone || '',
         company: '',
-        customFields: {
+        tripInterest: lead.destination,
+        metadata: {
           destination: lead.destination,
           travelDates: `${lead.startDate?.toISOString()} - ${lead.endDate?.toISOString()}`,
           travelers: lead.travelers.toString(),
@@ -81,15 +74,35 @@ export class LeadSyncService {
           interests: JSON.parse(lead.interests as string || '[]').join(', '),
           leadScore: lead.score.toString(),
           source: 'AI Trip Builder',
-          hasItinerary: lead.itineraries.length > 0 ? 'Yes' : 'No'
+          hasItinerary: lead.itinerary ? 'Yes' : 'No'
+        }
+      };
+
+      // Create contact first
+      const contactResult = await crmConnector.createContact(crmContact);
+      
+      if (!contactResult.success || !contactResult.data?.id) {
+        throw new Error(`Failed to create contact: ${contactResult.error}`);
+      }
+
+      // Then create lead
+      const crmLead = {
+        contactId: contactResult.data.id,
+        status: 'new' as const,
+        score: lead.score,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        metadata: {
+          leadId: lead.id,
+          tenantId: lead.tenantId
         }
       };
 
       // Sync to CRM
       console.log(`[LeadSync] Syncing lead ${leadId} to ${crmConfig.type}`);
-      const syncResult = await crmConnector.syncLead(crmLead);
+      const syncResult = await crmConnector.createLead(crmLead);
 
-      if (syncResult.success && syncResult.crmId) {
+      if (syncResult.success && syncResult.data?.id) {
         // Update lead with CRM sync status
         await prisma.lead.update({
           where: { id: leadId },
@@ -99,7 +112,7 @@ export class LeadSyncService {
           }
         });
 
-        console.log(`[LeadSync] Successfully synced lead ${leadId} to ${crmConfig.type} (CRM ID: ${syncResult.crmId})`);
+        console.log(`[LeadSync] Successfully synced lead ${leadId} to ${crmConfig.type} (CRM ID: ${syncResult.data?.id})`);
 
         // Send email notification to sales team
         const emailService = EmailService.getInstance();
@@ -110,17 +123,16 @@ export class LeadSyncService {
             email: lead.email,
             name: lead.name
           },
-          lead.itineraries[0] ? {
-            id: lead.itineraries[0].id,
-            title: lead.itineraries[0].title || 'Trip Itinerary',
+          lead.itinerary ? {
+            id: lead.id,
+            title: 'Trip Itinerary',
             destinations: [lead.destination],
             highlights: [],
             duration: lead.endDate && lead.startDate 
               ? Math.ceil((lead.endDate.getTime() - lead.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
               : 0,
             travelers: lead.travelers,
-            totalCost: (lead.budgetMin + lead.budgetMax) / 2,
-            createdAt: lead.createdAt.toISOString()
+            totalCost: (lead.budgetMin + lead.budgetMax) / 2
           } : undefined
         ).catch(error => {
           console.error('[LeadSync] Failed to send email notification:', error);
@@ -129,7 +141,7 @@ export class LeadSyncService {
         return {
           success: true,
           leadId,
-          crmId: syncResult.crmId,
+          crmId: syncResult.data?.id,
           crmType: crmConfig.type,
           syncedAt: new Date()
         };
@@ -227,7 +239,7 @@ export class LeadSyncService {
   /**
    * Get tenant CRM configuration
    */
-  private async getTenantCrmConfig(tenantId: string): Promise<CrmConfig | null> {
+  private async getTenantCrmConfig(tenantId: string): Promise<CrmAuthConfig | null> {
     // For now, return configuration from environment variables
     // In production, this would fetch from tenant settings
     const crmType = process.env.CRM_TYPE as CrmType || 'none';
@@ -236,29 +248,26 @@ export class LeadSyncService {
       return null;
     }
 
-    const config: CrmConfig = {
-      type: crmType,
-      enabled: true
+    const config: CrmAuthConfig = {
+      type: crmType
     };
 
     // Add CRM-specific configuration
     switch (crmType) {
       case 'hubspot':
         config.apiKey = process.env.HUBSPOT_API_KEY;
-        config.portalId = process.env.HUBSPOT_PORTAL_ID;
         break;
       case 'salesforce':
         config.clientId = process.env.SALESFORCE_CLIENT_ID;
         config.clientSecret = process.env.SALESFORCE_CLIENT_SECRET;
         config.refreshToken = process.env.SALESFORCE_REFRESH_TOKEN;
-        config.instanceUrl = process.env.SALESFORCE_INSTANCE_URL;
+        config.domain = process.env.SALESFORCE_INSTANCE_URL;
         break;
       case 'zoho':
         config.clientId = process.env.ZOHO_CLIENT_ID;
         config.clientSecret = process.env.ZOHO_CLIENT_SECRET;
         config.refreshToken = process.env.ZOHO_REFRESH_TOKEN;
-        config.accountsUrl = process.env.ZOHO_ACCOUNTS_URL || 'https://accounts.zoho.com';
-        config.apiDomain = process.env.ZOHO_API_DOMAIN || 'https://www.zohoapis.com';
+        config.domain = process.env.ZOHO_API_DOMAIN || 'https://www.zohoapis.com';
         break;
     }
 

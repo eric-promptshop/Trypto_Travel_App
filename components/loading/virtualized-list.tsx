@@ -26,7 +26,7 @@ export function VirtualizedList<T>({
 }: VirtualizedListProps<T>) {
   const [scrollTop, setScrollTop] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate visible range
@@ -138,7 +138,7 @@ export function useVirtualizedList<T>(
 ) {
   const [scrollTop, setScrollTop] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
-  const throttleTimeoutRef = useRef<NodeJS.Timeout>();
+  const throttleTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const { itemHeight, containerHeight, overscan = 5, throttleMs = 16 } = options;
 
@@ -204,7 +204,7 @@ export function useIntersectionObserver(
   const [entries, setEntries] = useState<Map<Element, IntersectionObserverEntry>>(
     new Map()
   );
-  const observerRef = useRef<IntersectionObserver>();
+  const observerRef = useRef<IntersectionObserver | undefined>(undefined);
 
   const observe = useCallback((element: Element) => {
     if (!observerRef.current) {

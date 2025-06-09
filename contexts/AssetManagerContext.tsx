@@ -189,18 +189,18 @@ export function AssetManagerProvider({ children, clientId }: AssetManagerProvide
     return {
       clientId: targetClientId,
       logos: {
-        light: logoLight,
-        dark: logoDark,
-        favicon: favicon,
+        ...(logoLight && { light: logoLight }),
+        ...(logoDark && { dark: logoDark }),
+        ...(favicon && { favicon: favicon }),
       },
       images: {
-        hero: heroImages.length > 0 ? heroImages : undefined,
-        backgrounds: backgrounds.length > 0 ? backgrounds : undefined,
-        icons: icons.length > 0 ? icons : undefined,
+        ...(heroImages.length > 0 && { hero: heroImages }),
+        ...(backgrounds.length > 0 && { backgrounds: backgrounds }),
+        ...(icons.length > 0 && { icons: icons }),
       },
       socialAssets: {
-        ogImage: ogImage,
-        twitterCard: ogImage, // Use same image for Twitter card for now
+        ...(ogImage && { ogImage: ogImage }),
+        ...(ogImage && { twitterCard: ogImage }), // Use same image for Twitter card for now
       },
       customAssets,
       lastUpdated,

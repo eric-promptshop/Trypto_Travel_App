@@ -1,21 +1,21 @@
 # 🤖 AI-Powered Form Testing Guide
 
-This guide covers testing TripNav's AI-powered trip planning form with Anthropic Claude integration.
+This guide covers testing TripNav's AI-powered trip planning form with OpenAI integration.
 
 ## 🔧 Setup Requirements
 
-### 1. **Get Anthropic API Key**
-1. Go to [Anthropic Console](https://console.anthropic.com/)
+### 1. **Get OpenAI API Key**
+1. Go to [OpenAI Platform](https://platform.openai.com/)
 2. Sign up/Sign in to your account
 3. Create a new API key
-4. Copy the key (starts with `sk-ant-...`)
+4. Copy the key (starts with `sk-proj-...`)
 
 ### 2. **Configure Environment**
 Add to your `.env.local` file:
 ```bash
-# AI Integration - Anthropic Claude
-ANTHROPIC_API_KEY=sk-ant-your-actual-api-key-here
-MODEL=claude-3-5-sonnet-20241022
+# AI Integration - OpenAI
+OPENAI_API_KEY=sk-proj-your-actual-api-key-here
+MODEL=gpt-4o-mini
 MAX_TOKENS=4000
 TEMPERATURE=0.2
 ```
@@ -312,7 +312,7 @@ npx prisma studio
 ## 📞 Support & Debugging
 
 ### **Common Success Indicators:**
-- ✅ Terminal shows: "AI generation starting..."
+- ✅ Terminal shows: "🤖 Starting AI generation for..."
 - ✅ Network tab shows 200 response
 - ✅ Itinerary displays with detailed activities
 - ✅ Database records created (check Prisma Studio)

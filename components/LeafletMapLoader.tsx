@@ -316,7 +316,7 @@ export function LeafletMapLoader({
         })
 
         // Add map click handler to close popups when clicking elsewhere
-        map.on("click", (e) => {
+        map.on("click", (e: any) => {
           if ((e.originalEvent.target as HTMLElement).closest(".custom-div-icon")) {
             return
           }
@@ -327,7 +327,7 @@ export function LeafletMapLoader({
         })
 
         // Handle map errors
-        map.on("error", (e) => {
+        map.on("error", (e: any) => {
           console.error("Map error:", e)
         })
       } catch (error) {
@@ -509,7 +509,7 @@ export function LeafletMapLoader({
           marker.bindPopup(popup)
           marker.addTo(map)
 
-          marker.on("click", function (e) {
+          marker.on("click", function (this: any, e: any) {
             console.log("Marker clicked for day:", location.day)
             L.DomEvent.stopPropagation(e)
 

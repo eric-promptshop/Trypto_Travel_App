@@ -6,6 +6,7 @@ import type {
   GeneratedItinerary, 
   Activity, 
   Accommodation, 
+  AccommodationType,
   Transportation, 
   Money 
 } from '@/lib/types/itinerary'
@@ -263,16 +264,28 @@ export class RealTimePricingService {
           id: 'default_accommodation',
           title: 'Standard Hotel',
           description: 'Standard accommodation',
-          type: 'hotel',
+          type: 'hotel' as AccommodationType,
           starRating: 3,
           location: 'Selected Destination',
           coordinates: { latitude: 0, longitude: 0 },
           amenities: [],
           images: [],
-          pricing: { currency: 'USD', adult: 100, child: 50, isFree: false },
-          availability: { dates: [], maxGuests: 4 },
-          policies: { checkIn: '15:00', checkOut: '11:00', cancellation: 'flexible' },
-          contact: { phone: '', email: '', website: '' },
+          roomTypes: [{
+            name: 'Standard Room',
+            capacity: 2,
+            bedConfiguration: 'Double',
+            amenities: [],
+            pricePerNight: { amount: 100, currency: 'USD' }
+          }],
+          checkInTime: '15:00',
+          checkOutTime: '11:00',
+          cancellationPolicy: 'flexible',
+          contactInfo: {
+            phone: '+1-555-0123',
+            email: 'info@hotel.com',
+            website: 'https://hotel.com',
+            address: 'Standard Hotel, Selected Destination'
+          },
           tags: [],
           estimatedCost: { amount: 100, currency: 'USD' },
           createdAt: new Date(),

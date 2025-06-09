@@ -366,7 +366,7 @@ export class DOMAnalyzer {
   private parseColor(color: string): { r: number; g: number; b: number } | null {
     const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
     
-    if (match) {
+    if (match && match[1] && match[2] && match[3]) {
       return {
         r: parseInt(match[1]),
         g: parseInt(match[2]),

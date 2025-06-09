@@ -33,12 +33,13 @@ function convertAPIToUIItinerary(apiItinerary: APIItinerary, tripData?: any): UI
     coverImage: apiItinerary.coverImage || '',
     status: apiItinerary.status,
     lastUpdated: apiItinerary.lastUpdated,
-    days: apiItinerary.days.map(day => ({
-      date: day.date,
-      title: `Day ${day.day}`,
-      totalCost: day.totalCost || 0,
-      highlights: day.highlights || [],
-      activities: [
+    days: apiItinerary.days.map(day => {
+      return {
+        date: day.date,
+        title: `Day ${day.day}`,
+        totalCost: day.totalCost || 0,
+        highlights: day.highlights || [],
+        activities: [
         ...day.activities.map(activity => ({
           id: activity.id,
           time: activity.time,
@@ -65,11 +66,11 @@ function convertAPIToUIItinerary(apiItinerary: APIItinerary, tripData?: any): UI
           type: 'accommodation' as any,
           duration: activity.duration,
           cost: activity.cost,
-          rating: activity.rating,
-          image: activity.image,
-          tips: activity.tips,
-          bookingRequired: activity.bookingRequired,
-          contactInfo: activity.contactInfo
+          ...(activity.rating !== undefined && { rating: activity.rating }),
+          ...(activity.image && { image: activity.image }),
+          ...(activity.tips && { tips: activity.tips }),
+          ...(activity.bookingRequired !== undefined && { bookingRequired: activity.bookingRequired }),
+          ...(activity.contactInfo && { contactInfo: activity.contactInfo })
         })),
         ...day.transportation.map(activity => ({
           id: activity.id,
@@ -80,14 +81,15 @@ function convertAPIToUIItinerary(apiItinerary: APIItinerary, tripData?: any): UI
           type: 'transport' as any,
           duration: activity.duration,
           cost: activity.cost,
-          rating: activity.rating,
-          image: activity.image,
-          tips: activity.tips,
-          bookingRequired: activity.bookingRequired,
-          contactInfo: activity.contactInfo
+          ...(activity.rating !== undefined && { rating: activity.rating }),
+          ...(activity.image && { image: activity.image }),
+          ...(activity.tips && { tips: activity.tips }),
+          ...(activity.bookingRequired !== undefined && { bookingRequired: activity.bookingRequired }),
+          ...(activity.contactInfo && { contactInfo: activity.contactInfo })
         }))
       ].sort((a, b) => a.time.localeCompare(b.time))
-    }))
+      }
+    })
   }
 }
 
@@ -102,12 +104,13 @@ function createMockItineraryFromFormData(formData: any): UIItinerary {
   const end = new Date(endDate)
   const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
 
-  const days = Array.from({ length: totalDays }, (_, index) => {
+  const days: UIItinerary['days'] = Array.from({ length: totalDays }, (_, index) => {
     const dayDate = new Date(start)
     dayDate.setDate(dayDate.getDate() + index)
+    const dateString: string = dayDate.toISOString().split('T')[0]!
     
     return {
-      date: dayDate.toISOString().split('T')[0],
+      date: dateString,
       title: index === 0 ? `Arrival in ${destination}` : 
              index === totalDays - 1 ? `Departure from ${destination}` : 
              `Explore ${destination}`,

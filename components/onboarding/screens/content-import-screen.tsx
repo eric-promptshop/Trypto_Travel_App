@@ -76,13 +76,14 @@ export function ContentImportScreen() {
           }
           if (nextProgress >= (currentMessageIndex + 1) * 25 && currentMessageIndex < messages.length - 1) {
             currentMessageIndex++
-            setScanMessage(messages[currentMessageIndex])
+            setScanMessage(messages[currentMessageIndex] || "Processing...")
           }
           return nextProgress
         })
       }, 1000)
       return () => clearInterval(interval)
     }
+    return undefined
   }, [stage])
 
   const handleFileUpload = (files: FileList | null) => {
@@ -101,7 +102,7 @@ export function ContentImportScreen() {
             setTimeout(() => {
               if (
                 uploadedFiles.length + newFiles.length ===
-                newFiles.filter((f) => fileUploadProgress[f.name] >= 100).length + uploadedFiles.length
+                newFiles.filter((f) => (fileUploadProgress[f.name] || 0) >= 100).length + uploadedFiles.length
               ) {
                 // Check if all current uploads are done
                 setImportedTours((prev) => [

@@ -346,14 +346,14 @@ function LandingPage({ onGetStarted }: LandingPageProps) {
                   <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
                     <CardContent className="p-8 text-center">
                       <div className="flex justify-center mb-4">
-                        {[...Array(testimonials[currentTestimonial].rating)].map((_, i) => (
+                        {[...Array(testimonials[currentTestimonial]?.rating || 0)].map((_, i) => (
                           <Star key={i} className="w-5 h-5 text-[#ff7b00] fill-current" />
                         ))}
                       </div>
-                      <p className="text-lg text-gray-700 mb-6 italic">"{testimonials[currentTestimonial].text}"</p>
+                      <p className="text-lg text-gray-700 mb-6 italic">"{testimonials[currentTestimonial]?.text}"</p>
                       <div>
-                        <div className="font-semibold text-gray-900">{testimonials[currentTestimonial].name}</div>
-                        <div className="text-gray-600 text-sm">{testimonials[currentTestimonial].location}</div>
+                        <div className="font-semibold text-gray-900">{testimonials[currentTestimonial]?.name}</div>
+                        <div className="text-gray-600 text-sm">{testimonials[currentTestimonial]?.location}</div>
                       </div>
                     </CardContent>
                   </Card>

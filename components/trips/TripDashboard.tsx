@@ -30,7 +30,9 @@ import {
   RefreshCw,
   AlertTriangle,
   Plane,
-  TrendingUp
+  TrendingUp,
+  Sparkles,
+  Loader2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, differenceInDays } from 'date-fns'
@@ -40,6 +42,16 @@ interface TripDashboardProps {
   onEditTrip?: (trip: Trip) => void
   onViewTrip?: (trip: Trip) => void
   className?: string
+}
+
+interface AITripSuggestion {
+  title: string
+  destination: string
+  description: string
+  duration: number
+  bestTimeToGo: string
+  estimatedBudget: string
+  highlights: string[]
 }
 
 interface TripStats {
@@ -65,6 +77,9 @@ export function TripDashboard({
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [stats, setStats] = useState<TripStats | null>(null)
+  const [showAISuggestions, setShowAISuggestions] = useState(false)
+  const [aiSuggestions, setAISuggestions] = useState<AITripSuggestion[]>([])
+  const [isLoadingAI, setIsLoadingAI] = useState(false)
 
   const { 
     trips, 
@@ -140,6 +155,57 @@ export function TripDashboard({
     return `${days} day${days === 1 ? '' : 's'}`
   }
 
+  const fetchAISuggestions = async () => {
+    setIsLoadingAI(true)
+    try {
+      const response = await fetch('/api/trips-ai/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          existingTrips: trips.map(t => ({
+            destination: t.location,
+            duration: differenceInDays(parseISO(t.endDate), parseISO(t.startDate)) + 1,
+            date: t.startDate
+          })),
+          userPreferences: {
+            totalTrips: stats?.total || 0,
+            commonDestinations: [...new Set(trips.map(t => t.location))].slice(0, 5)
+          }
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setAISuggestions(data.suggestions || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch AI suggestions:', error)
+      // Fallback suggestions
+      setAISuggestions([
+        {
+          title: 'Northern Lights Adventure',
+          destination: 'Reykjavik, Iceland',
+          description: 'Experience the magical aurora borealis and explore Iceland\'s stunning landscapes',
+          duration: 5,
+          bestTimeToGo: 'September to March',
+          estimatedBudget: '$2000-3000',
+          highlights: ['Aurora viewing', 'Blue Lagoon', 'Golden Circle tour']
+        },
+        {
+          title: 'Japanese Cultural Journey',
+          destination: 'Tokyo & Kyoto, Japan',
+          description: 'Immerse yourself in ancient traditions and modern innovation',
+          duration: 10,
+          bestTimeToGo: 'March-May or October-November',
+          estimatedBudget: '$3000-4500',
+          highlights: ['Cherry blossoms', 'Traditional temples', 'Mount Fuji']
+        }
+      ])
+    } finally {
+      setIsLoadingAI(false)
+    }
+  }
+
   if (error && !trips.length) {
     return (
       <div className={`container mx-auto p-6 ${className}`}>
@@ -172,11 +238,86 @@ export function TripDashboard({
             Plan, organize, and manage your travel adventures
           </p>
         </div>
-        <Button onClick={onCreateTrip} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="h-4 w-4 mr-2" />
-          New Trip
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => {
+              setShowAISuggestions(!showAISuggestions)
+              if (!showAISuggestions && aiSuggestions.length === 0) {
+                fetchAISuggestions()
+              }
+            }}
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            AI Suggestions
+          </Button>
+          <Button onClick={onCreateTrip} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="h-4 w-4 mr-2" />
+            New Trip
+          </Button>
+        </div>
       </div>
+
+      {/* AI Suggestions */}
+      {showAISuggestions && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 border border-purple-200"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              <h3 className="text-lg font-semibold text-gray-900">AI Trip Suggestions</h3>
+            </div>
+            {isLoadingAI && <Loader2 className="h-5 w-5 animate-spin text-purple-600" />}
+          </div>
+          
+          {isLoadingAI ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {aiSuggestions.map((suggestion, index) => (
+                <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer" onClick={onCreateTrip}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">{suggestion.title}</CardTitle>
+                    <CardDescription className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {suggestion.destination}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-gray-600">{suggestion.description}</p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-500">Duration:</span>
+                        <span className="ml-1 font-medium">{suggestion.duration} days</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Budget:</span>
+                        <span className="ml-1 font-medium">{suggestion.estimatedBudget}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-sm text-gray-500">Best time:</span>
+                      <span className="ml-1 text-sm font-medium">{suggestion.bestTimeToGo}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {suggestion.highlights.map((highlight, i) => (
+                        <Badge key={i} variant="secondary" className="text-xs">
+                          {highlight}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Stats Cards */}
       {stats && (

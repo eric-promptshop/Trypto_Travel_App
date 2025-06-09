@@ -44,11 +44,11 @@ scenarios:
     weight: 25
     flow:
       - get:
-          url: "/api/v1/trips"
+          url: "/api/trips"
           expect:
             - statusCode: [200, 401, 403]
       - post:
-          url: "/api/v1/trips"
+          url: "/api/trips"
           headers:
             'Content-Type': 'application/json'
           json:

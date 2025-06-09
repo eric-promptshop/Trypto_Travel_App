@@ -56,7 +56,7 @@ export function RoleManagement({ tenantId, userContext }: RoleManagementProps) {
   const loadUserRoles = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/v1/roles/users`, {
+      const response = await fetch(`/api/admin/roles/users`, {
         headers: {
           'x-tenant-slug': tenantId,
         },
@@ -77,7 +77,7 @@ export function RoleManagement({ tenantId, userContext }: RoleManagementProps) {
 
   const loadAvailableUsers = async () => {
     try {
-      const response = await fetch(`/api/v1/users`, {
+      const response = await fetch(`/api/admin/users`, {
         headers: {
           'x-tenant-slug': tenantId,
         },
@@ -98,7 +98,7 @@ export function RoleManagement({ tenantId, userContext }: RoleManagementProps) {
     if (!selectedUser || !selectedRole) return;
 
     try {
-      const response = await fetch(`/api/v1/roles/assign`, {
+      const response = await fetch(`/api/admin/roles/assign`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -127,7 +127,7 @@ export function RoleManagement({ tenantId, userContext }: RoleManagementProps) {
     if (!confirm('Are you sure you want to revoke this role?')) return;
 
     try {
-      const response = await fetch(`/api/v1/roles/revoke/${userRoleId}`, {
+      const response = await fetch(`/api/admin/roles/revoke/${userRoleId}`, {
         method: 'DELETE',
         headers: {
           'x-tenant-slug': tenantId,

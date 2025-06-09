@@ -27,11 +27,12 @@ export default function TestCloudinaryPage() {
         <div>
           <h3 className="text-lg font-semibold mb-2">Test Image (Low Quality)</h3>
           <AdaptiveImage
-            src={testImageUrl}
+            sources={[
+              { src: testImageUrl, quality: 'low', width: 600, height: 400 },
+              { src: testImageUrl, quality: 'medium', width: 600, height: 400 },
+              { src: testImageUrl, quality: 'high', width: 600, height: 400 }
+            ]}
             alt="Mountain landscape - Low quality"
-            width={600}
-            height={400}
-            quality="low"
             className="rounded shadow-lg"
           />
         </div>
@@ -39,12 +40,14 @@ export default function TestCloudinaryPage() {
         <div>
           <h3 className="text-lg font-semibold mb-2">Test Image (High Quality)</h3>
           <AdaptiveImage
-            src={testImageUrl}
+            sources={[
+              { src: testImageUrl, quality: 'low', width: 600, height: 400 },
+              { src: testImageUrl, quality: 'medium', width: 600, height: 400 },
+              { src: testImageUrl, quality: 'high', width: 600, height: 400 }
+            ]}
             alt="Mountain landscape - High quality"
-            width={600}
-            height={400}
-            quality="high"
             className="rounded shadow-lg"
+            priority
           />
         </div>
         
@@ -52,17 +55,21 @@ export default function TestCloudinaryPage() {
           <h3 className="text-lg font-semibold mb-2">Different Sizes</h3>
           <div className="flex gap-4">
             <AdaptiveImage
-              src={testImageUrl}
+              sources={[
+                { src: testImageUrl, quality: 'low', width: 200, height: 150 },
+                { src: testImageUrl, quality: 'medium', width: 200, height: 150 },
+                { src: testImageUrl, quality: 'high', width: 200, height: 150 }
+              ]}
               alt="Small"
-              width={200}
-              height={150}
               className="rounded"
             />
             <AdaptiveImage
-              src={testImageUrl}
+              sources={[
+                { src: testImageUrl, quality: 'low', width: 400, height: 300 },
+                { src: testImageUrl, quality: 'medium', width: 400, height: 300 },
+                { src: testImageUrl, quality: 'high', width: 400, height: 300 }
+              ]}
               alt="Medium"
-              width={400}
-              height={300}
               className="rounded"
             />
           </div>

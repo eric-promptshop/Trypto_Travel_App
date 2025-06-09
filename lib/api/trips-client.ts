@@ -2,7 +2,7 @@ import { Trip, CreateTripData, UpdateTripData, TripFilters, TripListResponse } f
 import { Itinerary, CreateActivityData } from '@/hooks/use-itinerary'
 
 // Base API client configuration
-const API_BASE_URL = '/api/v1'
+const API_BASE_URL = '/api'
 
 // Error handling utility
 class APIError extends Error {

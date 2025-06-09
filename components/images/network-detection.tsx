@@ -117,7 +117,7 @@ export function useNetworkCondition(updateInterval = 30000): NetworkCondition {
     isOnline: true,
     timestamp: Date.now(),
   });
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const updateNetworkCondition = useCallback(() => {
     const newCondition = getCurrentNetworkCondition();
