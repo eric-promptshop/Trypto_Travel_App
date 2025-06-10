@@ -1,0 +1,42 @@
+# CODEOWNERS file for automatic review assignment
+# Each line is a file pattern followed by one or more owners.
+
+# Global owners - will be requested for review when someone opens a pull request
+* @ericgonzalez
+
+# Frontend components
+/components/ @ericgonzalez
+/app/ @ericgonzalez
+
+# API routes and backend
+/app/api/ @ericgonzalez
+/lib/ @ericgonzalez
+
+# Configuration files
+*.config.* @ericgonzalez
+/package.json @ericgonzalez
+/tsconfig.json @ericgonzalez
+
+# Database and Prisma
+/prisma/ @ericgonzalez
+/lib/prisma.ts @ericgonzalez
+
+# Tests
+/__tests__/ @ericgonzalez
+/tests/ @ericgonzalez
+*.test.ts @ericgonzalez
+*.test.tsx @ericgonzalez
+*.spec.ts @ericgonzalez
+
+# Documentation
+/docs/ @ericgonzalez
+*.md @ericgonzalez
+
+# CI/CD
+/.github/ @ericgonzalez
+/scripts/ @ericgonzalez
+
+# Security-sensitive files
+/lib/auth/ @ericgonzalez
+/middleware.ts @ericgonzalez
+.env* @ericgonzalez
