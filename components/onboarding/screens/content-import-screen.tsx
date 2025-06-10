@@ -56,35 +56,80 @@ export function ContentImportScreen() {
   useEffect(() => {
     if (stage === "scanning") {
       setScanProgress(0)
-      setScanMessage("Scanning your website...")
-      const messages = [
-        "Found Peru tours...",
-        "Extracting Brazil itineraries...",
-        "Analyzing tour structures...",
-        "Found 23 tours so far...",
-      ]
-      let currentMessageIndex = 0
-      const interval = setInterval(() => {
-        setScanProgress((prev) => {
-          const nextProgress = prev + 20
-          if (nextProgress >= 100) {
-            clearInterval(interval)
-            setScanMessage("Scan complete! Found 47 tours from 6 destinations.")
-            setImportedTours(initialTours) // Mock data
+      setScanMessage("Initializing website scanner...")
+      
+      // Get website URL from company profile
+      const websiteUrl = onboardingData.companyProfile?.websiteUrl || 'https://example-tours.com'
+      
+      // Start the real scanning process
+      const performScan = async () => {
+        try {
+          // Update progress messages
+          const progressInterval = setInterval(() => {
+            setScanProgress((prev) => {
+              if (prev < 90) {
+                const messages = [
+                  "Connecting to website...",
+                  "Analyzing page structure...",
+                  "Extracting tour information...",
+                  "Processing activity data...",
+                  "Gathering pricing details...",
+                  "Collecting images and descriptions...",
+                ]
+                const messageIndex = Math.floor(prev / 15)
+                setScanMessage(messages[messageIndex] || "Processing...")
+                return prev + 5
+              }
+              return prev
+            })
+          }, 500)
+          
+          // Call the actual scanning API
+          const response = await fetch('/api/content/scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              websiteUrl,
+              tenantId: 'default', // TODO: Get from auth context when implemented
+              scanDepth: 10, // Scan up to 10 pages
+            }),
+          })
+          
+          clearInterval(progressInterval)
+          
+          if (!response.ok) {
+            throw new Error('Scanning failed')
+          }
+          
+          const result = await response.json()
+          
+          if (result.data?.tours && result.data.tours.length > 0) {
+            // Use real scraped data
+            setScanProgress(100)
+            setScanMessage(`Scan complete! Found ${result.data.tours.length} tours from ${result.data.summary.destinations.length} destinations.`)
+            setImportedTours(result.data.tours)
             setStage("scan_results")
-            return 100
+          } else {
+            // Fallback to mock data if no tours found
+            setScanProgress(100)
+            setScanMessage("Scan complete! Using sample data.")
+            setImportedTours(initialTours)
+            setStage("scan_results")
           }
-          if (nextProgress >= (currentMessageIndex + 1) * 25 && currentMessageIndex < messages.length - 1) {
-            currentMessageIndex++
-            setScanMessage(messages[currentMessageIndex] || "Processing...")
-          }
-          return nextProgress
-        })
-      }, 1000)
-      return () => clearInterval(interval)
+        } catch (error) {
+          console.error('Scanning error:', error)
+          // On error, use mock data
+          setScanProgress(100)
+          setScanMessage("Using sample tour data (website scan unavailable).")
+          setImportedTours(initialTours)
+          setStage("scan_results")
+        }
+      }
+      
+      performScan()
     }
     return undefined
-  }, [stage])
+  }, [stage, onboardingData.companyProfile?.websiteUrl])
 
   const handleFileUpload = (files: FileList | null) => {
     if (files) {
@@ -297,7 +342,7 @@ export function ContentImportScreen() {
       <h2 className="text-2xl font-semibold text-primary-blue mb-6">Content Import</h2>
       {stage === "selection" && renderSelection()}
       {stage === "scanning" && renderScanning()}
-      {stage === "scan_results" && renderResultsTable("✓ Successfully imported 47 tours from 6 destinations (mocked).")}
+      {stage === "scan_results" && renderResultsTable(scanMessage || "✓ Successfully imported tours from your website.")}
       {stage === "uploading" && renderUploading()}
       {stage === "upload_results" &&
         renderResultsTable(`✓ Successfully processed uploaded files. ${importedTours.length} total tours available.`)}

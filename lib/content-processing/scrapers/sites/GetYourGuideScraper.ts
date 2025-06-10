@@ -169,7 +169,8 @@ export class GetYourGuideScraper extends BaseScraper<ExtractedActivity> {
     
     const items: string[] = [];
     $element.find(selector).each((_, el) => {
-      const text = $(el).text().trim();
+      const $el = $element.find(selector).eq(_);
+      const text = $el.text().trim();
       if (text) {
         items.push(text);
       }
@@ -186,7 +187,7 @@ export class GetYourGuideScraper extends BaseScraper<ExtractedActivity> {
     
     const images: string[] = [];
     $parent.find(selector).each((_, element) => {
-      const $img = $(element);
+      const $img = $parent.find(selector).eq(_);
       const src = $img.attr('src') || $img.attr('data-src') || $img.attr('data-lazy-src');
       
       if (src && !src.includes('placeholder') && !src.includes('blank')) {

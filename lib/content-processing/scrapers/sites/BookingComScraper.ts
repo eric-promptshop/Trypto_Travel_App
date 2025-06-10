@@ -199,7 +199,8 @@ export class BookingComScraper extends BaseScraper<ExtractedAccommodation> {
     if (!selector) return [];
     const items: string[] = [];
     $parent.find(selector).each((_, element) => {
-      const text = $(element).text().trim();
+      const $el = $parent.find(selector).eq(_);
+      const text = $el.text().trim();
       if (text) items.push(text);
     });
     return items;
@@ -212,7 +213,7 @@ export class BookingComScraper extends BaseScraper<ExtractedAccommodation> {
     if (!selector) return [];
     const images: string[] = [];
     $parent.find(selector).each((_, element) => {
-      const $el = $(element);
+      const $el = $parent.find(selector).eq(_);
       const src = $el.attr('src') || $el.attr('data-src');
       if (src && !src.includes('placeholder')) {
         images.push(src);
@@ -305,7 +306,7 @@ export class BookingComScraper extends BaseScraper<ExtractedAccommodation> {
     }> = [];
 
     $parent.find(selector).each((_, element) => {
-      const $room = $(element);
+      const $room = $parent.find(selector).eq(_);
       const name = $room.find('[data-testid="room-name"]').text().trim();
       const priceText = $room.find('[data-testid="room-price"]').text().trim();
       const capacityText = $room.find('[data-testid="room-capacity"]').text().trim();

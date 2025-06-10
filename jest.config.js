@@ -13,17 +13,19 @@ const customJestConfig = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   testEnvironment: 'jest-environment-jsdom',
+  // Use Jest-specific TypeScript config
+  globals: {
+    'ts-jest': {
+      tsconfig: '<rootDir>/tsconfig.jest.json',
+      useESM: true
+    }
+  },
   // Transform ES modules in node_modules
   transformIgnorePatterns: [
     'node_modules/(?!(cheerio|bottleneck|uuid|@dnd-kit)/)'
   ],
   // Handle ES modules
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
-  globals: {
-    'ts-jest': {
-      useESM: true
-    }
-  },
   // Coverage configuration
   collectCoverageFrom: [
     'app/**/*.{ts,tsx}',
@@ -34,7 +36,6 @@ const customJestConfig = {
     '!**/node_modules/**',
     '!**/coverage/**',
     '!**/__tests__/**',
-    '!**/cypress/**',
   ],
   coverageReporters: ['html', 'text', 'lcov'],
   coverageDirectory: 'coverage',

@@ -90,7 +90,7 @@ export default function TripCustomizationDemo() {
     setTripData(null)
     setSaveStatus('idle')
   }
-
+0
   const generateItinerary = async () => {
     if (!tripData) return
     
