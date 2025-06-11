@@ -1,3 +1,3 @@
 {
-  "extends": ["./.eslintrc.development.json"]
+  "extends": ["./.eslintrc.production.json"]
 }
