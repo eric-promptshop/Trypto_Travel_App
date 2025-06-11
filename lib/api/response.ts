@@ -9,7 +9,10 @@ export function createSuccessResponse<T>(
   meta?: ApiResponse<T>['meta'],
   status: number = 200
 ): NextResponse {
-  const response: ApiResponse<T> = { data, meta };
+  const response: ApiResponse<T> = { 
+    data, 
+    ...(meta !== undefined && { meta })
+  };
   return NextResponse.json(response, { status });
 }
 

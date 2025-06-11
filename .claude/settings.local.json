@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(npm test)",
+      "Bash(npm install:*)",
+      "Bash(npx cypress:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm test:*)",
+      "Bash(node:*)",
+      "Bash(touch:*)",
+      "Bash(chmod:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma:*)",
+      "Bash(cat:*)",
+      "Bash(DATABASE_URL=\"file:./dev.db\" npx prisma db push)",
+      "Bash(mv:*)",
+      "Bash(npm run dev:*)",
+      "Bash(lsof:*)",
+      "Bash(killall:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm run:*)",
+      "Bash(sqlite3:*)",
+      "Bash(find:*)",
+      "Bash(vercel logs:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(vercel ls:*)"
+    ],
+    "deny": []
+  }
+}

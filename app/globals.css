@@ -18,6 +18,17 @@ body {
   .floating-card {
     @apply shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1;
   }
+
+  /* Mobile touch targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Mobile-friendly scrollbars */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @layer base {
@@ -120,6 +131,120 @@ body {
   ::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
   }
+
+  /* Mobile-specific styles */
+  @media (max-width: 768px) {
+    /* Hide scrollbars on mobile for cleaner look */
+    ::-webkit-scrollbar {
+      width: 0px;
+      background: transparent;
+    }
+
+    /* Ensure touch targets are large enough */
+    button,
+    input,
+    textarea,
+    select {
+      min-height: 44px;
+    }
+
+    /* Prevent zoom on input focus */
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
+
+    /* Improve touch scrolling */
+    .overflow-y-auto,
+    .overflow-x-auto {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  /* Tablet-specific styles */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    /* Slightly larger touch targets for tablets */
+    button {
+      min-height: 40px;
+    }
+  }
+}
+
+@layer base {
+  /* Responsive Typography */
+  h1 {
+    @apply text-3xl sm:text-4xl md:text-5xl; /* Example for h1 */
+  }
+  h2 {
+    @apply text-2xl sm:text-3xl md:text-4xl;
+  }
+  h3 {
+    @apply text-xl sm:text-2xl md:text-3xl;
+  }
+  p,
+  span,
+  div,
+  li,
+  button,
+  input,
+  textarea {
+    /* Apply base font size adjustments */
+    @apply text-sm sm:text-base;
+  }
+
+  /* Improved Line Heights for Readability */
+  body {
+    line-height: 1.6;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    line-height: 1.3;
+    text-wrap: balance; /* Balances text lines */
+  }
+
+  p {
+    text-wrap: pretty; /* Improves paragraph wrapping */
+    margin-bottom: 0.75em; /* Consistent paragraph spacing */
+  }
+
+  /* Ensure touch targets are large enough */
+  button,
+  a,
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex; /* Helps with alignment and sizing */
+    align-items: center;
+    justify-content: center;
+    padding-left: 0.5rem; /* Add some padding by default */
+    padding-right: 0.5rem;
+  }
+  /* Specific overrides for icon buttons or smaller controls if needed */
+  button.icon-only {
+    min-width: 44px; /* Ensure square for icon buttons */
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* Prevent zoom on input focus on iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="search"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="password"],
+  textarea {
+    font-size: 16px !important; /* Prevents iOS zoom */
+  }
 }
 
 /* Animation utilities */
@@ -195,16 +320,7 @@ body {
   border-radius: 2px;
 }
 
-/* Add a custom font face for the logo if needed */
-@font-face {
-  font-family: "TryptoFont";
-  src: local("Inter"), local("Arial");
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* Carousel navigation button animations */
+/* Mobile-optimized carousel navigation */
 .carousel-nav-button {
   transition: all 0.3s ease;
 }
@@ -306,11 +422,11 @@ img[src*="placeholder.svg"] {
   font-family: inherit;
   width: 100%;
   height: 100%;
-  z-index: 1 !important; /* Ensure map stays below UI elements */
+  z-index: 1 !important;
 }
 
 .leaflet-control-container {
-  z-index: 400 !important; /* Keep controls above map but below our UI */
+  z-index: 400 !important;
 }
 
 .leaflet-popup-content-wrapper {
@@ -320,73 +436,39 @@ img[src*="placeholder.svg"] {
   overflow: hidden;
 }
 
-/* Compact popup styling */
-.leaflet-popup-content-wrapper {
-  padding: 0 !important;
-  overflow: hidden;
+/* Mobile-optimized Leaflet controls */
+@media (max-width: 768px) {
+  .leaflet-control-container .leaflet-top.leaflet-left {
+    top: 10px;
+    left: 10px;
+  }
+
+  .leaflet-control-container .leaflet-bottom {
+    bottom: 120px;
+  }
+
+  .leaflet-control-zoom a {
+    width: 44px !important;
+    height: 44px !important;
+    line-height: 44px !important;
+    font-size: 20px !important;
+  }
+
+  /* Make map markers more touch-friendly */
+  .custom-div-icon {
+    transform: scale(1.2);
+  }
+
+  /* Larger popup close button for mobile */
+  .leaflet-popup-close-button {
+    font-size: 24px !important;
+    padding: 8px 12px !important;
+    right: 8px !important;
+    top: 8px !important;
+  }
 }
 
-.leaflet-popup-content {
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* Remove extra padding from popup */
-.custom-popup .leaflet-popup-content-wrapper {
-  background: transparent;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.custom-popup .leaflet-popup-content > div {
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.leaflet-popup-content {
-  margin: 0;
-  padding: 0;
-  width: auto !important;
-}
-
-.leaflet-popup-close-button {
-  font-size: 18px;
-  color: #666;
-  padding: 4px 8px;
-  right: 4px;
-  top: 4px;
-}
-
-.leaflet-popup-close-button:hover {
-  color: #333;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-}
-
-/* Custom marker styling */
-.custom-div-icon {
-  background: transparent !important;
-  border: none !important;
-}
-
-/* Make markers clickable */
-.custom-div-icon div {
-  cursor: pointer !important;
-  pointer-events: auto !important;
-}
-
-/* Fix Leaflet controls positioning */
-.leaflet-control-container .leaflet-top.leaflet-left {
-  top: 15px;
-  left: 15px;
-}
-
-.leaflet-control-container .leaflet-bottom {
-  bottom: 140px; /* Adjust for our itinerary card */
-}
-
-/* Enhanced zoom controls */
+/* Enhanced zoom controls for mobile */
 .leaflet-control-zoom {
   border: none !important;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
@@ -408,229 +490,66 @@ img[src*="placeholder.svg"] {
   color: #164569 !important;
 }
 
-.leaflet-control-zoom-in {
-  border-top-left-radius: 6px !important;
-  border-top-right-radius: 6px !important;
+/* Mobile-specific touch improvements */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  .hover\:shadow-xl:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  .hover\:-translate-y-1:hover {
+    transform: translateY(0);
+  }
+
+  /* Improve button press feedback */
+  button:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
 }
 
-.leaflet-control-zoom-out {
-  border-bottom-left-radius: 6px !important;
-  border-bottom-right-radius: 6px !important;
-}
-
-/* Ensure map is mobile responsive */
+/* Prevent text selection on touch devices for better UX */
 @media (max-width: 768px) {
-  .leaflet-control-container .leaflet-top.leaflet-left {
-    top: 10px;
-    left: 10px;
+  .select-none {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
   }
 
-  .leaflet-control-container .leaflet-bottom {
-    bottom: 120px;
+  /* Prevent callout on touch and hold */
+  .no-callout {
+    -webkit-touch-callout: none;
+  }
+
+  /* Prevent tap highlight */
+  .no-tap-highlight {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Fix for marker icons in production */
-.leaflet-default-icon-path {
-  background-image: url(https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png);
+/* Safe area insets for devices with notches */
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-area-left {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+
+  .safe-area-right {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
 }
 
-/* Enhanced Leaflet popup styling */
-.leaflet-popup {
-  z-index: 600 !important;
-}
-
-.leaflet-popup-content-wrapper {
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-}
-
+/* Ensure Leaflet popups are scrollable if content overflows */
 .leaflet-popup-content {
-  margin: 0;
-  padding: 0;
-  width: auto !important;
-}
-
-.leaflet-popup-close-button {
-  font-size: 20px;
-  color: #666;
-  padding: 8px 12px;
-  right: 4px;
-  top: 4px;
-  z-index: 650 !important;
-}
-
-.leaflet-popup-close-button:hover {
-  color: #333;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-}
-
-.custom-popup .leaflet-popup-content-wrapper {
-  padding: 0;
-}
-
-.custom-popup .leaflet-popup-tip {
-  background: white;
-  box-shadow: 0 3px 10px -5px rgba(0, 0, 0, 0.1);
-}
-
-/* Ensure popups appear above other elements */
-.leaflet-popup {
-  z-index: 700 !important;
-  pointer-events: auto !important;
-}
-
-.leaflet-popup-content-wrapper {
-  pointer-events: auto !important;
-}
-
-.leaflet-popup-content {
-  pointer-events: auto !important;
-}
-
-.leaflet-popup-close-button {
-  z-index: 800 !important;
-  pointer-events: auto !important;
-}
-
-.leaflet-popup-pane {
-  z-index: 700 !important;
-  pointer-events: auto !important;
-}
-
-/* Make sure marker clicks are properly captured */
-.custom-div-icon {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-/* Ensure the map container doesn't interfere with popup clicks */
-.leaflet-map-container {
-  z-index: 1 !important;
-}
-
-/* Prevent text selection in popups which can interfere with click handling */
-.leaflet-popup-content {
-  user-select: none;
-}
-
-/* Make popup images non-draggable to prevent interference with popup behavior */
-.custom-popup-content img {
-  pointer-events: none;
-  user-drag: none;
-  -webkit-user-drag: none;
-}
-
-/* Ensure popup tip is visible */
-.leaflet-popup-tip-container {
-  z-index: 699 !important;
-}
-
-.leaflet-popup-tip {
-  z-index: 699 !important;
-}
-
-/* Smooth marker animations */
-.custom-div-icon > div {
-  transition: all 0.3s ease;
-}
-
-/* Pulse animation for selected marker */
-@keyframes pulse {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.1);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s infinite;
-}
-
-/* Ensure UI elements stay above map */
-.leaflet-pane {
-  z-index: 400 !important;
-}
-
-.leaflet-top,
-.leaflet-bottom {
-  z-index: 500 !important;
-}
-
-/* Make sure our UI controls are above Leaflet */
-.map-controls {
-  z-index: 1000 !important;
-}
-
-.itinerary-button {
-  z-index: 1000 !important;
-}
-
-.day-indicator {
-  z-index: 1000 !important;
-}
-
-.itinerary-card {
-  z-index: 1000 !important;
-}
-
-/* Fix for zoom button interaction */
-.leaflet-container button {
-  cursor: pointer !important;
-}
-
-/* Ensure button icons don't interfere with clicks */
-button svg {
-  pointer-events: none !important;
-}
-
-/* Ensure buttons have proper hit area */
-button[type="button"] {
-  position: relative;
-  overflow: visible;
-}
-
-/* Remove the debug outline we added earlier */
-button[type="button"]:hover {
-  outline: none;
-}
-
-/* Ensure popup stays visible */
-.leaflet-popup-pane {
-  z-index: 600 !important;
-}
-
-/* Make markers more clickable */
-.marker-day-1,
-.marker-day-2,
-.marker-day-3,
-.marker-day-4,
-.marker-day-5,
-.marker-day-6,
-.marker-day-7 {
-  cursor: pointer !important;
-  pointer-events: auto !important;
-}
-
-/* Ensure the marker is clickable */
-.leaflet-marker-icon {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-/* Make the marker's inner content clickable too */
-.leaflet-marker-icon * {
-  pointer-events: auto !important;
-  cursor: pointer !important;
+  max-height: 200px; /* Adjust as needed */
+  overflow-y: auto;
+  padding-right: 5px; /* Space for scrollbar */
 }

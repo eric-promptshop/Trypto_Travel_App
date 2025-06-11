@@ -1,0 +1,64 @@
+# Dependabot configuration file
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 10
+    # Update strategy
+    versioning-strategy: increase
+    # Security updates
+    allow:
+      - dependency-type: "all"
+    # Assign reviewers
+    reviewers:
+      - "ericgonzalez"
+    # Add labels
+    labels:
+      - "dependencies"
+      - "automated"
+    # Commit message prefix
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    # Group updates
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+      development-dependencies:
+        dependency-type: "development"
+        
+  # Enable security updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    # Add labels
+    labels:
+      - "github-actions"
+      - "automated"
+    # Commit message
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+      
+  # Enable updates for Docker if we have Dockerfiles
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    labels:
+      - "docker"
+      - "automated"
+    commit-message:
+      prefix: "build"
+      include: "scope"

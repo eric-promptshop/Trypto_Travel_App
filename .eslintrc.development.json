@@ -1,0 +1,32 @@
+{
+  "extends": ["./.eslintrc.base.json"],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-unused-vars": ["warn", { 
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_",
+      "ignoreRestSiblings": true
+    }],
+    "@typescript-eslint/ban-ts-comment": "warn",
+    "react/no-unescaped-entities": "off",
+    "@next/next/no-img-element": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "prefer-const": "warn",
+    "no-var": "warn",
+    "no-console": "off",
+    "no-debugger": "off",
+    "@typescript-eslint/no-empty-function": "warn",
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    "react/display-name": "warn",
+    "jsx-a11y/alt-text": "warn",
+    "jsx-a11y/anchor-is-valid": "warn",
+    "@typescript-eslint/no-inferrable-types": "off",
+    "no-unreachable": "warn",
+    "no-unused-expressions": "warn",
+    "react/jsx-key": "warn",
+    "react/jsx-no-duplicate-props": "warn",
+    "react/jsx-no-undef": "warn",
+    "prefer-rest-params": "warn",
+    "prefer-spread": "warn"
+  }
+} 

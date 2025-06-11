@@ -31,6 +31,8 @@ export function LeafletMapLoader({
 }: LeafletMapLoaderProps) {
   const [isScriptsLoaded, setIsScriptsLoaded] = useState(false)
   const [isMapReady, setIsMapReady] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(false)
+  const [loadingError, setLoadingError] = useState<string | null>(null)
   const mapInstanceRef = useRef<any>(null)
   const markersRef = useRef<any[]>([])
   const popupsRef = useRef<any[]>([])
@@ -40,7 +42,7 @@ export function LeafletMapLoader({
   const [currentZoom, setCurrentZoom] = useState(4)
   const [activePopupDay, setActivePopupDay] = useState<number | null>(null)
   const isMountedRef = useRef(true)
-  // Update the locationImages state to handle promises
+  const initTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [locationImages, setLocationImages] = useState<Record<string, string>>({})
   const [isLoadingImages, setIsLoadingImages] = useState(true)
 
@@ -49,19 +51,22 @@ export function LeafletMapLoader({
     isMountedRef.current = true
     return () => {
       isMountedRef.current = false
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current)
+        initTimeoutRef.current = null
+      }
     }
   }, [])
 
   // Preload location images
   useEffect(() => {
     async function loadImages() {
+      if (!locations.length) return
+
       setIsLoadingImages(true)
 
       try {
-        // Create a map of location names to image URLs
         const imageMap: Record<string, string> = {}
-
-        // Load images in parallel
         const imagePromises = locations.map(async (location) => {
           try {
             const imageUrl = await getRealisticImageUrl(location.location)
@@ -76,10 +81,7 @@ export function LeafletMapLoader({
           }
         })
 
-        // Wait for all images to load
         const results = await Promise.all(imagePromises)
-
-        // Populate the image map
         results.forEach((result) => {
           imageMap[result.location] = result.url
         })
@@ -96,73 +98,126 @@ export function LeafletMapLoader({
       }
     }
 
-    // Start loading images
     loadImages()
   }, [locations])
 
-  // Load Leaflet scripts and CSS
+  // Load Leaflet scripts and CSS with better error handling
   useEffect(() => {
-    // Skip if already loaded
-    if (isScriptsLoaded || typeof window === "undefined") return
-    if ((window as any).L) {
+    if (typeof window === "undefined") return
+
+    // Check if Leaflet is already available
+    if ((window as any).L && typeof (window as any).L.map === "function") {
+      console.log("Leaflet already available")
       setIsScriptsLoaded(true)
       return
     }
 
-    // Function to load scripts
-    const loadScript = (src: string): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement("script")
-        script.src = src
-        script.onload = () => resolve()
-        script.onerror = () => reject(new Error(`Failed to load script: ${src}`))
-        document.head.appendChild(script)
-      })
-    }
+    if (isScriptsLoaded) return
 
-    // Function to load CSS
+    console.log("Loading Leaflet scripts...")
+
     const loadCSS = (href: string): Promise<void> => {
       return new Promise((resolve, reject) => {
+        // Check if CSS already exists
+        const existingLink = document.querySelector(`link[href="${href}"]`)
+        if (existingLink) {
+          console.log("Leaflet CSS already loaded")
+          resolve()
+          return
+        }
+
         const link = document.createElement("link")
         link.rel = "stylesheet"
         link.href = href
-        link.onload = () => resolve()
-        link.onerror = () => reject(new Error(`Failed to load CSS: ${href}`))
+        link.onload = () => {
+          console.log("Leaflet CSS loaded successfully")
+          resolve()
+        }
+        link.onerror = () => {
+          const error = `Failed to load CSS: ${href}`
+          console.error(error)
+          reject(new Error(error))
+        }
         document.head.appendChild(link)
       })
     }
 
-    // Load Leaflet resources
-    Promise.all([
-      loadCSS("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"),
-      loadScript("https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"),
-    ])
-      .then(() => {
-        if (isMountedRef.current) {
-          setIsScriptsLoaded(true)
+    const loadScript = (src: string): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        // Check if script already exists
+        const existingScript = document.querySelector(`script[src="${src}"]`)
+        if (existingScript) {
+          console.log("Leaflet script already loaded")
+          // Wait a bit and check if L is available
+          setTimeout(() => {
+            if ((window as any).L && typeof (window as any).L.map === "function") {
+              resolve()
+            } else {
+              reject(new Error("Leaflet script loaded but L object not available"))
+            }
+          }, 100)
+          return
         }
-      })
-      .catch((error) => {
-        console.error("Failed to load Leaflet:", error)
-      })
 
-    // Cleanup function
-    return () => {
-      // No cleanup needed for script/CSS loading
+        const script = document.createElement("script")
+        script.src = src
+        script.async = false // Ensure synchronous loading
+        script.onload = () => {
+          console.log("Leaflet script loaded successfully")
+          // Wait a moment for the script to initialize
+          setTimeout(() => {
+            if ((window as any).L && typeof (window as any).L.map === "function") {
+              console.log("Leaflet L object is available")
+              resolve()
+            } else {
+              const error = "Leaflet script loaded but L object not available"
+              console.error(error)
+              reject(new Error(error))
+            }
+          }, 100)
+        }
+        script.onerror = () => {
+          const error = `Failed to load script: ${src}`
+          console.error(error)
+          reject(new Error(error))
+        }
+        document.head.appendChild(script)
+      })
     }
+
+    // Load resources sequentially
+    const loadLeaflet = async () => {
+      try {
+        setLoadingError(null)
+
+        // Load CSS first
+        await loadCSS("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css")
+
+        // Then load JavaScript
+        await loadScript("https://unpkg.com/leaflet@1.9.4/dist/leaflet.js")
+
+        // Final verification
+        if ((window as any).L && typeof (window as any).L.map === "function") {
+          console.log("Leaflet fully loaded and ready")
+          if (isMountedRef.current) {
+            setIsScriptsLoaded(true)
+          }
+        } else {
+          throw new Error("Leaflet failed final verification")
+        }
+      } catch (error) {
+        console.error("Failed to load Leaflet:", error)
+        if (isMountedRef.current) {
+          setLoadingError(error instanceof Error ? error.message : "Failed to load map resources")
+        }
+      }
+    }
+
+    loadLeaflet()
   }, [isScriptsLoaded])
 
-  // Initialize map after scripts are loaded and container is available
-  useEffect(() => {
-    if (!isScriptsLoaded || typeof window === "undefined") return
-
-    const L = (window as any).L
-    if (!L) {
-      console.error("Leaflet not found on window object")
-      return
-    }
-
-    // Clean up existing map instance if it exists
+  // Clean up existing map instance
+  const cleanupMap = useCallback(() => {
     if (mapInstanceRef.current) {
       try {
         mapInstanceRef.current.remove()
@@ -170,42 +225,82 @@ export function LeafletMapLoader({
         console.error("Error removing existing map:", e)
       }
       mapInstanceRef.current = null
+      markersRef.current = []
+      popupsRef.current = []
       setIsMapReady(false)
     }
+  }, [])
 
-    // Use ref to get the container
-    const mapContainer = mapContainerRef.current
-    if (!mapContainer) {
-      console.error("Map container ref not available")
+  // Initialize map after scripts are loaded and container is available
+  useEffect(() => {
+    if (!isScriptsLoaded || typeof window === "undefined" || isInitializing || loadingError) return
+
+    // Verify Leaflet is actually available
+    const L = (window as any).L
+    if (!L || typeof L.map !== "function") {
+      console.error("Leaflet not properly loaded")
+      setLoadingError("Map library not properly loaded")
       return
     }
 
-    // Initialize map with a slight delay to ensure DOM is ready
-    const initializeMap = () => {
-      try {
-        // Double-check the container still exists
-        if (!mapContainerRef.current) {
-          console.error("Map container lost during initialization")
-          return
-        }
+    console.log("Initializing map...")
 
-        // Initialize map
-        const map = L.map(mapContainerRef.current, {
-          zoomControl: false, // Disable built-in zoom controls
+    // Clear any existing timeout
+    if (initTimeoutRef.current) {
+      clearTimeout(initTimeoutRef.current)
+      initTimeoutRef.current = null
+    }
+
+    // Clean up existing map
+    cleanupMap()
+
+    const initializeMap = () => {
+      if (!isMountedRef.current || isInitializing) return
+
+      setIsInitializing(true)
+
+      // Double-check the container still exists and is in the DOM
+      const mapContainer = mapContainerRef.current
+      if (!mapContainer || !document.contains(mapContainer)) {
+        console.error("Map container not available or not in DOM")
+        setIsInitializing(false)
+        return
+      }
+
+      // Verify Leaflet is still available
+      const L = (window as any).L
+      if (!L || typeof L.map !== "function") {
+        console.error("Leaflet not available during initialization")
+        setLoadingError("Map library not available")
+        setIsInitializing(false)
+        return
+      }
+
+      try {
+        console.log("Creating Leaflet map instance...")
+
+        // Initialize map with error handling
+        const map = L.map(mapContainer, {
+          zoomControl: false,
           attributionControl: true,
+          preferCanvas: true,
         }).setView([-15, -60], 4)
 
         mapInstanceRef.current = map
+        console.log("Map instance created successfully")
 
         // Add tile layer
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 18,
         }).addTo(map)
 
         // Wait for the map to be fully loaded
         map.whenReady(() => {
-          if (isMountedRef.current) {
+          console.log("Map is ready")
+          if (isMountedRef.current && mapInstanceRef.current === map) {
             setIsMapReady(true)
+            setIsInitializing(false)
             // Add markers after map is ready
             addMarkers(L, map)
             // Focus on selected location
@@ -215,47 +310,51 @@ export function LeafletMapLoader({
 
         // Track zoom level changes
         map.on("zoomend", () => {
-          if (isMountedRef.current) {
+          if (isMountedRef.current && mapInstanceRef.current === map) {
             setCurrentZoom(map.getZoom())
           }
         })
 
         // Add map click handler to close popups when clicking elsewhere
-        map.on("click", (e) => {
-          // Don't close popups if clicking on a marker
+        map.on("click", (e: any) => {
           if ((e.originalEvent.target as HTMLElement).closest(".custom-div-icon")) {
             return
           }
-
-          // Close all popups
           closeAllPopups(map)
           if (isMountedRef.current) {
             setActivePopupDay(null)
           }
         })
+
+        // Handle map errors
+        map.on("error", (e: any) => {
+          console.error("Map error:", e)
+        })
       } catch (error) {
         console.error("Error initializing Leaflet map:", error)
+        setLoadingError("Failed to initialize map")
+        setIsInitializing(false)
       }
     }
 
-    // Use requestAnimationFrame to ensure DOM is ready
-    requestAnimationFrame(initializeMap)
+    // Use a timeout to ensure DOM is stable
+    initTimeoutRef.current = setTimeout(initializeMap, 200)
 
-    // Cleanup function
     return () => {
-      if (mapInstanceRef.current) {
-        try {
-          mapInstanceRef.current.remove()
-        } catch (e) {
-          console.error("Error cleaning up map:", e)
-        }
-        mapInstanceRef.current = null
-        markersRef.current = []
-        popupsRef.current = []
-        setIsMapReady(false)
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current)
+        initTimeoutRef.current = null
       }
+      setIsInitializing(false)
     }
-  }, [isScriptsLoaded]) // Only re-run when scripts are loaded
+  }, [isScriptsLoaded, cleanupMap, loadingError])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupMap()
+    }
+  }, [cleanupMap])
 
   // Helper function to close all popups
   const closeAllPopups = (map: any) => {
@@ -295,7 +394,7 @@ export function LeafletMapLoader({
   // Function to add markers to the map
   const addMarkers = useCallback(
     (L: any, map: any) => {
-      if (!map || !L || !isMapReady) return
+      if (!map || !L || !isMapReady || !locations.length) return
 
       // Clear existing markers and popups
       try {
@@ -340,17 +439,14 @@ export function LeafletMapLoader({
       // Add markers
       locations.forEach((location) => {
         try {
-          // Create popup content - we'll use a simpler approach without complex HTML
           const popupContent = document.createElement("div")
           popupContent.className = "min-w-[200px] max-w-[250px]"
 
-          // Get the image URL for this location
           const imageUrl =
             locationImages[location.location] ||
             location.image ||
             `/placeholder.svg?height=128&width=250&text=${encodeURIComponent(location.location)}`
 
-          // Add image
           const imageContainer = document.createElement("div")
           imageContainer.className = "relative h-32 w-full"
 
@@ -358,19 +454,15 @@ export function LeafletMapLoader({
           img.src = imageUrl
           img.alt = location.location
           img.className = "w-full h-full object-cover rounded-t-lg"
-
-          // Add loading state
           img.style.opacity = "0"
           img.onload = () => {
             img.style.opacity = "1"
           }
-
           img.onerror = function () {
             this.src =
               location.image || `/placeholder.svg?height=128&width=250&text=${encodeURIComponent(location.location)}`
           }
 
-          // Add day number overlay on the image
           const dayOverlay = document.createElement("div")
           dayOverlay.className =
             "absolute top-2 left-2 bg-[#ff7b00] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg"
@@ -380,14 +472,12 @@ export function LeafletMapLoader({
           imageContainer.appendChild(dayOverlay)
           popupContent.appendChild(imageContainer)
 
-          // Add explore link with proper event handling
           const exploreLink = document.createElement("p")
           exploreLink.className =
             "text-xs text-[#ff7b00] font-medium cursor-pointer hover:underline explore-day text-center py-2 px-3 bg-white rounded-b-lg"
           exploreLink.textContent = "Click to explore this day"
           exploreLink.setAttribute("data-day", location.day.toString())
 
-          // Add click handler directly to the element
           exploreLink.addEventListener("click", (e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -395,15 +485,12 @@ export function LeafletMapLoader({
             if (onMarkerClick && isMountedRef.current) {
               console.log("Explore link clicked for day:", location.day)
               onMarkerClick(location.day)
-
-              // Close the popup after clicking
               closeAllPopups(map)
             }
           })
 
           popupContent.appendChild(exploreLink)
 
-          // Create popup with specific options
           const popup = L.popup({
             maxWidth: 250,
             className: "custom-popup",
@@ -413,82 +500,65 @@ export function LeafletMapLoader({
             closeOnEscapeKey: true,
           }).setContent(popupContent)
 
-          // Create marker with custom icon
           const marker = L.marker([location.latitude, location.longitude], {
             icon: createCustomIcon(location.day, location.day === selectedDay),
-            interactive: true, // Ensure marker is interactive
-            bubblingMouseEvents: false, // Prevent event bubbling
+            interactive: true,
+            bubblingMouseEvents: false,
           })
 
-          // Bind popup to marker
           marker.bindPopup(popup)
-
-          // Add marker to map
           marker.addTo(map)
 
-          // Add click handler with explicit popup management
-          marker.on("click", function (e) {
+          marker.on("click", function (this: any, e: any) {
             console.log("Marker clicked for day:", location.day)
-
-            // Stop propagation to prevent map click handler
             L.DomEvent.stopPropagation(e)
 
-            // Set the active popup day
             if (isMountedRef.current) {
               setActivePopupDay(location.day)
             }
 
-            // Close any open popups first
             closeAllPopups(map)
-
-            // Open this popup
             this.openPopup()
 
-            // IMPORTANT: Also navigate to the day when clicking the marker
             if (onMarkerClick && isMountedRef.current) {
               onMarkerClick(location.day)
             }
           })
 
-          // Store popup reference
           popupsRef.current.push(popup)
-
-          // Store marker reference
           markersRef.current.push(marker)
         } catch (err) {
           console.error("Error creating marker:", err)
         }
       })
     },
-    [selectedDay, onMarkerClick, isMapReady, locationImages],
+    [selectedDay, onMarkerClick, isMapReady, locationImages, locations],
   )
 
   // Enhanced function to focus on selected day with better animation
   const focusOnSelectedDay = useCallback(
     (map: any, withAnimation = true) => {
-      if (!selectedDay || !map || !isMapReady) return
+      if (!selectedDay || !map || !isMapReady || !locations.length) return
 
       try {
         const selected = locations.find((loc) => loc.day === selectedDay)
         if (selected) {
-          // Calculate the center point adjustment based on itinerary state
           let offsetX = 0
+          let offsetY = 0
 
-          // If itinerary is open, offset the center point to account for the sidebar
+          // Adjust for itinerary panels when open
           if (isItineraryOpen) {
-            // Get the map container width
             const mapContainer = mapContainerRef.current
             if (mapContainer) {
-              // Offset by 25% of the map width (half of the 50% sidebar width)
-              offsetX = -mapContainer.clientWidth * 0.25
+              // Account for left and right panels (total 640px width)
+              offsetX = -mapContainer.clientWidth * 0.1 // Slight left offset
+              offsetY = mapContainer.clientHeight * 0.05 // Slight top offset for header
             }
           }
 
-          // Create a new point with the offset
-          const targetPoint = map.project([selected.latitude, selected.longitude], 6).add([offsetX, 0])
+          const targetPoint = map.project([selected.latitude, selected.longitude], 6).add([offsetX, offsetY])
           const targetLatLng = map.unproject(targetPoint, 6)
 
-          // Set the view with or without animation
           if (withAnimation) {
             map.flyTo(targetLatLng, 6, {
               animate: true,
@@ -516,18 +586,12 @@ export function LeafletMapLoader({
     if (!L) return
 
     try {
-      // Check if selected day has changed
       const dayChanged = lastSelectedDayRef.current !== selectedDay
-      // Check if itinerary state has changed
       const itineraryStateChanged = lastItineraryStateRef.current !== isItineraryOpen
 
-      // Update markers with new selection state
       addMarkers(L, mapInstanceRef.current)
-
-      // Focus on selected day - use animation only when day changes, not on layout changes
       focusOnSelectedDay(mapInstanceRef.current, dayChanged)
 
-      // Update refs for next comparison
       lastSelectedDayRef.current = selectedDay
       lastItineraryStateRef.current = isItineraryOpen
     } catch (error) {
@@ -541,20 +605,42 @@ export function LeafletMapLoader({
 
     const handleResize = () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.invalidateSize()
-        // Re-center map on resize without animation
-        focusOnSelectedDay(mapInstanceRef.current, false)
+        try {
+          mapInstanceRef.current.invalidateSize()
+          focusOnSelectedDay(mapInstanceRef.current, false)
+        } catch (error) {
+          console.error("Error handling resize:", error)
+        }
       }
     }
 
     window.addEventListener("resize", handleResize)
-
-    return () => {
-      window.removeEventListener("resize", handleResize)
-    }
+    return () => window.removeEventListener("resize", handleResize)
   }, [isScriptsLoaded, isMapReady, focusOnSelectedDay])
 
-  if (!isScriptsLoaded) {
+  // Show error state if loading failed
+  if (loadingError) {
+    return (
+      <div className={`flex items-center justify-center bg-gray-100 h-full ${className}`}>
+        <div className="text-center p-6">
+          <div className="text-red-500 mb-2">⚠️</div>
+          <p className="text-gray-600 mb-2">Failed to load map</p>
+          <p className="text-xs text-gray-500">{loadingError}</p>
+          <button
+            onClick={() => {
+              setLoadingError(null)
+              setIsScriptsLoaded(false)
+            }}
+            className="mt-3 px-4 py-2 bg-[#1f5582] text-white rounded text-sm hover:bg-[#1f5582]/90"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isScriptsLoaded || isInitializing) {
     return (
       <div className={`flex items-center justify-center bg-gray-100 h-full ${className}`}>
         <div className="text-center">
@@ -567,7 +653,7 @@ export function LeafletMapLoader({
 
   return (
     <div className={`relative w-full h-full ${className}`}>
-      <div ref={mapContainerRef} className="w-full h-full"></div>
+      <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Custom Zoom Controls */}
       {isMapReady && (

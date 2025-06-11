@@ -1,0 +1,572 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Core tenant model for multi-tenancy
+model Tenant {
+  id            String   @id @default(uuid())
+  name          String
+  slug          String   @unique
+  description   String?
+  domain        String?  @unique
+  isActive      Boolean  @default(true)
+  settings      Json?    // Tenant-specific configuration
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  users         User[]
+  tenantSettings TenantSettings[]
+  integrations  Integration[]
+  tripTemplates TripTemplate[]
+  tenantContent TenantContent[]
+  
+  @@index([slug])
+  @@index([domain])
+  @@map("tenants")
+}
+
+// Global settings that apply to all tenants
+model GlobalSettings {
+  id            String   @id @default(uuid())
+  settingKey    String   @unique
+  settingValue  String
+  description   String?
+  isEncrypted   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("global_settings")
+}
+
+// Tenant-specific settings with inheritance from global
+model TenantSettings {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  settingKey      String
+  settingValue    String
+  overridesGlobal Boolean  @default(false)
+  isEncrypted     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([tenantId, settingKey])
+  @@index([tenantId])
+  @@map("tenant_settings")
+}
+
+// Users with tenant isolation
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?
+  role         Role     @default(USER)
+  isActive     Boolean  @default(true)
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastLoginAt  DateTime?
+  
+  // Relations
+  trips        Trip[]
+  accounts     Account[]
+  sessions     Session[]
+  tenantContent TenantContent[]
+  
+  @@index([email])
+  @@index([tenantId])
+  @@index([tenantId, role])
+  @@map("users")
+}
+
+// NextAuth.js Account model
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// NextAuth.js Session model
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+// NextAuth.js VerificationToken model
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Trip management with tenant isolation
+model Trip {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  location    String
+  budget      Decimal?   @db.Decimal(10, 2)
+  currency    String     @default("USD")
+  status      TripStatus @default(PLANNED)
+  isPublic    Boolean    @default(false)
+  metadata    Json?      // Flexible data storage
+  
+  // Tenant isolation
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  activities  Activity[]
+  participants TripParticipant[]
+  documents   TripDocument[]
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+  @@index([startDate])
+  @@index([userId, status])
+  @@map("trips")
+}
+
+// Trip participants for group travel
+model TripParticipant {
+  id        String   @id @default(uuid())
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  email     String
+  name      String?
+  role      ParticipantRole @default(PARTICIPANT)
+  isConfirmed Boolean @default(false)
+  invitedAt DateTime @default(now())
+  confirmedAt DateTime?
+  
+  @@unique([tripId, email])
+  @@index([tripId])
+  @@map("trip_participants")
+}
+
+// Activities within trips
+model Activity {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  date        DateTime
+  startTime   String?  // Format: "HH:MM"
+  endTime     String?  // Format: "HH:MM"
+  location    String?
+  cost        Decimal? @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  category    ActivityCategory @default(GENERAL)
+  isBooked    Boolean  @default(false)
+  bookingRef  String?
+  notes       String?
+  
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([tripId])
+  @@index([date])
+  @@index([tripId, date])
+  @@map("activities")
+}
+
+// Document storage for trips
+model TripDocument {
+  id          String   @id @default(uuid())
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  fileName    String
+  originalName String
+  mimeType    String
+  size        Int
+  url         String
+  category    DocumentCategory @default(GENERAL)
+  uploadedAt  DateTime @default(now())
+  
+  @@index([tripId])
+  @@index([category])
+  @@map("trip_documents")
+}
+
+// Trip templates for quick trip creation
+model TripTemplate {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  category    String
+  duration    Int      // Duration in days
+  estimatedCost Decimal? @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  isActive    Boolean  @default(true)
+  
+  // Tenant isolation
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Template content
+  activities  Json?    // Serialized activity templates
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([tenantId])
+  @@index([category])
+  @@index([tenantId, isActive])
+  @@map("trip_templates")
+}
+
+// Third-party integrations per tenant
+model Integration {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider     IntegrationProvider
+  name         String
+  isActive     Boolean  @default(true)
+  configuration Json    // Provider-specific config
+  credentials   Json?   // Encrypted credentials
+  lastSyncAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([tenantId, provider, name])
+  @@index([tenantId])
+  @@index([provider])
+  @@map("integrations")
+}
+
+// Audit log for tracking changes
+model AuditLog {
+  id          String   @id @default(uuid())
+  tenantId    String   // For tenant isolation
+  userId      String?  // Optional user ID
+  action      String   // CREATE, UPDATE, DELETE, etc.
+  resource    String   // Table/entity name
+  resourceId  String   // ID of the affected resource
+  oldValues   Json?    // Previous values
+  newValues   Json?    // New values
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  
+  @@index([tenantId])
+  @@index([userId])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  USER
+  TRAVELER
+  AGENT
+}
+
+enum TripStatus {
+  PLANNED
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipantRole {
+  ORGANIZER
+  PARTICIPANT
+  VIEWER
+}
+
+enum ActivityCategory {
+  FLIGHT
+  ACCOMMODATION
+  RESTAURANT
+  ATTRACTION
+  TRANSPORT
+  MEETING
+  GENERAL
+}
+
+enum DocumentCategory {
+  PASSPORT
+  VISA
+  TICKET
+  BOOKING
+  ITINERARY
+  INSURANCE
+  GENERAL
+}
+
+enum IntegrationProvider {
+  HUBSPOT
+  SALESFORCE
+  ZOHO
+  MAILCHIMP
+  STRIPE
+  GOOGLE_CALENDAR
+}
+
+// ===== TENANT CONTENT MANAGEMENT =====
+
+// Tenant-specific content repositories
+model TenantContent {
+  id            String   @id @default(uuid())
+  title         String
+  content       Json     // Rich content structure (text, images, etc.)
+  contentType   String   // 'page', 'component', 'media', 'template', 'config'
+  category      String?  // Content category
+  status        String   @default("draft") // 'draft', 'published', 'archived'
+  
+  // Tenant isolation
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  // Authorship
+  authorId      String?
+  author        User?    @relation(fields: [authorId], references: [id])
+  
+  // Metadata
+  metadata      Json?    // Additional data like SEO, translations, etc.
+  version       Int      @default(1)
+  publishedAt   DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([tenantId])
+  @@index([tenantId, contentType])
+  @@index([tenantId, status])
+  @@index([authorId])
+  @@map("tenant_content")
+}
+
+// ===== CONTENT PROCESSING MODELS =====
+
+// Processed content storage with ML features
+model ProcessedContent {
+  id                String   @id @default(uuid())
+  contentType       ContentType
+  source            String   // Source URL or document name
+  sourceType        String   // 'web' | 'pdf' | 'docx'
+  extractionDate    DateTime
+  
+  // Normalized content data
+  title             String
+  description       String?  @db.Text
+  content           Json     // Full normalized content as JSON
+  
+  // ML Features
+  embedding         Float[]  // Vector embedding for similarity search
+  confidence        Float    @default(0.0)
+  
+  // Tags and categories
+  primaryCategory   String
+  tags              ContentTag[]
+  entities          Json?    // Extracted entities (locations, attractions, etc.)
+  
+  // Deduplication
+  contentHash       String   // SHA-256 hash for exact duplicate detection
+  similarityGroup   String?  // Group ID for near-duplicates
+  
+  // Metadata
+  metadata          Json?    // Additional structured data
+  processedAt       DateTime @default(now())
+  lastUpdated       DateTime @updatedAt
+  
+  // Relations
+  relatedContent    ContentRelation[] @relation("FromContent")
+  relatedTo         ContentRelation[] @relation("ToContent")
+  feedback          ContentFeedback[]
+  
+  @@index([contentType])
+  @@index([primaryCategory])
+  @@index([contentHash])
+  @@index([processedAt])
+  @@map("processed_content")
+}
+
+// Content tags with hierarchical structure
+model ContentTag {
+  id              String   @id @default(uuid())
+  contentId       String
+  content         ProcessedContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  
+  category        String   // Main category from taxonomy
+  subcategories   String[] // Array of subcategory paths
+  keywords        String[] // Associated keywords
+  confidence      Float    @default(0.0)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([contentId])
+  @@index([category])
+  @@map("content_tags")
+}
+
+// Content relationships for recommendation system
+model ContentRelation {
+  id              String   @id @default(uuid())
+  fromContentId   String
+  fromContent     ProcessedContent @relation("FromContent", fields: [fromContentId], references: [id], onDelete: Cascade)
+  toContentId     String
+  toContent       ProcessedContent @relation("ToContent", fields: [toContentId], references: [id], onDelete: Cascade)
+  
+  relationType    String   // 'similar', 'related', 'prerequisite', etc.
+  similarity      Float?   // Similarity score (0-1)
+  confidence      Float    @default(0.0)
+  
+  createdAt       DateTime @default(now())
+  
+  @@unique([fromContentId, toContentId, relationType])
+  @@index([fromContentId])
+  @@index([toContentId])
+  @@index([relationType])
+  @@map("content_relations")
+}
+
+// Feedback for ML improvement
+model ContentFeedback {
+  id              String   @id @default(uuid())
+  contentId       String
+  content         ProcessedContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  
+  feedbackType    String   // 'tag_correction', 'quality_rating', 'relevance'
+  value           Json     // Feedback data
+  userId          String?  // Optional user who provided feedback
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([contentId])
+  @@index([feedbackType])
+  @@map("content_feedback")
+}
+
+// Content processing jobs for async processing
+model ContentProcessingJob {
+  id              String   @id @default(uuid())
+  jobType         String   // 'scrape', 'parse', 'normalize', 'tag', 'embed'
+  status          JobStatus @default(PENDING)
+  source          String   // URL or file path
+  
+  // Job configuration
+  config          Json?
+  priority        Int      @default(0)
+  attempts        Int      @default(0)
+  maxAttempts     Int      @default(3)
+  
+  // Results and errors
+  result          Json?
+  error           String?  @db.Text
+  
+  // Timing
+  scheduledAt     DateTime @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  
+  @@index([status])
+  @@index([jobType])
+  @@index([scheduledAt])
+  @@map("content_processing_jobs")
+}
+
+// ML Model tracking for versioning and performance
+model MLModel {
+  id              String   @id @default(uuid())
+  modelType       String   // 'embedding', 'tagger', 'similarity'
+  version         String
+  provider        String   // 'openai', 'custom', etc.
+  
+  // Model configuration
+  config          Json
+  performance     Json?    // Metrics like accuracy, precision, recall
+  
+  isActive        Boolean  @default(false)
+  deployedAt      DateTime?
+  createdAt       DateTime @default(now())
+  
+  @@unique([modelType, version])
+  @@index([modelType, isActive])
+  @@map("ml_models")
+}
+
+// Content Analytics for monitoring
+model ContentAnalytics {
+  id              String   @id @default(uuid())
+  date            DateTime @db.Date
+  contentType     String
+  
+  // Metrics
+  totalProcessed  Int      @default(0)
+  successCount    Int      @default(0)
+  errorCount      Int      @default(0)
+  avgConfidence   Float?
+  avgProcessTime  Float?   // in milliseconds
+  
+  // Tag statistics
+  tagDistribution Json?    // Distribution of tags
+  
+  createdAt       DateTime @default(now())
+  
+  @@unique([date, contentType])
+  @@index([date])
+  @@map("content_analytics")
+}
+
+// Additional Enums
+enum ContentType {
+  DESTINATION
+  ACTIVITY
+  ACCOMMODATION
+  TRANSPORTATION
+  ITINERARY
+  DINING
+  SHOPPING
+  PRACTICAL_INFO
+  GENERIC
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+} 

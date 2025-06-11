@@ -1,0 +1,440 @@
+{
+  "summary": {
+    "total_issues": 67,
+    "high_severity": 4,
+    "medium_severity": 30,
+    "low_severity": 33
+  },
+  "timestamp": "2025-06-08T05:40:46.949Z",
+  "vulnerabilities": [],
+  "dependencies": [],
+  "codeAnalysis": [
+    {
+      "type": "data_integrity",
+      "severity": "medium",
+      "message": "Email field should have @unique constraint"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/clients/[id]/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/clients/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "authentication",
+      "severity": "medium",
+      "file": "/app/api/admin/deploy/route.ts",
+      "message": "API route may lack authentication"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/deploy/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/admin/themes/[id]/apply/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/[id]/apply/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/admin/themes/[id]/deploy/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/[id]/deploy/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/[id]/duplicate/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/[id]/preview/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/[id]/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/admin/themes/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/analytics/identify/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/analytics/identify/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/analytics/track/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/analytics/track/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/auth/[...nextauth]/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/auth/[...nextauth]/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/docs/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "authentication",
+      "severity": "medium",
+      "file": "/app/api/generate-itinerary/route.ts",
+      "message": "API route may lack authentication"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/generate-itinerary/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/generate-itinerary/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "authentication",
+      "severity": "medium",
+      "file": "/app/api/health/route.ts",
+      "message": "API route may lack authentication"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/health/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/health/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/images/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/monitoring/metrics/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/monitoring/metrics/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "authentication",
+      "severity": "medium",
+      "file": "/app/api/placeholder/[width]/[height]/route.ts",
+      "message": "API route may lack authentication"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/placeholder/[width]/[height]/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/placeholder/[width]/[height]/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/v1/content/[id]/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v1/content/[id]/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/v1/content/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v1/content/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/v1/crm/sync/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v1/deploy/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "authentication",
+      "severity": "medium",
+      "file": "/app/api/v1/domains/route.ts",
+      "message": "API route may lack authentication"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/v1/domains/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v1/domains/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/v1/roles/assign/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v1/roles/assign/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/v1/roles/revoke/[id]/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v1/roles/revoke/[id]/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/v1/roles/users/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v1/roles/users/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v1/trips/[id]/itinerary/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v1/trips/[id]/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v1/trips/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "authentication",
+      "severity": "medium",
+      "file": "/app/api/v2/generate-itinerary/route.ts",
+      "message": "API route may lack authentication"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/v2/generate-itinerary/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/v2/generate-itinerary/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "authentication",
+      "severity": "medium",
+      "file": "/app/api/webhooks/crm/route.ts",
+      "message": "API route may lack authentication"
+    },
+    {
+      "type": "input_validation",
+      "severity": "medium",
+      "file": "/app/api/webhooks/crm/route.ts",
+      "message": "API route may lack input validation"
+    },
+    {
+      "type": "rate_limiting",
+      "severity": "low",
+      "file": "/app/api/webhooks/crm/route.ts",
+      "message": "API route may lack rate limiting"
+    },
+    {
+      "type": "exposed_secret",
+      "severity": "high",
+      "file": "/app/api/docs/route.ts",
+      "secretType": "Password",
+      "message": "Potential Password found in source code"
+    }
+  ],
+  "configurationIssues": [
+    {
+      "type": "configuration",
+      "severity": "high",
+      "variable": "NEXTAUTH_SECRET",
+      "message": "Required environment variable NEXTAUTH_SECRET is not set"
+    },
+    {
+      "type": "configuration",
+      "severity": "high",
+      "variable": "DATABASE_URL",
+      "message": "Required environment variable DATABASE_URL is not set"
+    },
+    {
+      "type": "configuration",
+      "severity": "high",
+      "variable": "NEXTAUTH_URL",
+      "message": "Required environment variable NEXTAUTH_URL is not set"
+    },
+    {
+      "type": "configuration",
+      "severity": "low",
+      "message": "Environment file .env.local detected - ensure it's not committed to version control"
+    },
+    {
+      "type": "configuration",
+      "severity": "low",
+      "message": "Environment file .env.development detected - ensure it's not committed to version control"
+    },
+    {
+      "type": "configuration",
+      "severity": "low",
+      "message": "Environment file .env.production detected - ensure it's not committed to version control"
+    },
+    {
+      "type": "file_permissions",
+      "severity": "medium",
+      "file": ".env",
+      "message": "File .env is world-readable"
+    },
+    {
+      "type": "file_permissions",
+      "severity": "medium",
+      "file": ".env.local",
+      "message": "File .env.local is world-readable"
+    },
+    {
+      "type": "file_permissions",
+      "severity": "medium",
+      "file": ".env.production",
+      "message": "File .env.production is world-readable"
+    },
+    {
+      "type": "file_permissions",
+      "severity": "medium",
+      "file": "prisma/schema.prisma",
+      "message": "File prisma/schema.prisma is world-readable"
+    }
+  ],
+  "recommendations": [
+    {
+      "category": "Authentication",
+      "priority": "high",
+      "action": "Implement authentication for all sensitive API endpoints",
+      "details": "Use NextAuth.js or similar authentication middleware"
+    },
+    {
+      "category": "Input Validation",
+      "priority": "medium",
+      "action": "Add input validation using Zod or similar validation library",
+      "details": "Validate all user inputs to prevent injection attacks"
+    },
+    {
+      "category": "Security Headers",
+      "priority": "medium",
+      "action": "Implement security headers in next.config.js",
+      "details": "Add CSP, HSTS, and other security headers"
+    },
+    {
+      "category": "Rate Limiting",
+      "priority": "low",
+      "action": "Implement rate limiting for API endpoints",
+      "details": "Prevent abuse and DoS attacks with proper rate limiting"
+    }
+  ]
+}

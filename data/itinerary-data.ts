@@ -1,4 +1,3 @@
-// Location data for the itinerary
 export const itineraryData = [
   {
     day: 1,

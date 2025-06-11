@@ -1,0 +1,196 @@
+// Content Processing System Models
+// To be added to the main schema.prisma file
+
+// ===== CONTENT PROCESSING MODELS =====
+
+// Processed content storage with ML features
+model ProcessedContent {
+  id                String   @id @default(uuid())
+  contentType       ContentType
+  source            String   // Source URL or document name
+  sourceType        String   // 'web' | 'pdf' | 'docx'
+  extractionDate    DateTime
+  
+  // Normalized content data
+  title             String
+  description       String?  @db.Text
+  content           Json     // Full normalized content as JSON
+  
+  // ML Features
+  embedding         Float[]  // Vector embedding for similarity search
+  confidence        Float    @default(0.0)
+  
+  // Tags and categories
+  primaryCategory   String
+  tags              ContentTag[]
+  entities          Json?    // Extracted entities (locations, attractions, etc.)
+  
+  // Deduplication
+  contentHash       String   // SHA-256 hash for exact duplicate detection
+  similarityGroup   String?  // Group ID for near-duplicates
+  
+  // Metadata
+  metadata          Json?    // Additional structured data
+  processedAt       DateTime @default(now())
+  lastUpdated       DateTime @updatedAt
+  
+  // Relations
+  relatedContent    ContentRelation[] @relation("FromContent")
+  relatedTo         ContentRelation[] @relation("ToContent")
+  feedback          ContentFeedback[]
+  
+  @@index([contentType])
+  @@index([primaryCategory])
+  @@index([contentHash])
+  @@index([processedAt])
+  @@index([embedding]) // For vector similarity search
+  @@map("processed_content")
+}
+
+// Content tags with hierarchical structure
+model ContentTag {
+  id              String   @id @default(uuid())
+  contentId       String
+  content         ProcessedContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  
+  category        String   // Main category from taxonomy
+  subcategories   String[] // Array of subcategory paths
+  keywords        String[] // Associated keywords
+  confidence      Float    @default(0.0)
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([contentId])
+  @@index([category])
+  @@map("content_tags")
+}
+
+// Content relationships for recommendation system
+model ContentRelation {
+  id              String   @id @default(uuid())
+  fromContentId   String
+  fromContent     ProcessedContent @relation("FromContent", fields: [fromContentId], references: [id], onDelete: Cascade)
+  toContentId     String
+  toContent       ProcessedContent @relation("ToContent", fields: [toContentId], references: [id], onDelete: Cascade)
+  
+  relationType    String   // 'similar', 'related', 'prerequisite', etc.
+  similarity      Float?   // Similarity score (0-1)
+  confidence      Float    @default(0.0)
+  
+  createdAt       DateTime @default(now())
+  
+  @@unique([fromContentId, toContentId, relationType])
+  @@index([fromContentId])
+  @@index([toContentId])
+  @@index([relationType])
+  @@map("content_relations")
+}
+
+// Feedback for ML improvement
+model ContentFeedback {
+  id              String   @id @default(uuid())
+  contentId       String
+  content         ProcessedContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  
+  feedbackType    String   // 'tag_correction', 'quality_rating', 'relevance'
+  value           Json     // Feedback data
+  userId          String?  // Optional user who provided feedback
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([contentId])
+  @@index([feedbackType])
+  @@map("content_feedback")
+}
+
+// Content processing jobs for async processing
+model ContentProcessingJob {
+  id              String   @id @default(uuid())
+  jobType         String   // 'scrape', 'parse', 'normalize', 'tag', 'embed'
+  status          JobStatus @default(PENDING)
+  source          String   // URL or file path
+  
+  // Job configuration
+  config          Json?
+  priority        Int      @default(0)
+  attempts        Int      @default(0)
+  maxAttempts     Int      @default(3)
+  
+  // Results and errors
+  result          Json?
+  error           String?  @db.Text
+  
+  // Timing
+  scheduledAt     DateTime @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
+  
+  @@index([status])
+  @@index([jobType])
+  @@index([scheduledAt])
+  @@map("content_processing_jobs")
+}
+
+// ML Model tracking for versioning and performance
+model MLModel {
+  id              String   @id @default(uuid())
+  modelType       String   // 'embedding', 'tagger', 'similarity'
+  version         String
+  provider        String   // 'openai', 'custom', etc.
+  
+  // Model configuration
+  config          Json
+  performance     Json?    // Metrics like accuracy, precision, recall
+  
+  isActive        Boolean  @default(false)
+  deployedAt      DateTime?
+  createdAt       DateTime @default(now())
+  
+  @@unique([modelType, version])
+  @@index([modelType, isActive])
+  @@map("ml_models")
+}
+
+// Content Analytics for monitoring
+model ContentAnalytics {
+  id              String   @id @default(uuid())
+  date            DateTime @db.Date
+  contentType     String
+  
+  // Metrics
+  totalProcessed  Int      @default(0)
+  successCount    Int      @default(0)
+  errorCount      Int      @default(0)
+  avgConfidence   Float?
+  avgProcessTime  Float?   // in milliseconds
+  
+  // Tag statistics
+  tagDistribution Json?    // Distribution of tags
+  
+  createdAt       DateTime @default(now())
+  
+  @@unique([date, contentType])
+  @@index([date])
+  @@map("content_analytics")
+}
+
+// Additional Enums
+enum ContentType {
+  DESTINATION
+  ACTIVITY
+  ACCOMMODATION
+  TRANSPORTATION
+  ITINERARY
+  DINING
+  SHOPPING
+  PRACTICAL_INFO
+  GENERIC
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+} 

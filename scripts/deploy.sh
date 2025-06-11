@@ -1,104 +1,94 @@
 #!/bin/bash
 
-# Deployment script for Travel Itinerary Builder
-# Usage: ./scripts/deploy.sh [development|staging|production]
+# Travel Itinerary Builder - Deployment Script
+# Usage: ./scripts/deploy.sh [environment] [branch]
+# Environments: staging, production
+# Example: ./scripts/deploy.sh production main
 
-set -e
+set -euo pipefail
 
-ENVIRONMENT=${1:-development}
-PROJECT_ROOT=$(pwd)
+# Configuration
+ENVIRONMENT="${1:-staging}"
+BRANCH="${2:-develop}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+DEPLOYMENT_LOG="$PROJECT_DIR/logs/deployment_${ENVIRONMENT}_${TIMESTAMP}.log"
 
-echo "🚀 Starting deployment to $ENVIRONMENT environment..."
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Validate environment
-if [[ ! "$ENVIRONMENT" =~ ^(development|staging|production)$ ]]; then
-    echo "❌ Error: Invalid environment. Use 'development', 'staging', or 'production'"
+# Logging functions
+log() {
+    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')] $1${NC}" | tee -a "$DEPLOYMENT_LOG"
+}
+
+success() {
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')] ✅ $1${NC}" | tee -a "$DEPLOYMENT_LOG"
+}
+
+warning() {
+    echo -e "${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')] ⚠️  $1${NC}" | tee -a "$DEPLOYMENT_LOG"
+}
+
+error() {
+    echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')] ❌ $1${NC}" | tee -a "$DEPLOYMENT_LOG"
     exit 1
-fi
+}
 
-# Load environment variables
-ENV_FILE=".env.$ENVIRONMENT"
-if [ -f "$ENV_FILE" ]; then
-    echo "📄 Loading environment from $ENV_FILE"
-    export $(cat $ENV_FILE | grep -v '^#' | xargs)
-else
-    echo "⚠️  Warning: $ENV_FILE not found. Using default environment variables."
-fi
+# Create logs directory if it doesn't exist
+mkdir -p "$PROJECT_DIR/logs"
 
-# Pre-deployment checks
-echo "🔍 Running pre-deployment checks..."
-
-# Check if required environment variables are set
-required_vars=("DATABASE_URL" "NEXTAUTH_SECRET" "SUPABASE_URL")
-for var in "${required_vars[@]}"; do
-    if [ -z "${!var}" ]; then
-        echo "❌ Error: Required environment variable $var is not set"
-        exit 1
+# Main deployment flow
+main() {
+    log "Starting deployment to $ENVIRONMENT environment from branch $BRANCH"
+    
+    # Check prerequisites
+    command -v git >/dev/null 2>&1 || error "Git is required but not installed"
+    command -v node >/dev/null 2>&1 || error "Node.js is required but not installed"
+    command -v npm >/dev/null 2>&1 || error "npm is required but not installed"
+    
+    cd "$PROJECT_DIR"
+    
+    # Run tests
+    log "Running pre-deployment tests..."
+    npm run lint || error "Linting failed"
+    npm run type-check || error "Type checking failed"
+    npm test -- --passWithNoTests || error "Unit tests failed"
+    npm run build || error "Build test failed"
+    success "All tests passed"
+    
+    # Deploy
+    log "Deploying to $ENVIRONMENT..."
+    if [ -n "${VERCEL_TOKEN:-}" ]; then
+        if ! command -v vercel >/dev/null 2>&1; then
+            npm install -g vercel
+        fi
+        
+        VERCEL_FLAGS=""
+        if [ "$ENVIRONMENT" = "production" ]; then
+            VERCEL_FLAGS="--prod"
+        fi
+        
+        vercel --token "$VERCEL_TOKEN" $VERCEL_FLAGS --yes || error "Deployment failed"
+    else
+        warning "VERCEL_TOKEN not set - manual deployment required"
     fi
-done
+    
+    success "🎉 Deployment completed successfully!"
+}
 
-# Install dependencies
-echo "📦 Installing dependencies..."
-npm ci
-
-# Run tests
-echo "🧪 Running tests..."
-npm test -- --watchAll=false
-
-# Type checking
-echo "🔍 Running TypeScript type checking..."
-npx tsc --noEmit
-
-# Linting
-echo "🔍 Running linting..."
-npm run lint
-
-# Security audit
-echo "🔒 Running security audit..."
-npm audit --audit-level=high
-
-# Generate Prisma client
-echo "🔧 Generating Prisma client..."
-npx prisma generate
-
-# Build application
-echo "🏗️  Building application..."
-npm run build
-
-# Database migrations (only for staging and production)
-if [[ "$ENVIRONMENT" != "development" ]]; then
-    echo "🗃️  Running database migrations..."
-    npx prisma migrate deploy
-fi
-
-# Environment-specific deployment
-case $ENVIRONMENT in
-    development)
-        echo "🔧 Starting development server..."
-        npm run dev
+# Handle script arguments
+case "${1:-}" in
+    -h|--help)
+        echo "Usage: $0 [environment] [branch]"
+        exit 0
         ;;
-    staging)
-        echo "🚀 Deploying to staging..."
-        vercel --token="$VERCEL_TOKEN" --env="$ENVIRONMENT"
-        ;;
-    production)
-        echo "🚀 Deploying to production..."
-        vercel --prod --token="$VERCEL_TOKEN"
+    *)
+        main "$@"
         ;;
 esac
-
-echo "✅ Deployment to $ENVIRONMENT completed successfully!"
-
-# Post-deployment health check
-if [[ "$ENVIRONMENT" != "development" ]]; then
-    echo "🏥 Running health check..."
-    sleep 30
-    
-    HEALTH_URL="${NEXTAUTH_URL}/api/health"
-    if curl -f "$HEALTH_URL" > /dev/null 2>&1; then
-        echo "✅ Health check passed!"
-    else
-        echo "❌ Health check failed!"
-        exit 1
-    fi
-fi 

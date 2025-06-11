@@ -1,0 +1,56 @@
+{
+  "extends": ["./.eslintrc.base.json"],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-unused-vars": ["error", { 
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_",
+      "ignoreRestSiblings": true
+    }],
+    "@typescript-eslint/ban-ts-comment": "error",
+    "react/no-unescaped-entities": "error",
+    "@next/next/no-img-element": "error",
+    "react-hooks/exhaustive-deps": "error",
+    "prefer-const": "error",
+    "no-var": "error",
+    "no-console": "error",
+    "no-debugger": "error",
+    "@typescript-eslint/no-empty-function": "error",
+    "@typescript-eslint/no-non-null-assertion": "error",
+    "react/display-name": "error",
+    "jsx-a11y/alt-text": "error",
+    "jsx-a11y/anchor-is-valid": "error",
+    "no-undef": "error",
+    "no-unreachable": "error",
+    "no-unused-expressions": "error",
+    "@typescript-eslint/no-inferrable-types": "error",
+    "react/jsx-key": "error",
+    "react/jsx-no-duplicate-props": "error",
+    "react/jsx-no-undef": "error",
+    "prefer-rest-params": "error",
+    "prefer-spread": "error",
+    "no-duplicate-imports": "error"
+  },
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "warn",
+        "no-console": "off",
+        "@typescript-eslint/no-non-null-assertion": "warn"
+      }
+    },
+    {
+      "files": ["jest.setup.js", "jest.config.js", "next.config.mjs"],
+      "rules": {
+        "@typescript-eslint/no-var-requires": "off",
+        "no-console": "off"
+      }
+    }
+  ]
+} 

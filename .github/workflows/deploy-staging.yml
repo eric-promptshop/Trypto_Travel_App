@@ -24,7 +24,7 @@ jobs:
         cache: 'npm'
         
     - name: Install dependencies
-      run: npm ci
+      run: npm ci --force
       
     - name: Run tests
       run: npm test -- --watchAll=false
@@ -60,13 +60,4 @@ jobs:
     - name: Run Smoke Tests
       run: |
         sleep 30
-        curl -f ${{ secrets.STAGING_NEXTAUTH_URL }}/api/health || exit 1
-        
-    - name: Notify Deployment Status
-      if: always()
-      uses: 8398a7/action-slack@v3
-      with:
-        status: ${{ job.status }}
-        channel: '#deployments'
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }} 
+        curl -f ${{ secrets.STAGING_NEXTAUTH_URL }}/api/health || exit 1 
