@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { AIRequestForm } from "@/components/ai-request-form"
-import { ItineraryBuilder } from "@/components/itinerary-builder"
-import LandingPage from "@/components/landing-page"
+import { ItineraryViewer } from "@/components/itinerary"
+// import LandingPage from "@/components/landing-page" // Component archived
 
 interface FormData {
   destinations?: string[]
@@ -53,7 +53,12 @@ export default function Home() {
   }
 
   if (currentView === "landing") {
-    return <LandingPage onGetStarted={handleGetStarted} />
+    // Landing page component was archived, show form instead
+  return (
+    <main className="min-h-screen">
+      <AIRequestForm onComplete={handleFormComplete} />
+    </main>
+  )
   }
 
   if (currentView === "form") {
@@ -67,10 +72,15 @@ export default function Home() {
   if (currentView === "itinerary") {
     return (
       <main className="min-h-screen">
-        <ItineraryBuilder formData={formData} isMobile={isMobile} />
+        <ItineraryViewer formData={formData} isMobile={isMobile} />
       </main>
     )
   }
 
-  return <LandingPage onGetStarted={handleGetStarted} />
+  // Landing page component was archived, show form instead
+  return (
+    <main className="min-h-screen">
+      <AIRequestForm onComplete={handleFormComplete} />
+    </main>
+  )
 }
