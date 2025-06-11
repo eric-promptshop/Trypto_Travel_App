@@ -26,7 +26,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(vercel ls:*)"
+      "Bash(vercel ls:*)",
+      "Bash(vercel:*)",
+      "WebFetch(domain:vercel.com)",
+      "Bash(ls:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": []
   }

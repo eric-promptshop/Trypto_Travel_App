@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTrips, type Trip, type TripFilters } from '@/hooks/use-trips'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,9 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { 
   Plus, 
   Search, 
@@ -19,7 +19,6 @@ import {
   Calendar, 
   MapPin, 
   Users, 
-  DollarSign,
   MoreVertical,
   Edit3,
   Share2,
@@ -30,7 +29,6 @@ import {
   RefreshCw,
   AlertTriangle,
   Plane,
-  TrendingUp,
   Sparkles,
   Loader2
 } from 'lucide-react'
@@ -72,6 +70,7 @@ export function TripDashboard({
   onViewTrip,
   className = "" 
 }: TripDashboardProps) {
+  const router = useRouter()
   const [filters, setFilters] = useState<TripFilters>({ page: 1, limit: 12 })
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null)
@@ -88,7 +87,6 @@ export function TripDashboard({
     meta, 
     refresh, 
     deleteTrip,
-    fetchTrips 
   } = useTrips(filters)
 
   // Debounced search
@@ -444,9 +442,15 @@ export function TripDashboard({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => {
+                            router.push(`/trips/${trip.id}/details`)
+                          }}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details (New)
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => onViewTrip?.(trip)}>
                             <Eye className="h-4 w-4 mr-2" />
-                            View Details
+                            View Details (Classic)
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => onEditTrip?.(trip)}>
                             <Edit3 className="h-4 w-4 mr-2" />
@@ -483,7 +487,7 @@ export function TripDashboard({
 
                   <CardContent 
                     className="space-y-3 cursor-pointer"
-                    onClick={() => onViewTrip?.(trip)}
+                    onClick={() => router.push(`/trips/${trip.id}/details`)}
                   >
                     {trip.description && (
                       <p className="text-sm text-gray-600 line-clamp-2">

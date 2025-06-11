@@ -1,6 +1,7 @@
 "use client"
 
-import React from 'react'
+import React, { useState } from 'react'
+import { useEnhancedTrip } from '@/contexts/EnhancedTripContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -154,7 +155,11 @@ interface TravelersViewProps {
 }
 
 export function TravelersView({ tripId, editable = false, onAddTraveler, onUpdateTraveler }: TravelersViewProps) {
-  const groupData = mockTripGroup // TODO: Replace with API call using tripId
+  const { state, actions } = useEnhancedTrip()
+  const [isAdding, setIsAdding] = useState(false)
+  
+  // Use real data from context, fallback to mock if not loaded
+  const groupData = state.travelers || mockTripGroup
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -209,9 +214,25 @@ export function TravelersView({ tripId, editable = false, onAddTraveler, onUpdat
           </div>
           
           {editable && (
-            <Button onClick={onAddTraveler} className="w-full mt-4">
+            <Button 
+              onClick={async () => {
+                setIsAdding(true)
+                try {
+                  await actions.addTraveler({
+                    name: 'New Traveler',
+                    email: '',
+                    role: 'traveler'
+                  })
+                  onAddTraveler?.()
+                } finally {
+                  setIsAdding(false)
+                }
+              }} 
+              className="w-full mt-4"
+              disabled={isAdding || state.loading.addTraveler}
+            >
               <UserPlus className="h-4 w-4 mr-2" />
-              Add Traveler
+              {isAdding || state.loading.addTraveler ? 'Adding...' : 'Add Traveler'}
             </Button>
           )}
         </CardContent>
@@ -251,7 +272,14 @@ export function TravelersView({ tripId, editable = false, onAddTraveler, onUpdat
                     {traveler.status}
                   </Badge>
                   {editable && (
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        // In a real app, this would open an edit dialog
+                        onUpdateTraveler?.(traveler.id, traveler)
+                      }}
+                    >
                       <Settings className="h-4 w-4" />
                     </Button>
                   )}

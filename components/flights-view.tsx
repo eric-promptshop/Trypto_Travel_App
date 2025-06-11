@@ -1,6 +1,7 @@
 "use client"
 
-import React from 'react'
+import React, { useState } from 'react'
+import { useEnhancedTrip } from '@/contexts/EnhancedTripContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -247,7 +248,11 @@ interface FlightsViewProps {
 }
 
 export function FlightsView({ tripId, editable = false, onBookFlight, onSearchFlights }: FlightsViewProps) {
-  const flightData = mockFlightSearch // TODO: Replace with API call using tripId
+  const { state, actions } = useEnhancedTrip()
+  const [isSearching, setIsSearching] = useState(false)
+  
+  // Use real data from context instead of mock
+  const flightData = state.flights.searchResults || mockFlightSearch
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -381,8 +386,19 @@ export function FlightsView({ tripId, editable = false, onBookFlight, onSearchFl
         {editable && (
           <div className="flex gap-2">
             {flight.status === 'available' && (
-              <Button onClick={() => onBookFlight?.(flight.id)} className="flex-1">
-                Book Flight
+              <Button 
+                onClick={async () => {
+                  try {
+                    await actions.bookFlight(flight.id)
+                    onBookFlight?.(flight.id)
+                  } catch (error) {
+                    console.error('Failed to book flight:', error)
+                  }
+                }} 
+                className="flex-1"
+                disabled={state.loading.bookFlight}
+              >
+                {state.loading.bookFlight ? 'Booking...' : 'Book Flight'}
               </Button>
             )}
             {flight.status === 'booked' && (
@@ -443,9 +459,22 @@ export function FlightsView({ tripId, editable = false, onBookFlight, onSearchFl
           
           {editable && (
             <div className="flex gap-2 mt-4">
-              <Button onClick={onSearchFlights} variant="outline" className="flex-1">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Update Search
+              <Button 
+                onClick={async () => {
+                  setIsSearching(true)
+                  try {
+                    await actions.searchFlights(flightData.searchCriteria)
+                    onSearchFlights?.()
+                  } finally {
+                    setIsSearching(false)
+                  }
+                }} 
+                variant="outline" 
+                className="flex-1"
+                disabled={isSearching || state.loading.flights}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isSearching ? 'animate-spin' : ''}`} />
+                {isSearching || state.loading.flights ? 'Searching...' : 'Update Search'}
               </Button>
               <Button variant="outline">
                 Modify Dates

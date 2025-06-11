@@ -1,6 +1,7 @@
 "use client"
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { useEnhancedTrip } from '@/contexts/EnhancedTripContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -308,7 +309,20 @@ interface LodgingViewProps {
 }
 
 export function LodgingView({ tripId, editable = false, onBookAccommodation, onSearchAccommodations }: LodgingViewProps) {
-  const lodgingData = mockAccommodationSearch // TODO: Replace with API call using tripId
+  const { state, actions } = useEnhancedTrip()
+  const [isSearching, setIsSearching] = useState(false)
+  
+  // Use real data from context instead of mock
+  const lodgingData = {
+    accommodations: state.accommodations.searchResults,
+    searchCriteria: state.accommodations.searchCriteria || mockAccommodationSearch.searchCriteria,
+    filters: {
+      amenities: state.accommodations.searchCriteria?.amenities || ['Free WiFi'],
+      rating: state.accommodations.searchCriteria?.rating || 4.0,
+      priceSort: state.accommodations.searchCriteria?.priceSort || 'asc'
+    },
+    lastUpdated: state.accommodations.lastUpdated
+  }
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -373,8 +387,21 @@ export function LodgingView({ tripId, editable = false, onBookAccommodation, onS
           
           {editable && (
             <div className="flex gap-2 mt-4">
-              <Button onClick={onSearchAccommodations} variant="outline" className="flex-1">
-                Update Search
+              <Button 
+                onClick={async () => {
+                  setIsSearching(true)
+                  try {
+                    await actions.searchAccommodations(lodgingData.searchCriteria)
+                    onSearchAccommodations?.()
+                  } finally {
+                    setIsSearching(false)
+                  }
+                }} 
+                variant="outline" 
+                className="flex-1"
+                disabled={isSearching || state.loading.accommodations}
+              >
+                {isSearching || state.loading.accommodations ? 'Searching...' : 'Update Search'}
               </Button>
               <Button variant="outline">
                 Modify Dates
@@ -539,9 +566,17 @@ export function LodgingView({ tripId, editable = false, onBookAccommodation, onS
                           <Button 
                             size="sm" 
                             className="w-full"
-                            onClick={() => onBookAccommodation?.(accommodation.id, room.id)}
+                            onClick={async () => {
+                              try {
+                                await actions.bookAccommodation(accommodation.id, room.id)
+                                onBookAccommodation?.(accommodation.id, room.id)
+                              } catch (error) {
+                                console.error('Failed to book accommodation:', error)
+                              }
+                            }}
+                            disabled={state.loading.bookAccommodation}
                           >
-                            Book Room
+                            {state.loading.bookAccommodation ? 'Booking...' : 'Book Room'}
                           </Button>
                         )}
                       </div>

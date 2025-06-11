@@ -1,6 +1,7 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useEnhancedTrip } from '@/contexts/EnhancedTripContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -90,7 +91,17 @@ interface TripCostViewProps {
 }
 
 export function TripCostView({ tripId, editable = false, onUpdateBudget }: TripCostViewProps) {
-  const costData = mockTripCost // TODO: Replace with API call using tripId
+  const { state, actions } = useEnhancedTrip()
+  
+  // Use real data from context, fallback to mock if not loaded
+  const costData = state.costs || mockTripCost
+  
+  // Refresh costs when component mounts
+  useEffect(() => {
+    if (!state.costs && !state.loading.costs) {
+      actions.refreshCosts()
+    }
+  }, [state.costs, state.loading.costs, actions])
   const budgetUsedPercentage = (costData.totalSpent / costData.totalBudget) * 100
   const remainingBudget = costData.totalBudget - costData.totalSpent
 
