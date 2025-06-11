@@ -1,0 +1,2727 @@
+{
+  "summary": {
+    "total": 200,
+    "dead": 33,
+    "active": 167,
+    "duplicateGroups": 5,
+    "totalSizeKB": "1676.48",
+    "deadSizeKB": "233.20",
+    "savingsPercent": "13.9"
+  },
+  "deadComponents": [
+    {
+      "file": "components/admin/ContentManagement.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/RoleManagement.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/BatterySettings.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/dashboard/TravelDashboard.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/flight-display/flight-display-demo.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/hotel-display/hotel-display-demo.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/images/optimized-image.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/itinerary-builder.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/landing-page.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/main-content.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/onboarding/WhiteLabelOnboarding.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/performance/lazy-component.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/setup-instructions.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/sidebar.tsx",
+      "duplicates": [
+        "components/ui/sidebar.tsx"
+      ]
+    },
+    {
+      "file": "components/templates/TemplateEditor.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/toggle-test.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/accordion.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/alert-dialog.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/aspect-ratio.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/breadcrumb.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/carousel.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/context-menu.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/drawer.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/hover-card.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/input-otp.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/menubar.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/navigation-menu.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/pagination.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/resizable.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/sidebar.tsx",
+      "duplicates": [
+        "components/sidebar.tsx"
+      ]
+    },
+    {
+      "file": "components/ui/skip-link.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/toaster.tsx",
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/toggle-group.tsx",
+      "duplicates": []
+    }
+  ],
+  "duplicateGroups": [
+    [
+      "components/ai-request-form-enhanced.tsx",
+      "components/ai-request-form.tsx"
+    ],
+    [
+      "components/atoms/Button.tsx",
+      "components/ui/button.tsx"
+    ],
+    [
+      "components/OneHandedSettings.tsx",
+      "components/settings/OneHandedSettings.tsx"
+    ],
+    [
+      "components/sidebar.tsx",
+      "components/ui/sidebar.tsx"
+    ],
+    [
+      "components/atoms/index.ts",
+      "components/error-handling/index.ts",
+      "components/flight-display/index.ts",
+      "components/hotel-display/index.ts",
+      "components/images/index.ts",
+      "components/itinerary/index.ts",
+      "components/loading/index.ts",
+      "components/performance/index.ts",
+      "components/testing/index.ts",
+      "components/travel-forms/index.ts",
+      "components/trip-customization/index.ts"
+    ]
+  ],
+  "componentUsage": [
+    {
+      "file": "components/admin/AdminDashboard.tsx",
+      "component": "AdminDashboard",
+      "usedIn": [
+        "app/admin/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/ClientManagement.tsx",
+      "component": "ClientManagement",
+      "usedIn": [
+        "app/admin/white-label/page.tsx",
+        "components/admin/AdminDashboard.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/ContentManagement.tsx",
+      "component": "ContentManagement",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/DeploymentManager.tsx",
+      "component": "DeploymentManager",
+      "usedIn": [
+        "components/admin/AdminDashboard.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/onboarding/OnboardingChecklist.tsx",
+      "component": "OnboardingChecklist",
+      "usedIn": [
+        "components/admin/onboarding/OnboardingWorkflow.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/onboarding/OnboardingProgress.tsx",
+      "component": "OnboardingProgress",
+      "usedIn": [
+        "app/onboarding/layout.tsx",
+        "components/admin/onboarding/OnboardingWorkflow.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/onboarding/OnboardingStepRenderer.tsx",
+      "component": "OnboardingStepRenderer",
+      "usedIn": [
+        "components/admin/onboarding/OnboardingWorkflow.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/onboarding/OnboardingWorkflow.tsx",
+      "component": "OnboardingWorkflow",
+      "usedIn": [
+        "app/admin/white-label/page.tsx",
+        "components/admin/onboarding/OnboardingProgress.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/RoleManagement.tsx",
+      "component": "RoleManagement",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/ThemeCustomizer.tsx",
+      "component": "ThemeCustomizer",
+      "usedIn": [
+        "app/admin/white-label/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/ThemeCustomizerConnected.tsx",
+      "component": "ThemeCustomizerConnected",
+      "usedIn": [
+        "app/admin/white-label/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/admin/ThemePreview.tsx",
+      "component": "ThemePreview",
+      "usedIn": [
+        "app/admin/white-label/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ai-request-form-enhanced.tsx",
+      "component": "ai-request-form-enhanced",
+      "usedIn": [
+        "app/plan/page.tsx",
+        "app/trips/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/ai-request-form.tsx"
+      ]
+    },
+    {
+      "file": "components/ai-request-form.tsx",
+      "component": "ai-request-form",
+      "usedIn": [
+        "app/plan/page.tsx",
+        "app/trips/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/ai-request-form-enhanced.tsx"
+      ]
+    },
+    {
+      "file": "components/analytics/AnalyticsDashboard.tsx",
+      "component": "AnalyticsDashboard",
+      "usedIn": [
+        "app/analytics/page.tsx",
+        "app/ui-showcase-v2/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/assets/AssetGallery.tsx",
+      "component": "AssetGallery",
+      "usedIn": [
+        "components/assets/AssetManager.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/assets/AssetManager.tsx",
+      "component": "AssetManager",
+      "usedIn": [
+        "components/ClientAppShell.tsx",
+        "components/templates/TemplateEditor.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/assets/AssetUpload.tsx",
+      "component": "AssetUpload",
+      "usedIn": [
+        "components/assets/AssetManager.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/atoms/Button.tsx",
+      "component": "Button",
+      "usedIn": [
+        "app/(demo)/accommodation-selection/page.tsx",
+        "app/(demo)/trip-customization/page.tsx",
+        "app/demo-multitenant/page.tsx",
+        "app/demo/activity-selection/page.tsx",
+        "app/demo/drag-drop-timeline/page.tsx",
+        "app/demo/one-handed-mode/page.tsx",
+        "app/demo/real-time-pricing/page.tsx",
+        "app/demo/state-management/page.tsx",
+        "app/demo/voice-test/page.tsx",
+        "app/docs/page.tsx",
+        "app/itinerary-display/page.tsx",
+        "app/page.tsx",
+        "app/ui-showcase-v2/page.tsx",
+        "app/ui-showcase/page.tsx",
+        "components/admin/AdminDashboard.tsx",
+        "components/admin/DeploymentManager.tsx",
+        "components/ai-request-form-enhanced.tsx",
+        "components/ai-request-form.tsx",
+        "components/analytics/AnalyticsDashboard.tsx",
+        "components/assets/AssetGallery.tsx",
+        "components/assets/AssetManager.tsx",
+        "components/assets/AssetUpload.tsx",
+        "components/atoms/index.ts",
+        "components/chat-interface.tsx",
+        "components/dashboard/TravelDashboard.tsx",
+        "components/error-handling/edge-case-demo.tsx",
+        "components/error-handling/error-boundary.tsx",
+        "components/flight-display/flight-card.tsx",
+        "components/flights-view.tsx",
+        "components/header.tsx",
+        "components/hotel-display/hotel-map-preview.tsx",
+        "components/hotel-display/room-preview.tsx",
+        "components/itinerary/ActivityManager.tsx",
+        "components/itinerary/ConnectedItineraryViewer.tsx",
+        "components/itinerary/ModernItineraryViewer.tsx",
+        "components/landing-page.tsx",
+        "components/layout/MainHeader.tsx",
+        "components/layout/mobile-bottom-nav.tsx",
+        "components/LeafletMapLoader.tsx",
+        "components/lodging-view.tsx",
+        "components/mobile-audit/audit-runner.tsx",
+        "components/mobile-audit/mobile-audit-dashboard.tsx",
+        "components/molecules/TripCard.tsx",
+        "components/onboarding/screens/branding-customization-screen.tsx",
+        "components/onboarding/screens/company-profile-screen.tsx",
+        "components/onboarding/screens/content-import-screen.tsx",
+        "components/onboarding/screens/crm-integrations-screen.tsx",
+        "components/onboarding/screens/pricing-configuration-screen.tsx",
+        "components/onboarding/screens/review-launch-screen.tsx",
+        "components/onboarding/screens/welcome-screen.tsx",
+        "components/OneHandedSettings.tsx",
+        "components/performance/bundle-analyzer.tsx",
+        "components/performance/code-splitting.tsx",
+        "components/performance/performance-optimization-demo.tsx",
+        "components/performance/react-optimizations.tsx",
+        "components/pricing/PricingInsights.tsx",
+        "components/sections/CTASection.tsx",
+        "components/setup-instructions.tsx",
+        "components/sidebar.tsx",
+        "components/templates/TemplateEditor.tsx",
+        "components/testing/comprehensive-test-demo.tsx",
+        "components/theme-toggle.tsx",
+        "components/toggle-test.tsx",
+        "components/travel-forms/date-range-picker.tsx",
+        "components/travel-forms/destination-selector.tsx",
+        "components/travel-forms/traveler-counter.tsx",
+        "components/travelers-view.tsx",
+        "components/trip-customization/accommodation-map.tsx",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/trip-customization/activity-timeline.tsx",
+        "components/trip-customization/drag-drop-timeline.tsx",
+        "components/trip-customization/pricing-breakdown.tsx",
+        "components/trip-customization/pricing-history.tsx",
+        "components/trip-customization/trip-modification-form.tsx",
+        "components/trips/TripDashboard.tsx",
+        "components/ui/carousel.tsx",
+        "components/ui/pagination.tsx",
+        "components/ui/sidebar.tsx",
+        "components/ui/tripnav-button.tsx",
+        "components/ui/voice-command-input.tsx",
+        "components/ui/voice-input.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/ui/button.tsx"
+      ]
+    },
+    {
+      "file": "components/BatterySettings.tsx",
+      "component": "BatterySettings",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/BatteryStatusBanner.tsx",
+      "component": "BatteryStatusBanner",
+      "usedIn": [
+        "components/ClientAppShell.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/chat-interface.tsx",
+      "component": "chat-interface",
+      "usedIn": [
+        "components/itinerary-builder-legacy-wrapper.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ClientAppShell.tsx",
+      "component": "ClientAppShell",
+      "usedIn": [
+        "app/layout.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/dashboard/TravelDashboard.tsx",
+      "component": "TravelDashboard",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/error-handling/data-validation.tsx",
+      "component": "data-validation",
+      "usedIn": [
+        "components/error-handling/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/error-handling/edge-case-demo.tsx",
+      "component": "edge-case-demo",
+      "usedIn": [
+        "app/demo/edge-cases/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/error-handling/error-boundary.tsx",
+      "component": "error-boundary",
+      "usedIn": [
+        "components/ClientAppShell.tsx",
+        "components/error-handling/data-validation.tsx",
+        "components/error-handling/index.ts",
+        "components/error-handling/safe-async.tsx",
+        "components/error-handling/safe-storage.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/error-handling/safe-async.tsx",
+      "component": "safe-async",
+      "usedIn": [
+        "components/error-handling/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/error-handling/safe-storage.tsx",
+      "component": "safe-storage",
+      "usedIn": [
+        "components/error-handling/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/flight-display/airline-info.tsx",
+      "component": "airline-info",
+      "usedIn": [
+        "components/flight-display/flight-card.tsx",
+        "components/flight-display/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/flight-display/flight-card.tsx",
+      "component": "flight-card",
+      "usedIn": [
+        "components/flight-display/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/flight-display/flight-display-demo.tsx",
+      "component": "flight-display-demo",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/flight-display/flight-status.tsx",
+      "component": "flight-status",
+      "usedIn": [
+        "components/flight-display/flight-card.tsx",
+        "components/flight-display/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/flight-display/flight-timeline.tsx",
+      "component": "flight-timeline",
+      "usedIn": [
+        "components/flight-display/flight-card.tsx",
+        "components/flight-display/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/flights-view.tsx",
+      "component": "flights-view",
+      "usedIn": [
+        "components/main-content.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/FloatingActionContainer.tsx",
+      "component": "FloatingActionContainer",
+      "usedIn": [
+        "app/demo/one-handed-mode/page.tsx",
+        "components/ClientAppShell.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/GeolocationBanner.tsx",
+      "component": "GeolocationBanner",
+      "usedIn": [
+        "components/ClientAppShell.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/header.tsx",
+      "component": "header",
+      "usedIn": [
+        "app/layout.tsx",
+        "components/itinerary-builder-legacy-wrapper.tsx",
+        "components/landing-page.tsx",
+        "components/layout/MainHeader.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/hotel-display/amenity-icons.tsx",
+      "component": "amenity-icons",
+      "usedIn": [
+        "components/hotel-display/hotel-card.tsx",
+        "components/hotel-display/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/hotel-display/collapsible-section.tsx",
+      "component": "collapsible-section",
+      "usedIn": [
+        "components/flight-display/flight-card.tsx",
+        "components/hotel-display/hotel-card.tsx",
+        "components/hotel-display/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/hotel-display/hotel-card.tsx",
+      "component": "hotel-card",
+      "usedIn": [
+        "components/hotel-display/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/hotel-display/hotel-display-demo.tsx",
+      "component": "hotel-display-demo",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/hotel-display/hotel-map-preview.tsx",
+      "component": "hotel-map-preview",
+      "usedIn": [
+        "components/hotel-display/hotel-card.tsx",
+        "components/hotel-display/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/hotel-display/room-preview.tsx",
+      "component": "room-preview",
+      "usedIn": [
+        "components/hotel-display/hotel-card.tsx",
+        "components/hotel-display/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/hotel-display/star-rating.tsx",
+      "component": "star-rating",
+      "usedIn": [
+        "components/hotel-display/hotel-card.tsx",
+        "components/hotel-display/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/images/adaptive-image.tsx",
+      "component": "adaptive-image",
+      "usedIn": [
+        "app/test-cloudinary/page.tsx",
+        "components/images/cloudinary-config.ts",
+        "components/images/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/images/image-cache.tsx",
+      "component": "image-cache",
+      "usedIn": [
+        "components/images/image-quality-controls.tsx",
+        "components/images/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/images/image-optimization-demo.tsx",
+      "component": "image-optimization-demo",
+      "usedIn": [
+        "components/testing/comprehensive-test-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/images/image-quality-controls.tsx",
+      "component": "image-quality-controls",
+      "usedIn": [
+        "components/images/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/images/network-detection.tsx",
+      "component": "network-detection",
+      "usedIn": [
+        "app/(demo)/trip-customization/page.tsx",
+        "components/ClientAppShell.tsx",
+        "components/images/adaptive-image.tsx",
+        "components/images/image-quality-controls.tsx",
+        "components/images/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/images/optimized-image.tsx",
+      "component": "optimized-image",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/images/responsive-image.tsx",
+      "component": "responsive-image",
+      "usedIn": [
+        "components/itinerary/print-share-actions.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/itinerary-builder-legacy-wrapper.tsx",
+      "component": "itinerary-builder-legacy-wrapper",
+      "usedIn": [
+        "components/itinerary-builder.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/itinerary-builder.tsx",
+      "component": "itinerary-builder",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/itinerary/ActivityManager.tsx",
+      "component": "ActivityManager",
+      "usedIn": [
+        "app/ui-showcase-v2/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/itinerary/ConnectedItineraryViewer.tsx",
+      "component": "ConnectedItineraryViewer",
+      "usedIn": [
+        "app/plan/page.tsx",
+        "app/trips/page.tsx",
+        "app/ui-showcase-v2/page.tsx",
+        "components/itinerary-builder-legacy-wrapper.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/itinerary/ModernItineraryViewer.tsx",
+      "component": "ModernItineraryViewer",
+      "usedIn": [
+        "components/itinerary-builder-legacy-wrapper.tsx",
+        "components/itinerary/ConnectedItineraryViewer.tsx",
+        "components/itinerary/index.ts",
+        "components/main-content.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/itinerary/print-share-actions.tsx",
+      "component": "print-share-actions",
+      "usedIn": [
+        "components/itinerary/index.ts",
+        "components/itinerary/print-share-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/itinerary/print-share-demo.tsx",
+      "component": "print-share-demo",
+      "usedIn": [
+        "components/itinerary/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/itinerary/share-analytics.tsx",
+      "component": "share-analytics",
+      "usedIn": [
+        "components/itinerary/index.ts",
+        "components/itinerary/print-share-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/landing-page.tsx",
+      "component": "landing-page",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/layout/MainHeader.tsx",
+      "component": "MainHeader",
+      "usedIn": [
+        "components/ClientAppShell.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/layout/MainNavigation.tsx",
+      "component": "MainNavigation",
+      "usedIn": [
+        "components/ClientAppShell.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/layout/mobile-bottom-nav.tsx",
+      "component": "mobile-bottom-nav",
+      "usedIn": [
+        "components/ClientAppShell.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/layout/orientation-aware-layout.tsx",
+      "component": "orientation-aware-layout",
+      "usedIn": [
+        "components/layout/mobile-bottom-nav.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/LeafletMapLoader.tsx",
+      "component": "LeafletMapLoader",
+      "usedIn": [
+        "components/performance/lazy-component.tsx",
+        "components/testing/comprehensive-test-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/loading/loading-priority-queue.tsx",
+      "component": "loading-priority-queue",
+      "usedIn": [
+        "components/loading/index.ts",
+        "components/loading/prefetch-manager.tsx",
+        "components/loading/progressive-loader.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/loading/prefetch-manager.tsx",
+      "component": "prefetch-manager",
+      "usedIn": [
+        "components/loading/index.ts",
+        "components/loading/progressive-loader.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/loading/progressive-loader.tsx",
+      "component": "progressive-loader",
+      "usedIn": [
+        "components/loading/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/loading/skeleton-components.tsx",
+      "component": "skeleton-components",
+      "usedIn": [
+        "components/loading/index.ts",
+        "components/loading/progressive-loader.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/loading/virtualized-list.tsx",
+      "component": "virtualized-list",
+      "usedIn": [
+        "components/loading/index.ts",
+        "components/loading/progressive-loader.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/lodging-view.tsx",
+      "component": "lodging-view",
+      "usedIn": [
+        "components/main-content.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/main-content.tsx",
+      "component": "main-content",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/mobile-audit/audit-runner.tsx",
+      "component": "audit-runner",
+      "usedIn": [
+        "app/demo/mobile-audit/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/mobile-audit/dom-analyzer.tsx",
+      "component": "dom-analyzer",
+      "usedIn": [
+        "components/mobile-audit/audit-runner.tsx",
+        "components/mobile-audit/mobile-audit-dashboard.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/mobile-audit/mobile-audit-dashboard.tsx",
+      "component": "mobile-audit-dashboard",
+      "usedIn": [
+        "app/demo/mobile-audit/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/mobile-audit/touch-target-guide.tsx",
+      "component": "touch-target-guide",
+      "usedIn": [
+        "app/demo/mobile-audit/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/molecules/TripCard.tsx",
+      "component": "TripCard",
+      "usedIn": [
+        "app/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/onboarding/onboarding-progress-bar.tsx",
+      "component": "onboarding-progress-bar",
+      "usedIn": [
+        "app/onboarding/layout.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/onboarding/OnboardingIntegrationWrapper.tsx",
+      "component": "OnboardingIntegrationWrapper",
+      "usedIn": [
+        "app/onboarding/layout.tsx",
+        "components/onboarding/screens/company-profile-screen.tsx",
+        "components/onboarding/screens/review-launch-screen.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/onboarding/screens/branding-customization-screen.tsx",
+      "component": "branding-customization-screen",
+      "usedIn": [
+        "app/onboarding/branding/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/onboarding/screens/company-profile-screen.tsx",
+      "component": "company-profile-screen",
+      "usedIn": [
+        "app/onboarding/company-profile/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/onboarding/screens/content-import-screen.tsx",
+      "component": "content-import-screen",
+      "usedIn": [
+        "app/onboarding/content-import/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/onboarding/screens/crm-integrations-screen.tsx",
+      "component": "crm-integrations-screen",
+      "usedIn": [
+        "app/onboarding/integrations/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/onboarding/screens/pricing-configuration-screen.tsx",
+      "component": "pricing-configuration-screen",
+      "usedIn": [
+        "app/onboarding/pricing/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/onboarding/screens/review-launch-screen.tsx",
+      "component": "review-launch-screen",
+      "usedIn": [
+        "app/onboarding/review/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/onboarding/screens/welcome-screen.tsx",
+      "component": "welcome-screen",
+      "usedIn": [
+        "app/onboarding/welcome/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/onboarding/WhiteLabelOnboarding.tsx",
+      "component": "WhiteLabelOnboarding",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/OneHandedSettings.tsx",
+      "component": "OneHandedSettings",
+      "usedIn": [
+        "app/demo/one-handed-mode/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/settings/OneHandedSettings.tsx"
+      ]
+    },
+    {
+      "file": "components/OrientationBanner.tsx",
+      "component": "OrientationBanner",
+      "usedIn": [
+        "components/ClientAppShell.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/performance/bundle-analyzer.tsx",
+      "component": "bundle-analyzer",
+      "usedIn": [
+        "components/performance/index.ts",
+        "components/performance/performance-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/performance/code-splitting.tsx",
+      "component": "code-splitting",
+      "usedIn": [
+        "components/performance/index.ts",
+        "components/performance/performance-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/performance/lazy-component.tsx",
+      "component": "lazy-component",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/performance/performance-monitor.tsx",
+      "component": "performance-monitor",
+      "usedIn": [
+        "app/api/monitoring/metrics/route.ts",
+        "components/ClientAppShell.tsx",
+        "components/performance/index.ts",
+        "components/performance/performance-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/performance/performance-optimization-demo.tsx",
+      "component": "performance-optimization-demo",
+      "usedIn": [
+        "components/performance/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/performance/react-optimizations.tsx",
+      "component": "react-optimizations",
+      "usedIn": [
+        "components/performance/index.ts",
+        "components/performance/performance-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/performance/use-web-vitals.tsx",
+      "component": "use-web-vitals",
+      "usedIn": [
+        "components/ClientAppShell.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/pricing/PricingInsights.tsx",
+      "component": "PricingInsights",
+      "usedIn": [
+        "app/ui-showcase-v2/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/sections/CTASection.tsx",
+      "component": "CTASection",
+      "usedIn": [
+        "app/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/sections/FeatureShowcase.tsx",
+      "component": "FeatureShowcase",
+      "usedIn": [
+        "app/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/settings/OneHandedSettings.tsx",
+      "component": "OneHandedSettings",
+      "usedIn": [
+        "app/demo/one-handed-mode/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/OneHandedSettings.tsx"
+      ]
+    },
+    {
+      "file": "components/setup-instructions.tsx",
+      "component": "setup-instructions",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/sidebar.tsx",
+      "component": "sidebar",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": [
+        "components/ui/sidebar.tsx"
+      ]
+    },
+    {
+      "file": "components/templates/ComponentEditor.tsx",
+      "component": "ComponentEditor",
+      "usedIn": [
+        "components/templates/TemplateEditor.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/templates/TemplateEditor.tsx",
+      "component": "TemplateEditor",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/templates/TemplatePreview.tsx",
+      "component": "TemplatePreview",
+      "usedIn": [
+        "components/templates/TemplateEditor.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/testing/comprehensive-test-demo.tsx",
+      "component": "comprehensive-test-demo",
+      "usedIn": [
+        "components/testing/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/theme-provider.tsx",
+      "component": "theme-provider",
+      "usedIn": [
+        "app/layout.tsx",
+        "components/ClientAppShell.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/theme-toggle.tsx",
+      "component": "theme-toggle",
+      "usedIn": [
+        "components/layout/MainHeader.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ThumbZoneWrapper.tsx",
+      "component": "ThumbZoneWrapper",
+      "usedIn": [
+        "app/demo/one-handed-mode/page.tsx",
+        "components/ClientAppShell.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/toggle-test.tsx",
+      "component": "toggle-test",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/travel-forms/budget-range-slider.tsx",
+      "component": "budget-range-slider",
+      "usedIn": [
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/travel-forms/date-range-picker.tsx",
+      "component": "date-range-picker",
+      "usedIn": [
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/travel-forms/destination-selector.tsx",
+      "component": "destination-selector",
+      "usedIn": [
+        "app/demo/voice-test/page.tsx",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/travel-forms/enhanced-form-components.tsx",
+      "component": "enhanced-form-components",
+      "usedIn": [
+        "components/travel-forms/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/travel-forms/form-section.tsx",
+      "component": "form-section",
+      "usedIn": [
+        "components/travel-forms/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/travel-forms/interest-tags.tsx",
+      "component": "interest-tags",
+      "usedIn": [
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/travel-forms/progress-indicator.tsx",
+      "component": "progress-indicator",
+      "usedIn": [
+        "components/travel-forms/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/travel-forms/travel-form-provider.tsx",
+      "component": "travel-form-provider",
+      "usedIn": [
+        "components/travel-forms/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/travel-forms/traveler-counter.tsx",
+      "component": "traveler-counter",
+      "usedIn": [
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/travelers-view.tsx",
+      "component": "travelers-view",
+      "usedIn": [
+        "components/main-content.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/trip-cost-view.tsx",
+      "component": "trip-cost-view",
+      "usedIn": [
+        "components/main-content.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/trip-customization/accommodation-map.tsx",
+      "component": "accommodation-map",
+      "usedIn": [
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/trip-customization/accommodation-selector.tsx",
+      "component": "accommodation-selector",
+      "usedIn": [
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/trip-customization/activity-selector.tsx",
+      "component": "activity-selector",
+      "usedIn": [
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/trip-customization/activity-timeline.tsx",
+      "component": "activity-timeline",
+      "usedIn": [
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/trip-customization/drag-drop-timeline.tsx",
+      "component": "drag-drop-timeline",
+      "usedIn": [
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/trip-customization/pricing-breakdown.tsx",
+      "component": "pricing-breakdown",
+      "usedIn": [
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/trip-customization/pricing-history.tsx",
+      "component": "pricing-history",
+      "usedIn": [
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/trip-customization/trip-modification-form.tsx",
+      "component": "trip-modification-form",
+      "usedIn": [
+        "components/trip-customization/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/trips/TripDashboard.tsx",
+      "component": "TripDashboard",
+      "usedIn": [
+        "app/trips/page.tsx",
+        "app/ui-showcase-v2/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/accordion.tsx",
+      "component": "accordion",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/alert-dialog.tsx",
+      "component": "alert-dialog",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/alert.tsx",
+      "component": "alert",
+      "usedIn": [
+        "app/demo/drag-drop-timeline/page.tsx",
+        "app/demo/real-time-pricing/page.tsx",
+        "app/demo/state-management/page.tsx",
+        "app/docs/page.tsx",
+        "app/ui-showcase-v2/page.tsx",
+        "app/ui-showcase/page.tsx",
+        "components/ai-request-form-enhanced.tsx",
+        "components/ai-request-form.tsx",
+        "components/assets/AssetGallery.tsx",
+        "components/assets/AssetUpload.tsx",
+        "components/BatteryStatusBanner.tsx",
+        "components/error-handling/edge-case-demo.tsx",
+        "components/error-handling/error-boundary.tsx",
+        "components/GeolocationBanner.tsx",
+        "components/itinerary/ConnectedItineraryViewer.tsx",
+        "components/mobile-audit/mobile-audit-dashboard.tsx",
+        "components/OrientationBanner.tsx",
+        "components/pricing/PricingInsights.tsx",
+        "components/templates/TemplateEditor.tsx",
+        "components/travel-forms/enhanced-form-components.tsx",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/activity-timeline.tsx",
+        "components/trip-customization/drag-drop-timeline.tsx",
+        "components/trip-customization/pricing-breakdown.tsx",
+        "components/trips/TripDashboard.tsx",
+        "components/ui/alert-dialog.tsx",
+        "components/ui/voice-input.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/aspect-ratio.tsx",
+      "component": "aspect-ratio",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/avatar.tsx",
+      "component": "avatar",
+      "usedIn": [
+        "components/dashboard/TravelDashboard.tsx",
+        "components/itinerary/ModernItineraryViewer.tsx",
+        "components/layout/MainHeader.tsx",
+        "components/travelers-view.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/badge.tsx",
+      "component": "badge",
+      "usedIn": [
+        "app/(demo)/accommodation-selection/page.tsx",
+        "app/(demo)/trip-customization/page.tsx",
+        "app/demo-multitenant/page.tsx",
+        "app/demo/activity-selection/page.tsx",
+        "app/demo/drag-drop-timeline/page.tsx",
+        "app/demo/real-time-pricing/page.tsx",
+        "app/demo/state-management/page.tsx",
+        "app/docs/page.tsx",
+        "app/itinerary-display/page.tsx",
+        "app/page.tsx",
+        "app/ui-showcase-v2/page.tsx",
+        "app/ui-showcase/page.tsx",
+        "components/admin/AdminDashboard.tsx",
+        "components/admin/DeploymentManager.tsx",
+        "components/ai-request-form.tsx",
+        "components/analytics/AnalyticsDashboard.tsx",
+        "components/assets/AssetGallery.tsx",
+        "components/assets/AssetUpload.tsx",
+        "components/BatterySettings.tsx",
+        "components/dashboard/TravelDashboard.tsx",
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/airline-info.tsx",
+        "components/flight-display/flight-card.tsx",
+        "components/flight-display/flight-status.tsx",
+        "components/flights-view.tsx",
+        "components/hotel-display/hotel-card.tsx",
+        "components/hotel-display/room-preview.tsx",
+        "components/itinerary/ActivityManager.tsx",
+        "components/itinerary/ModernItineraryViewer.tsx",
+        "components/lodging-view.tsx",
+        "components/mobile-audit/audit-runner.tsx",
+        "components/mobile-audit/mobile-audit-dashboard.tsx",
+        "components/onboarding/screens/content-import-screen.tsx",
+        "components/OneHandedSettings.tsx",
+        "components/performance/bundle-analyzer.tsx",
+        "components/performance/code-splitting.tsx",
+        "components/performance/performance-monitor.tsx",
+        "components/performance/performance-optimization-demo.tsx",
+        "components/performance/react-optimizations.tsx",
+        "components/pricing/PricingInsights.tsx",
+        "components/sections/CTASection.tsx",
+        "components/setup-instructions.tsx",
+        "components/templates/TemplateEditor.tsx",
+        "components/testing/comprehensive-test-demo.tsx",
+        "components/travel-forms/destination-selector.tsx",
+        "components/travel-forms/enhanced-form-components.tsx",
+        "components/travel-forms/index.ts",
+        "components/travelers-view.tsx",
+        "components/trip-cost-view.tsx",
+        "components/trip-customization/accommodation-map.tsx",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/trip-customization/activity-timeline.tsx",
+        "components/trip-customization/drag-drop-timeline.tsx",
+        "components/trip-customization/pricing-breakdown.tsx",
+        "components/trip-customization/pricing-history.tsx",
+        "components/trip-customization/trip-modification-form.tsx",
+        "components/trips/TripDashboard.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/breadcrumb.tsx",
+      "component": "breadcrumb",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/button.tsx",
+      "component": "button",
+      "usedIn": [
+        "app/(demo)/accommodation-selection/page.tsx",
+        "app/(demo)/trip-customization/page.tsx",
+        "app/admin/white-label/page.tsx",
+        "app/demo-multitenant/page.tsx",
+        "app/demo/activity-selection/page.tsx",
+        "app/demo/drag-drop-timeline/page.tsx",
+        "app/demo/real-time-pricing/page.tsx",
+        "app/demo/state-management/page.tsx",
+        "app/docs/page.tsx",
+        "app/itinerary-display/page.tsx",
+        "app/page.tsx",
+        "app/ui-showcase-v2/page.tsx",
+        "app/ui-showcase/page.tsx",
+        "components/admin/AdminDashboard.tsx",
+        "components/admin/ClientManagement.tsx",
+        "components/admin/DeploymentManager.tsx",
+        "components/admin/ThemePreview.tsx",
+        "components/ai-request-form-enhanced.tsx",
+        "components/ai-request-form.tsx",
+        "components/analytics/AnalyticsDashboard.tsx",
+        "components/assets/AssetGallery.tsx",
+        "components/assets/AssetManager.tsx",
+        "components/assets/AssetUpload.tsx",
+        "components/atoms/Button.tsx",
+        "components/chat-interface.tsx",
+        "components/dashboard/TravelDashboard.tsx",
+        "components/error-handling/edge-case-demo.tsx",
+        "components/error-handling/error-boundary.tsx",
+        "components/flight-display/flight-card.tsx",
+        "components/flights-view.tsx",
+        "components/header.tsx",
+        "components/hotel-display/hotel-map-preview.tsx",
+        "components/hotel-display/room-preview.tsx",
+        "components/itinerary/ActivityManager.tsx",
+        "components/itinerary/ConnectedItineraryViewer.tsx",
+        "components/itinerary/ModernItineraryViewer.tsx",
+        "components/landing-page.tsx",
+        "components/layout/MainHeader.tsx",
+        "components/layout/mobile-bottom-nav.tsx",
+        "components/LeafletMapLoader.tsx",
+        "components/loading/progressive-loader.tsx",
+        "components/lodging-view.tsx",
+        "components/mobile-audit/audit-runner.tsx",
+        "components/mobile-audit/mobile-audit-dashboard.tsx",
+        "components/mobile-audit/touch-target-guide.tsx",
+        "components/onboarding/screens/branding-customization-screen.tsx",
+        "components/onboarding/screens/company-profile-screen.tsx",
+        "components/onboarding/screens/content-import-screen.tsx",
+        "components/onboarding/screens/crm-integrations-screen.tsx",
+        "components/onboarding/screens/pricing-configuration-screen.tsx",
+        "components/onboarding/screens/review-launch-screen.tsx",
+        "components/onboarding/screens/welcome-screen.tsx",
+        "components/OneHandedSettings.tsx",
+        "components/performance/bundle-analyzer.tsx",
+        "components/performance/code-splitting.tsx",
+        "components/performance/performance-optimization-demo.tsx",
+        "components/performance/react-optimizations.tsx",
+        "components/pricing/PricingInsights.tsx",
+        "components/sections/CTASection.tsx",
+        "components/setup-instructions.tsx",
+        "components/sidebar.tsx",
+        "components/templates/TemplateEditor.tsx",
+        "components/testing/comprehensive-test-demo.tsx",
+        "components/theme-toggle.tsx",
+        "components/toggle-test.tsx",
+        "components/travel-forms/date-range-picker.tsx",
+        "components/travel-forms/destination-selector.tsx",
+        "components/travel-forms/index.ts",
+        "components/travel-forms/traveler-counter.tsx",
+        "components/travelers-view.tsx",
+        "components/trip-customization/accommodation-map.tsx",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/trip-customization/activity-timeline.tsx",
+        "components/trip-customization/drag-drop-timeline.tsx",
+        "components/trip-customization/pricing-breakdown.tsx",
+        "components/trip-customization/pricing-history.tsx",
+        "components/trip-customization/trip-modification-form.tsx",
+        "components/trips/TripDashboard.tsx",
+        "components/ui/alert-dialog.tsx",
+        "components/ui/calendar.tsx",
+        "components/ui/carousel.tsx",
+        "components/ui/pagination.tsx",
+        "components/ui/sidebar.tsx",
+        "components/ui/tripnav-button.tsx",
+        "components/ui/voice-input.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/atoms/Button.tsx"
+      ]
+    },
+    {
+      "file": "components/ui/calendar.tsx",
+      "component": "calendar",
+      "usedIn": [
+        "components/travel-forms/date-range-picker.tsx",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/trip-modification-form.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/card.tsx",
+      "component": "card",
+      "usedIn": [
+        "app/(demo)/accommodation-selection/page.tsx",
+        "app/(demo)/trip-customization/page.tsx",
+        "app/demo-multitenant/page.tsx",
+        "app/demo/activity-selection/page.tsx",
+        "app/demo/drag-drop-timeline/page.tsx",
+        "app/demo/real-time-pricing/page.tsx",
+        "app/demo/state-management/page.tsx",
+        "app/demo/voice-test/page.tsx",
+        "app/docs/page.tsx",
+        "app/itinerary-display/page.tsx",
+        "app/page.tsx",
+        "app/ui-showcase-v2/page.tsx",
+        "app/ui-showcase/page.tsx",
+        "components/admin/AdminDashboard.tsx",
+        "components/admin/DeploymentManager.tsx",
+        "components/analytics/AnalyticsDashboard.tsx",
+        "components/assets/AssetGallery.tsx",
+        "components/assets/AssetUpload.tsx",
+        "components/BatterySettings.tsx",
+        "components/dashboard/TravelDashboard.tsx",
+        "components/error-handling/edge-case-demo.tsx",
+        "components/error-handling/error-boundary.tsx",
+        "components/flight-display/flight-card.tsx",
+        "components/flight-display/index.ts",
+        "components/flights-view.tsx",
+        "components/hotel-display/hotel-card.tsx",
+        "components/hotel-display/index.ts",
+        "components/itinerary/ActivityManager.tsx",
+        "components/itinerary/ModernItineraryViewer.tsx",
+        "components/landing-page.tsx",
+        "components/lodging-view.tsx",
+        "components/mobile-audit/audit-runner.tsx",
+        "components/mobile-audit/mobile-audit-dashboard.tsx",
+        "components/mobile-audit/touch-target-guide.tsx",
+        "components/onboarding/screens/branding-customization-screen.tsx",
+        "components/onboarding/screens/content-import-screen.tsx",
+        "components/onboarding/screens/crm-integrations-screen.tsx",
+        "components/onboarding/screens/pricing-configuration-screen.tsx",
+        "components/onboarding/screens/review-launch-screen.tsx",
+        "components/onboarding/screens/welcome-screen.tsx",
+        "components/OneHandedSettings.tsx",
+        "components/performance/bundle-analyzer.tsx",
+        "components/performance/code-splitting.tsx",
+        "components/performance/performance-monitor.tsx",
+        "components/performance/performance-optimization-demo.tsx",
+        "components/performance/react-optimizations.tsx",
+        "components/pricing/PricingInsights.tsx",
+        "components/setup-instructions.tsx",
+        "components/templates/TemplateEditor.tsx",
+        "components/testing/comprehensive-test-demo.tsx",
+        "components/travel-forms/form-section.tsx",
+        "components/travel-forms/index.ts",
+        "components/travelers-view.tsx",
+        "components/trip-cost-view.tsx",
+        "components/trip-customization/accommodation-map.tsx",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/trip-customization/activity-timeline.tsx",
+        "components/trip-customization/drag-drop-timeline.tsx",
+        "components/trip-customization/pricing-breakdown.tsx",
+        "components/trip-customization/pricing-history.tsx",
+        "components/trip-customization/trip-modification-form.tsx",
+        "components/trips/TripDashboard.tsx",
+        "components/ui/hover-card.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/carousel.tsx",
+      "component": "carousel",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/chart.tsx",
+      "component": "chart",
+      "usedIn": [
+        "components/performance/code-splitting.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/checkbox.tsx",
+      "component": "checkbox",
+      "usedIn": [
+        "components/onboarding/screens/company-profile-screen.tsx",
+        "components/onboarding/screens/content-import-screen.tsx",
+        "components/onboarding/screens/review-launch-screen.tsx",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/collapsible.tsx",
+      "component": "collapsible",
+      "usedIn": [
+        "components/flight-display/flight-card.tsx",
+        "components/hotel-display/hotel-card.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/command.tsx",
+      "component": "command",
+      "usedIn": [
+        "app/demo/voice-test/page.tsx",
+        "components/travel-forms/destination-selector.tsx",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/trip-modification-form.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/context-menu.tsx",
+      "component": "context-menu",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/dialog.tsx",
+      "component": "dialog",
+      "usedIn": [
+        "components/itinerary/ActivityManager.tsx",
+        "components/itinerary/ModernItineraryViewer.tsx",
+        "components/onboarding/screens/review-launch-screen.tsx",
+        "components/performance/bundle-analyzer.tsx",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/trip-customization/activity-timeline.tsx",
+        "components/trips/TripDashboard.tsx",
+        "components/ui/alert-dialog.tsx",
+        "components/ui/command.tsx",
+        "components/ui/sheet.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/drawer.tsx",
+      "component": "drawer",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/dropdown-menu.tsx",
+      "component": "dropdown-menu",
+      "usedIn": [
+        "components/assets/AssetGallery.tsx",
+        "components/layout/MainHeader.tsx",
+        "components/theme-toggle.tsx",
+        "components/trips/TripDashboard.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/form.tsx",
+      "component": "form",
+      "usedIn": [
+        "app/api/monitoring/metrics/route.ts",
+        "app/demo/performance/page.tsx",
+        "app/demo/voice-test/page.tsx",
+        "app/page.tsx",
+        "app/plan/page.tsx",
+        "app/trips/page.tsx",
+        "components/ai-request-form-enhanced.tsx",
+        "components/assets/AssetGallery.tsx",
+        "components/assets/AssetUpload.tsx",
+        "components/ClientAppShell.tsx",
+        "components/mobile-audit/mobile-audit-dashboard.tsx",
+        "components/onboarding/screens/content-import-screen.tsx",
+        "components/performance/performance-optimization-demo.tsx",
+        "components/sidebar.tsx",
+        "components/travel-forms/budget-range-slider.tsx",
+        "components/travel-forms/date-range-picker.tsx",
+        "components/travel-forms/enhanced-form-components.tsx",
+        "components/travel-forms/index.ts",
+        "components/travel-forms/travel-form-provider.tsx",
+        "components/travel-forms/traveler-counter.tsx",
+        "components/trip-customization/index.ts",
+        "components/trip-customization/trip-modification-form.tsx",
+        "components/trips/TripDashboard.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/hover-card.tsx",
+      "component": "hover-card",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/input-otp.tsx",
+      "component": "input-otp",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/input.tsx",
+      "component": "input",
+      "usedIn": [
+        "app/demo/state-management/page.tsx",
+        "app/demo/voice-test/page.tsx",
+        "app/ui-showcase/page.tsx",
+        "components/admin/DeploymentManager.tsx",
+        "components/admin/ThemePreview.tsx",
+        "components/assets/AssetGallery.tsx",
+        "components/assets/AssetUpload.tsx",
+        "components/error-handling/edge-case-demo.tsx",
+        "components/itinerary/ActivityManager.tsx",
+        "components/onboarding/screens/branding-customization-screen.tsx",
+        "components/onboarding/screens/company-profile-screen.tsx",
+        "components/onboarding/screens/content-import-screen.tsx",
+        "components/onboarding/screens/crm-integrations-screen.tsx",
+        "components/onboarding/screens/pricing-configuration-screen.tsx",
+        "components/performance/react-optimizations.tsx",
+        "components/travel-forms/budget-range-slider.tsx",
+        "components/travel-forms/destination-selector.tsx",
+        "components/travel-forms/enhanced-form-components.tsx",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/trip-customization/trip-modification-form.tsx",
+        "components/trips/TripDashboard.tsx",
+        "components/ui/input-otp.tsx",
+        "components/ui/sidebar.tsx",
+        "components/ui/voice-command-input.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/label.tsx",
+      "component": "label",
+      "usedIn": [
+        "app/admin/crm/page.tsx",
+        "app/demo/one-handed-mode/page.tsx",
+        "app/demo/state-management/page.tsx",
+        "app/demo/voice-test/page.tsx",
+        "app/ui-showcase/page.tsx",
+        "components/admin/ClientManagement.tsx",
+        "components/admin/ContentManagement.tsx",
+        "components/admin/DeploymentManager.tsx",
+        "components/admin/onboarding/OnboardingStepRenderer.tsx",
+        "components/admin/RoleManagement.tsx",
+        "components/admin/ThemeCustomizer.tsx",
+        "components/admin/ThemeCustomizerConnected.tsx",
+        "components/assets/AssetUpload.tsx",
+        "components/BatterySettings.tsx",
+        "components/error-handling/edge-case-demo.tsx",
+        "components/images/image-quality-controls.tsx",
+        "components/itinerary/ActivityManager.tsx",
+        "components/itinerary/print-share-demo.tsx",
+        "components/onboarding/screens/branding-customization-screen.tsx",
+        "components/onboarding/screens/company-profile-screen.tsx",
+        "components/onboarding/screens/content-import-screen.tsx",
+        "components/onboarding/screens/crm-integrations-screen.tsx",
+        "components/onboarding/screens/pricing-configuration-screen.tsx",
+        "components/onboarding/screens/review-launch-screen.tsx",
+        "components/OneHandedSettings.tsx",
+        "components/performance/react-optimizations.tsx",
+        "components/settings/OneHandedSettings.tsx",
+        "components/sidebar.tsx",
+        "components/templates/TemplateEditor.tsx",
+        "components/travel-forms/budget-range-slider.tsx",
+        "components/travel-forms/destination-selector.tsx",
+        "components/travel-forms/enhanced-form-components.tsx",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/trip-customization/trip-modification-form.tsx",
+        "components/ui/form.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/menubar.tsx",
+      "component": "menubar",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/navigation-menu.tsx",
+      "component": "navigation-menu",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/pagination.tsx",
+      "component": "pagination",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/popover.tsx",
+      "component": "popover",
+      "usedIn": [
+        "components/travel-forms/date-range-picker.tsx",
+        "components/travel-forms/destination-selector.tsx",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/trip-modification-form.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/progress.tsx",
+      "component": "progress",
+      "usedIn": [
+        "app/onboarding/layout.tsx",
+        "components/analytics/AnalyticsDashboard.tsx",
+        "components/assets/AssetUpload.tsx",
+        "components/dashboard/TravelDashboard.tsx",
+        "components/error-handling/edge-case-demo.tsx",
+        "components/mobile-audit/audit-runner.tsx",
+        "components/mobile-audit/mobile-audit-dashboard.tsx",
+        "components/onboarding/onboarding-progress-bar.tsx",
+        "components/onboarding/screens/content-import-screen.tsx",
+        "components/performance/bundle-analyzer.tsx",
+        "components/performance/code-splitting.tsx",
+        "components/performance/react-optimizations.tsx",
+        "components/pricing/PricingInsights.tsx",
+        "components/travel-forms/progress-indicator.tsx",
+        "components/trip-cost-view.tsx",
+        "components/trip-customization/pricing-breakdown.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/radio-group.tsx",
+      "component": "radio-group",
+      "usedIn": [
+        "components/BatterySettings.tsx",
+        "components/onboarding/screens/company-profile-screen.tsx",
+        "components/OneHandedSettings.tsx",
+        "components/travel-forms/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/resizable.tsx",
+      "component": "resizable",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/scroll-area.tsx",
+      "component": "scroll-area",
+      "usedIn": [
+        "components/templates/TemplateEditor.tsx",
+        "components/trip-customization/pricing-history.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/select.tsx",
+      "component": "select",
+      "usedIn": [
+        "app/demo/voice-test/page.tsx",
+        "app/ui-showcase/page.tsx",
+        "components/admin/DeploymentManager.tsx",
+        "components/admin/ThemePreview.tsx",
+        "components/analytics/AnalyticsDashboard.tsx",
+        "components/assets/AssetGallery.tsx",
+        "components/assets/AssetUpload.tsx",
+        "components/itinerary/ActivityManager.tsx",
+        "components/onboarding/screens/branding-customization-screen.tsx",
+        "components/onboarding/screens/company-profile-screen.tsx",
+        "components/onboarding/screens/crm-integrations-screen.tsx",
+        "components/travel-forms/budget-range-slider.tsx",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/trip-customization/pricing-breakdown.tsx",
+        "components/trip-customization/trip-modification-form.tsx",
+        "components/trips/TripDashboard.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/separator.tsx",
+      "component": "separator",
+      "usedIn": [
+        "app/(demo)/accommodation-selection/page.tsx",
+        "app/(demo)/trip-customization/page.tsx",
+        "app/demo/activity-selection/page.tsx",
+        "app/demo/drag-drop-timeline/page.tsx",
+        "app/demo/real-time-pricing/page.tsx",
+        "app/demo/state-management/page.tsx",
+        "app/itinerary-display/page.tsx",
+        "components/analytics/AnalyticsDashboard.tsx",
+        "components/itinerary/ActivityManager.tsx",
+        "components/itinerary/ModernItineraryViewer.tsx",
+        "components/pricing/PricingInsights.tsx",
+        "components/templates/TemplateEditor.tsx",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/trip-customization/activity-timeline.tsx",
+        "components/trip-customization/drag-drop-timeline.tsx",
+        "components/trip-customization/pricing-breakdown.tsx",
+        "components/trip-customization/pricing-history.tsx",
+        "components/trip-customization/trip-modification-form.tsx",
+        "components/trips/TripDashboard.tsx",
+        "components/ui/sidebar.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/sheet.tsx",
+      "component": "sheet",
+      "usedIn": [
+        "components/layout/MainHeader.tsx",
+        "components/layout/mobile-bottom-nav.tsx",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/ui/sidebar.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/sidebar.tsx",
+      "component": "sidebar",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": [
+        "components/sidebar.tsx"
+      ]
+    },
+    {
+      "file": "components/ui/skeleton.tsx",
+      "component": "skeleton",
+      "usedIn": [
+        "components/itinerary/ConnectedItineraryViewer.tsx",
+        "components/performance/lazy-component.tsx",
+        "components/trips/TripDashboard.tsx",
+        "components/ui/sidebar.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/skip-link.tsx",
+      "component": "skip-link",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/slider.tsx",
+      "component": "slider",
+      "usedIn": [
+        "components/BatterySettings.tsx",
+        "components/itinerary/ActivityManager.tsx",
+        "components/OneHandedSettings.tsx",
+        "components/travel-forms/budget-range-slider.tsx",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/trip-customization/index.ts",
+        "components/trip-customization/trip-modification-form.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/sonner.tsx",
+      "component": "sonner",
+      "usedIn": [
+        "components/ClientAppShell.tsx",
+        "components/itinerary/ActivityManager.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/switch.tsx",
+      "component": "switch",
+      "usedIn": [
+        "app/demo/state-management/page.tsx",
+        "components/BatterySettings.tsx",
+        "components/itinerary/ActivityManager.tsx",
+        "components/onboarding/screens/content-import-screen.tsx",
+        "components/onboarding/screens/pricing-configuration-screen.tsx",
+        "components/OneHandedSettings.tsx",
+        "components/trip-customization/trip-modification-form.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/table.tsx",
+      "component": "table",
+      "usedIn": [
+        "components/admin/ClientManagement.tsx",
+        "components/admin/ContentManagement.tsx",
+        "components/admin/RoleManagement.tsx",
+        "components/onboarding/screens/content-import-screen.tsx",
+        "components/onboarding/screens/pricing-configuration-screen.tsx",
+        "components/trip-customization/drag-drop-timeline.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/tabs.tsx",
+      "component": "tabs",
+      "usedIn": [
+        "app/(demo)/accommodation-selection/page.tsx",
+        "app/demo/activity-selection/page.tsx",
+        "app/demo/drag-drop-timeline/page.tsx",
+        "app/demo/real-time-pricing/page.tsx",
+        "app/demo/state-management/page.tsx",
+        "app/itinerary-display/page.tsx",
+        "app/page.tsx",
+        "app/ui-showcase-v2/page.tsx",
+        "components/admin/AdminDashboard.tsx",
+        "components/admin/DeploymentManager.tsx",
+        "components/assets/AssetManager.tsx",
+        "components/dashboard/TravelDashboard.tsx",
+        "components/error-handling/edge-case-demo.tsx",
+        "components/mobile-audit/mobile-audit-dashboard.tsx",
+        "components/performance/bundle-analyzer.tsx",
+        "components/performance/performance-optimization-demo.tsx",
+        "components/performance/react-optimizations.tsx",
+        "components/templates/TemplateEditor.tsx",
+        "components/testing/comprehensive-test-demo.tsx",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/textarea.tsx",
+      "component": "textarea",
+      "usedIn": [
+        "components/admin/ThemePreview.tsx",
+        "components/ai-request-form.tsx",
+        "components/assets/AssetUpload.tsx",
+        "components/chat-interface.tsx",
+        "components/itinerary/ActivityManager.tsx",
+        "components/sidebar.tsx",
+        "components/travel-forms/enhanced-form-components.tsx",
+        "components/travel-forms/index.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/toast.tsx",
+      "component": "toast",
+      "usedIn": [
+        "components/itinerary/ActivityManager.tsx",
+        "components/trip-customization/drag-drop-timeline.tsx",
+        "components/ui/toaster.tsx",
+        "components/ui/use-toast.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/toaster.tsx",
+      "component": "toaster",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/toggle-group.tsx",
+      "component": "toggle-group",
+      "usedIn": [],
+      "isDead": true,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/toggle.tsx",
+      "component": "toggle",
+      "usedIn": [
+        "components/layout/MainHeader.tsx",
+        "components/ui/toggle-group.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/tooltip.tsx",
+      "component": "tooltip",
+      "usedIn": [
+        "components/hotel-display/amenity-icons.tsx",
+        "components/pricing/PricingInsights.tsx",
+        "components/trip-customization/accommodation-selector.tsx",
+        "components/trip-customization/activity-selector.tsx",
+        "components/trip-customization/pricing-breakdown.tsx",
+        "components/trip-customization/pricing-history.tsx",
+        "components/ui/sidebar.tsx",
+        "components/ui/voice-input.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/tripnav-button.tsx",
+      "component": "tripnav-button",
+      "usedIn": [
+        "components/ui/button.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/TripNavLogo.tsx",
+      "component": "TripNavLogo",
+      "usedIn": [
+        "app/page.tsx",
+        "components/ai-request-form.tsx",
+        "components/header.tsx",
+        "components/landing-page.tsx",
+        "components/layout/MainHeader.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/use-mobile.tsx",
+      "component": "use-mobile",
+      "usedIn": [
+        "components/layout/orientation-aware-layout.tsx",
+        "components/ui/sidebar.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/voice-command-input.tsx",
+      "component": "voice-command-input",
+      "usedIn": [
+        "app/demo/voice-test/page.tsx",
+        "components/travel-forms/destination-selector.tsx",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/trip-modification-form.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/voice-input.tsx",
+      "component": "voice-input",
+      "usedIn": [
+        "app/demo/voice-test/page.tsx",
+        "components/travel-forms/index.ts",
+        "components/ui/voice-command-input.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/atoms/index.ts",
+      "component": "index",
+      "usedIn": [
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/flight-display-demo.tsx",
+        "components/hotel-display/hotel-display-demo.tsx",
+        "components/images/image-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/error-handling/index.ts",
+        "components/flight-display/index.ts",
+        "components/hotel-display/index.ts",
+        "components/images/index.ts",
+        "components/itinerary/index.ts",
+        "components/loading/index.ts",
+        "components/performance/index.ts",
+        "components/testing/index.ts",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ]
+    },
+    {
+      "file": "components/error-handling/index.ts",
+      "component": "index",
+      "usedIn": [
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/flight-display-demo.tsx",
+        "components/hotel-display/hotel-display-demo.tsx",
+        "components/images/image-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/atoms/index.ts",
+        "components/flight-display/index.ts",
+        "components/hotel-display/index.ts",
+        "components/images/index.ts",
+        "components/itinerary/index.ts",
+        "components/loading/index.ts",
+        "components/performance/index.ts",
+        "components/testing/index.ts",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ]
+    },
+    {
+      "file": "components/flight-display/index.ts",
+      "component": "index",
+      "usedIn": [
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/flight-display-demo.tsx",
+        "components/hotel-display/hotel-display-demo.tsx",
+        "components/images/image-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/atoms/index.ts",
+        "components/error-handling/index.ts",
+        "components/hotel-display/index.ts",
+        "components/images/index.ts",
+        "components/itinerary/index.ts",
+        "components/loading/index.ts",
+        "components/performance/index.ts",
+        "components/testing/index.ts",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ]
+    },
+    {
+      "file": "components/hotel-display/index.ts",
+      "component": "index",
+      "usedIn": [
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/flight-display-demo.tsx",
+        "components/hotel-display/hotel-display-demo.tsx",
+        "components/images/image-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/atoms/index.ts",
+        "components/error-handling/index.ts",
+        "components/flight-display/index.ts",
+        "components/images/index.ts",
+        "components/itinerary/index.ts",
+        "components/loading/index.ts",
+        "components/performance/index.ts",
+        "components/testing/index.ts",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ]
+    },
+    {
+      "file": "components/images/cloudinary-config.ts",
+      "component": "cloudinary-config",
+      "usedIn": [
+        "app/test-cloudinary/page.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/images/index.ts",
+      "component": "index",
+      "usedIn": [
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/flight-display-demo.tsx",
+        "components/hotel-display/hotel-display-demo.tsx",
+        "components/images/image-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/atoms/index.ts",
+        "components/error-handling/index.ts",
+        "components/flight-display/index.ts",
+        "components/hotel-display/index.ts",
+        "components/itinerary/index.ts",
+        "components/loading/index.ts",
+        "components/performance/index.ts",
+        "components/testing/index.ts",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ]
+    },
+    {
+      "file": "components/itinerary/index.ts",
+      "component": "index",
+      "usedIn": [
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/flight-display-demo.tsx",
+        "components/hotel-display/hotel-display-demo.tsx",
+        "components/images/image-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/atoms/index.ts",
+        "components/error-handling/index.ts",
+        "components/flight-display/index.ts",
+        "components/hotel-display/index.ts",
+        "components/images/index.ts",
+        "components/loading/index.ts",
+        "components/performance/index.ts",
+        "components/testing/index.ts",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ]
+    },
+    {
+      "file": "components/loading/index.ts",
+      "component": "index",
+      "usedIn": [
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/flight-display-demo.tsx",
+        "components/hotel-display/hotel-display-demo.tsx",
+        "components/images/image-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/atoms/index.ts",
+        "components/error-handling/index.ts",
+        "components/flight-display/index.ts",
+        "components/hotel-display/index.ts",
+        "components/images/index.ts",
+        "components/itinerary/index.ts",
+        "components/performance/index.ts",
+        "components/testing/index.ts",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ]
+    },
+    {
+      "file": "components/mobile-audit/types.ts",
+      "component": "types",
+      "usedIn": [
+        "app/api/generate-itinerary/route.ts",
+        "app/api/integrations/crm/auth/[provider]/route.ts",
+        "app/api/integrations/crm/callback/[provider]/route.ts",
+        "app/api/trips/[id]/route.ts",
+        "app/api/trips/route.ts",
+        "app/api/v1/trips/route.ts",
+        "app/api/webhooks/crm/route.ts",
+        "components/admin/ClientManagement.tsx",
+        "components/admin/ContentManagement.tsx",
+        "components/admin/ThemeCustomizer.tsx",
+        "components/admin/ThemeCustomizerConnected.tsx",
+        "components/admin/ThemePreview.tsx",
+        "components/assets/AssetManager.tsx",
+        "components/mobile-audit/audit-runner.tsx",
+        "components/mobile-audit/dom-analyzer.tsx",
+        "components/mobile-audit/mobile-audit-dashboard.tsx",
+        "components/templates/ComponentEditor.tsx",
+        "components/templates/TemplateEditor.tsx",
+        "components/templates/TemplatePreview.tsx",
+        "components/trip-customization/pricing-service.ts"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/performance/index.ts",
+      "component": "index",
+      "usedIn": [
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/flight-display-demo.tsx",
+        "components/hotel-display/hotel-display-demo.tsx",
+        "components/images/image-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/atoms/index.ts",
+        "components/error-handling/index.ts",
+        "components/flight-display/index.ts",
+        "components/hotel-display/index.ts",
+        "components/images/index.ts",
+        "components/itinerary/index.ts",
+        "components/loading/index.ts",
+        "components/testing/index.ts",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ]
+    },
+    {
+      "file": "components/testing/index.ts",
+      "component": "index",
+      "usedIn": [
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/flight-display-demo.tsx",
+        "components/hotel-display/hotel-display-demo.tsx",
+        "components/images/image-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/atoms/index.ts",
+        "components/error-handling/index.ts",
+        "components/flight-display/index.ts",
+        "components/hotel-display/index.ts",
+        "components/images/index.ts",
+        "components/itinerary/index.ts",
+        "components/loading/index.ts",
+        "components/performance/index.ts",
+        "components/travel-forms/index.ts",
+        "components/trip-customization/index.ts"
+      ]
+    },
+    {
+      "file": "components/travel-forms/index.ts",
+      "component": "index",
+      "usedIn": [
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/flight-display-demo.tsx",
+        "components/hotel-display/hotel-display-demo.tsx",
+        "components/images/image-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/atoms/index.ts",
+        "components/error-handling/index.ts",
+        "components/flight-display/index.ts",
+        "components/hotel-display/index.ts",
+        "components/images/index.ts",
+        "components/itinerary/index.ts",
+        "components/loading/index.ts",
+        "components/performance/index.ts",
+        "components/testing/index.ts",
+        "components/trip-customization/index.ts"
+      ]
+    },
+    {
+      "file": "components/trip-customization/index.ts",
+      "component": "index",
+      "usedIn": [
+        "components/error-handling/edge-case-demo.tsx",
+        "components/flight-display/flight-display-demo.tsx",
+        "components/hotel-display/hotel-display-demo.tsx",
+        "components/images/image-optimization-demo.tsx"
+      ],
+      "isDead": false,
+      "duplicates": [
+        "components/atoms/index.ts",
+        "components/error-handling/index.ts",
+        "components/flight-display/index.ts",
+        "components/hotel-display/index.ts",
+        "components/images/index.ts",
+        "components/itinerary/index.ts",
+        "components/loading/index.ts",
+        "components/performance/index.ts",
+        "components/testing/index.ts",
+        "components/travel-forms/index.ts"
+      ]
+    },
+    {
+      "file": "components/trip-customization/pricing-service.ts",
+      "component": "pricing-service",
+      "usedIn": [
+        "components/trip-customization/index.ts",
+        "components/trip-customization/pricing-breakdown.tsx",
+        "components/trip-customization/pricing-history.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    },
+    {
+      "file": "components/ui/use-toast.ts",
+      "component": "use-toast",
+      "usedIn": [
+        "components/trip-customization/drag-drop-timeline.tsx",
+        "components/ui/toaster.tsx"
+      ],
+      "isDead": false,
+      "duplicates": []
+    }
+  ]
+}

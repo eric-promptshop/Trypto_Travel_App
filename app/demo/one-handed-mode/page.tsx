@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ThumbZoneWrapper } from '@/components/ThumbZoneWrapper';
 import { FloatingActionContainer } from '@/components/FloatingActionContainer';
 import { OneHandedSettings } from '@/components/settings/OneHandedSettings';
-import { Button } from '@/components/atoms';
+import { Button } from "@/components/ui/button";
 
 export default function OneHandedModePage() {
   const [oneHandedEnabled, setOneHandedEnabled] = useState(false);
@@ -56,7 +56,7 @@ export default function OneHandedModePage() {
           <div className="flex items-center gap-4 mb-6">
             <Button
               onClick={handleToggleOneHanded}
-              variant={oneHandedEnabled ? "danger" : "primary"}
+              variant={oneHandedEnabled ? "destructive" : "default"}
               className="min-h-[44px] px-6"
             >
               {oneHandedEnabled ? 'Exit One-Handed Mode' : 'Enable One-Handed Mode'}
@@ -87,7 +87,7 @@ export default function OneHandedModePage() {
                 High Priority Actions (Always in thumb reach when enabled)
               </h3>
               <ThumbZoneWrapper priority="high">
-                <Button variant="primary" className="w-full">
+                <Button variant="default" className="w-full">
                   Primary Action Button
                 </Button>
               </ThumbZoneWrapper>
@@ -154,7 +154,7 @@ export default function OneHandedModePage() {
             
             <div className="primary-actions">
               <ThumbZoneWrapper priority="high">
-                <Button variant="primary" className="w-full">
+                <Button variant="default" className="w-full">
                   Submit Form
                 </Button>
               </ThumbZoneWrapper>
@@ -182,7 +182,7 @@ export default function OneHandedModePage() {
       {oneHandedEnabled && (
         <FloatingActionContainer>
           <Button
-            variant="primary"
+            variant="default"
             className="w-12 h-12 rounded-full flex items-center justify-center"
             onClick={() => alert('Floating action triggered!')}
           >

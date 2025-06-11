@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { TripDashboard } from '@/components/trips/TripDashboard'
 import { ConnectedItineraryViewer } from '@/components/itinerary/ConnectedItineraryViewer'
-import { AIRequestFormEnhanced } from '@/components/ai-request-form-enhanced'
+import { AIRequestForm } from '@/components/ai-request-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import { type Trip } from '@/hooks/use-trips'
 
@@ -97,7 +97,7 @@ export default function TripsPage() {
             transition={{ duration: 0.3 }}
             className="min-h-screen"
           >
-            <AIRequestFormEnhanced onComplete={handleFormComplete} />
+            <AIRequestForm onComplete={handleFormComplete} />
           </motion.div>
         )
 
