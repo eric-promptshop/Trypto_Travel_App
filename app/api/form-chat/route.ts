@@ -21,8 +21,10 @@ export async function POST(request: NextRequest) {
     if (!process.env.OPENAI_API_KEY) {
       console.warn('OpenAI API key not configured, using fallback responses')
       return NextResponse.json({
+        response: getFallbackResponse(message, conversationHistory),
         fallbackResponse: getFallbackResponse(message, conversationHistory),
-        warning: 'OpenAI API key not configured'
+        warning: 'OpenAI API key not configured',
+        success: true
       })
     }
 
@@ -65,10 +67,35 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Form chat error:', error)
     
+    // Provide more specific error messages
+    let errorMessage = "I'm having trouble connecting right now. Let me help you plan your trip! What destination are you thinking about?"
+    let debugInfo = ""
+    
+    if (error instanceof Error) {
+      if (error.message.includes('401')) {
+        debugInfo = 'Invalid OpenAI API key. Please check your OPENAI_API_KEY environment variable.'
+        errorMessage = "I'm having trouble with my connection. While we fix this, tell me about your dream destination!"
+      } else if (error.message.includes('429')) {
+        debugInfo = 'OpenAI API rate limit exceeded. Please try again in a few moments.'
+        errorMessage = "I'm a bit busy right now. Let's take a moment - what destination are you considering?"
+      } else if (error.message.includes('insufficient_quota')) {
+        debugInfo = 'OpenAI API quota exceeded. Please check your OpenAI account.'
+        errorMessage = "I'm having some technical difficulties. But I'd still love to hear about where you want to go!"
+      }
+    }
+    
+    // Log the debug info for developers
+    if (debugInfo) {
+      console.error('OpenAI API Error:', debugInfo)
+    }
+    
     // Return fallback response on error
     return NextResponse.json({
-      fallbackResponse: "I'm having trouble connecting right now. Let me help you plan your trip! What destination are you thinking about?",
-      error: error instanceof Error ? error.message : 'Failed to process chat'
+      response: errorMessage,
+      fallbackResponse: errorMessage,
+      error: error instanceof Error ? error.message : 'Failed to process chat',
+      debugInfo,
+      success: true // Keep success true to avoid breaking UI
     }, { status: 200 }) // Return 200 to avoid breaking the UI
   }
 }
