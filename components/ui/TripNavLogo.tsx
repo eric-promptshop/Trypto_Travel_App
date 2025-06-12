@@ -8,6 +8,7 @@ interface TripNavLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl'
   animated?: boolean
   variant?: 'default' | 'white' | 'dark'
+  showTakeoff?: boolean
 }
 
 const sizeClasses = {
@@ -21,7 +22,8 @@ export function TripNavLogo({
   className, 
   size = 'md', 
   animated = false,
-  variant = 'default'
+  variant = 'default',
+  showTakeoff = false
 }: TripNavLogoProps) {
   const containerClass = cn(
     'flex items-center justify-center',
@@ -73,7 +75,22 @@ export function TripNavLogo({
   } : {}
 
   // Animation properties for the airplane
-  const airplaneAnimationProps = animated ? {
+  const airplaneAnimationProps = showTakeoff ? {
+    initial: { x: -50, y: 20, rotate: -15, opacity: 0 },
+    animate: {
+      x: [0, 20, 40],
+      y: [0, -15, -30],
+      rotate: [0, -10, -25],
+      opacity: [1, 1, 0]
+    },
+    transition: {
+      duration: 3,
+      repeat: Infinity,
+      ease: [0.43, 0.13, 0.23, 0.96],
+      times: [0, 0.6, 1],
+      repeatDelay: 1
+    }
+  } : animated ? {
     animate: {
       x: [0, 3, 0],
       y: [0, -1, 0]
@@ -142,14 +159,82 @@ export function TripNavLogo({
           />
         </motion.g>
         
+        {/* Airplane trail effect for takeoff */}
+        {showTakeoff && (
+          <motion.g
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.6, 0] }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeOut",
+              repeatDelay: 1
+            }}
+          >
+            <motion.path
+              d="M155 26 Q145 28 135 32"
+              stroke={colors.orange}
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
+              opacity="0.4"
+              strokeDasharray="4 2"
+            />
+            <motion.path
+              d="M140 30 Q130 32 120 36"
+              stroke={colors.orange}
+              strokeWidth="1.5"
+              fill="none"
+              strokeLinecap="round"
+              opacity="0.3"
+              strokeDasharray="3 2"
+            />
+          </motion.g>
+        )}
+        
         {/* Orange connecting line */}
-        <motion.path 
-          d="M35 25 Q95 15 155 25" 
-          stroke={colors.orange} 
-          strokeWidth="3" 
-          fill="none"
-          {...lineAnimationProps}
-        />
+        {!showTakeoff && (
+          <motion.path 
+            d="M35 25 Q95 15 155 25" 
+            stroke={colors.orange} 
+            strokeWidth="3" 
+            fill="none"
+            {...lineAnimationProps}
+          />
+        )}
+        
+        {/* Runway for takeoff animation */}
+        {showTakeoff && (
+          <motion.g
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <motion.rect
+              x="35"
+              y="28"
+              width="120"
+              height="2"
+              fill={colors.orange}
+              opacity="0.3"
+            />
+            <motion.g
+              animate={{ opacity: [0.3, 0.6, 0.3] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              {[40, 60, 80, 100, 120, 140].map((x, i) => (
+                <rect
+                  key={i}
+                  x={x}
+                  y="29"
+                  width="8"
+                  height="1"
+                  fill={colors.orange}
+                />
+              ))}
+            </motion.g>
+          </motion.g>
+        )}
         
         {/* Text "TripNav" */}
         <motion.g 

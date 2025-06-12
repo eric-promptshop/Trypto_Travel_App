@@ -263,7 +263,7 @@ export default function Home() {
               >
                 {/* Logo */}
                 <motion.div variants={transitionVariants.item}>
-                  <TripNavLogo size="xl" animated={true} className="mx-auto" />
+                  <TripNavLogo size="xl" animated={true} showTakeoff={true} className="mx-auto" />
                 </motion.div>
 
                 {/* Main Heading */}
