@@ -13,8 +13,11 @@ import {
   AlertTriangle,
   RefreshCw,
   Loader2,
+  Plane,
 } from "lucide-react"
 import { useTrips } from '@/hooks/use-trips'
+import { Badge } from "@/components/ui/badge"
+import { truncateTextSmart } from '@/lib/truncate-text'
 
 interface Message {
   id: string
@@ -50,6 +53,14 @@ interface AIRequestFormProps {
   onComplete: (formData: FormData) => void
 }
 
+interface ItineraryDay {
+  day: number
+  title: string
+  location: string
+  description: string
+  image?: string
+}
+
 export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const { createTrip } = useTrips()
   const [messages, setMessages] = useState<Message[]>([
@@ -66,7 +77,20 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [extractedData, setExtractedData] = useState<FormData>({})
   const [error, setError] = useState<string | null>(null)
+  const [selectedDay, setSelectedDay] = useState(1)
+  const [currentItineraryData, setCurrentItineraryData] = useState<ItineraryDay[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Mock location images for demo
+  const locationImages: Record<number, string> = {
+    1: '/images/lima-peru.png',
+    2: '/images/cusco-peru.png',
+    3: '/images/sacred-valley.png',
+    4: '/images/machu-picchu.png',
+    5: '/images/cusco-peru.png',
+    6: '/images/puerto-maldonado.png',
+    7: '/images/lima-peru.png'
+  }
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -146,6 +170,32 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       if (response.ok) {
         const result = await response.json()
         setExtractedData(result.data)
+        
+        // Generate mock itinerary preview when we have enough data
+        if (result.data.completeness >= 70 && result.data.destinations?.length > 0) {
+          const destination = result.data.destinations[0]
+          const startDate = new Date(result.data.travelDates?.startDate || new Date())
+          const endDate = new Date(result.data.travelDates?.endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))
+          const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+          
+          const mockDays: ItineraryDay[] = []
+          for (let i = 0; i < days; i++) {
+            mockDays.push({
+              day: i + 1,
+              title: i === 0 ? `Arrival in ${destination}` : 
+                     i === days - 1 ? `Departure from ${destination}` : 
+                     `Explore ${destination}`,
+              location: destination,
+              description: i === 0 ? 
+                `Welcome to ${destination}! Check into your accommodation and explore the local area.` :
+                i === days - 1 ?
+                `Say goodbye to ${destination}. Transfer to the airport for your departure.` :
+                `Discover the best of ${destination} with guided tours, local cuisine, and cultural experiences.`,
+              image: locationImages[i + 1]
+            })
+          }
+          setCurrentItineraryData(mockDays)
+        }
       }
     } catch (error) {
       console.error("Error extracting form data:", error)
@@ -176,10 +226,25 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       }
 
       // Generate AI itinerary
-      const response = await fetch("/api/trips-ai/generate", {
+      const preferences = {
+        primaryDestination: extractedData.destinations?.[0] || "Paris",
+        startDate: extractedData.travelDates?.startDate || new Date().toISOString(),
+        endDate: extractedData.travelDates?.endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        adults: extractedData.travelers?.adults || 1,
+        children: extractedData.travelers?.children || 0,
+        infants: 0,
+        budgetMin: extractedData.budget?.amount || 1000,
+        budgetMax: (extractedData.budget?.amount || 1000) * 1.5,
+        interests: extractedData.interests || ['sightseeing', 'culinary', 'cultural'],
+        accommodationType: extractedData.accommodation || 'hotel',
+        transportationPreference: 'mixed',
+        pacePreference: 'moderate'
+      }
+
+      const response = await fetch("/api/generate-itinerary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tripData),
+        body: JSON.stringify({ preferences }),
       })
 
       if (!response.ok) {
@@ -189,14 +254,28 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
 
       const result = await response.json()
       
-      // Create trip in the system with the generated itinerary
-      const newTrip = await createTrip({
-        title: result.itinerary.title || `Trip to ${tripData.destination}`,
-        description: `AI-generated ${result.itinerary.duration}-day itinerary`,
-        startDate: result.itinerary.startDate,
-        endDate: result.itinerary.endDate,
-        location: tripData.destination
-      })
+      if (result.success && result.itinerary) {
+        // Parse the generated itinerary to create preview data
+        const itineraryDays: ItineraryDay[] = result.itinerary.days.map((day: any, index: number) => ({
+          day: day.dayNumber || index + 1,
+          title: day.title,
+          location: day.location || result.itinerary.destinations[0]?.title || preferences.primaryDestination,
+          description: day.notes || `Day ${day.dayNumber}: ${day.activities.map((a: any) => a.title).join(', ')}`,
+          image: locationImages[day.dayNumber || index + 1]
+        }))
+        setCurrentItineraryData(itineraryDays)
+        
+        // Create trip in the system with the generated itinerary
+        const newTrip = await createTrip({
+          title: result.itinerary.title || `Trip to ${preferences.primaryDestination}`,
+          description: result.itinerary.description || `AI-generated ${result.itinerary.totalDuration}-day itinerary`,
+          startDate: result.itinerary.days[0]?.date || preferences.startDate,
+          endDate: result.itinerary.days[result.itinerary.days.length - 1]?.date || preferences.endDate,
+          location: preferences.primaryDestination
+        })
+      } else {
+        throw new Error("Invalid itinerary response")
+      }
 
       if (newTrip) {
         onComplete({
@@ -239,9 +318,11 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const isReadyToProceed = completeness >= 70
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex flex-col">
-      <div className="flex-1 max-w-4xl mx-auto w-full p-4">
-        <div className="bg-white rounded-lg shadow-lg h-[calc(100vh-2rem)] flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex">
+      <div className="flex-1 flex">
+        {/* Main Chat Interface */}
+        <div className="flex-1 max-w-4xl mx-auto p-4">
+          <div className="bg-white rounded-lg shadow-lg h-[calc(100vh-2rem)] flex flex-col">
           {/* Header */}
           <div className="p-6 border-b">
             <h1 className="text-2xl font-bold text-gray-900">AI Travel Planner</h1>
@@ -365,6 +446,109 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Right Image Gallery - Only show when we have itinerary data */}
+      {currentItineraryData.length > 0 && (
+        <div className="w-80 bg-white border-l border-gray-200 flex flex-col flex-shrink-0 shadow-sm">
+          <div className="p-6 border-b border-gray-200 flex-shrink-0">
+            <h3 className="text-xl font-bold text-brand-gray-600 mb-2">Destination Gallery</h3>
+            <p className="text-sm text-brand-gray-500">
+              Day {selectedDay} of {currentItineraryData.length} • {currentItineraryData[selectedDay - 1]?.location}
+            </p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {currentItineraryData.map((day) => (
+              <motion.div
+                key={day.day}
+                data-day={day.day}
+                className={`relative cursor-pointer rounded-xl overflow-hidden transition-all duration-300 ${
+                  selectedDay === day.day
+                    ? "ring-4 ring-brand-blue-600 shadow-xl scale-105"
+                    : "hover:shadow-lg hover:scale-102"
+                }`}
+                onClick={() => setSelectedDay(day.day)}
+                whileHover={{ scale: selectedDay === day.day ? 1.05 : 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="relative">
+                  <img
+                    src={
+                      locationImages[day.day] ||
+                      day.image ||
+                      `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(day.location)}`
+                    }
+                    alt={day.location}
+                    className="w-full h-52 object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(day.location)}`
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-base truncate">{day.location}</h4>
+                        <p className="text-sm opacity-90 truncate">
+                          Day {day.day} - {day.title}
+                        </p>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className={`text-sm ml-3 flex-shrink-0 font-bold ${
+                          selectedDay === day.day ? "bg-brand-orange-600 text-white" : "bg-white/20 text-white"
+                        }`}
+                      >
+                        {day.day}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded content for selected day */}
+                {selectedDay === day.day && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="bg-white p-4 border-t border-gray-200"
+                  >
+                    <p className="text-sm text-brand-gray-500 leading-relaxed">
+                      {truncateTextSmart(day.description, 120)}
+                    </p>
+                    <div className="flex gap-2 mt-3">
+                      <Button size="sm" variant="outline" className="text-xs">
+                        <Plane className="w-3 h-3 mr-1" />
+                        Details
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Scroll to selected day button */}
+          <div className="p-4 border-t border-gray-200 flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-brand-blue-600 border-brand-blue-600 hover:bg-brand-blue-600/10 font-semibold"
+              onClick={() => {
+                const selectedElement = document.querySelector(`[data-day="${selectedDay}"]`)
+                if (selectedElement) {
+                  selectedElement.scrollIntoView({ behavior: "smooth", block: "center" })
+                }
+              }}
+            >
+              <Plane className="w-4 h-4 mr-2" />
+              Scroll to Day {selectedDay}
+            </Button>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   )

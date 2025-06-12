@@ -270,6 +270,17 @@ export function ModernItineraryViewer({
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
   const [expandedActivities, setExpandedActivities] = useState<Set<string>>(new Set())
 
+  // Location images mapping
+  const locationImages: Record<number, string> = {
+    0: '/images/lima-peru.png',
+    1: '/images/cusco-peru.png',
+    2: '/images/sacred-valley.png',
+    3: '/images/machu-picchu.png',
+    4: '/images/cusco-peru.png',
+    5: '/images/puerto-maldonado.png',
+    6: '/images/lima-peru.png'
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'long',
@@ -359,10 +370,10 @@ export function ModernItineraryViewer({
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Sidebar - Day Navigation */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-3">
             <Card className="sticky top-24">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg">Trip Overview</CardTitle>
@@ -435,7 +446,7 @@ export function ModernItineraryViewer({
           </div>
 
           {/* Main Content - Daily Activities */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-6">
             <AnimatePresence mode="wait">
               <motion.div
                 key={selectedDay}
@@ -691,6 +702,104 @@ export function ModernItineraryViewer({
                 Next Day
                 <ChevronRight className="w-4 h-4" />
               </Button>
+            </div>
+          </div>
+
+          {/* Right Image Gallery */}
+          <div className="lg:col-span-3">
+            <div className="bg-white border border-gray-200 rounded-lg sticky top-24 max-h-[calc(100vh-120px)] flex flex-col">
+              <div className="p-6 border-b border-gray-200 flex-shrink-0">
+                <h3 className="text-xl font-bold text-brand-gray-600 mb-2">Destination Gallery</h3>
+                <p className="text-sm text-brand-gray-500">
+                  Day {selectedDay + 1} of {itinerary.days.length} • {currentDay?.title}
+                </p>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {itinerary.days.map((day, dayIndex) => (
+                  <motion.div
+                    key={dayIndex}
+                    data-day={dayIndex}
+                    className={`relative cursor-pointer rounded-xl overflow-hidden transition-all duration-300 ${
+                      selectedDay === dayIndex
+                        ? "ring-4 ring-brand-blue-600 shadow-xl scale-105"
+                        : "hover:shadow-lg hover:scale-102"
+                    }`}
+                    onClick={() => setSelectedDay(dayIndex)}
+                    whileHover={{ scale: selectedDay === dayIndex ? 1.05 : 1.02 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="relative">
+                      <img
+                        src={`/placeholder.svg?height=200&width=300&text=${encodeURIComponent(day.title)}`}
+                        alt={day.title}
+                        className="w-full h-52 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(day.title)}`
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-base truncate">{day.title}</h4>
+                            <p className="text-sm opacity-90 truncate">
+                              Day {dayIndex + 1} - {formatDate(day.date)}
+                            </p>
+                          </div>
+                          <Badge
+                            variant="secondary"
+                            className={`text-sm ml-3 flex-shrink-0 font-bold ${
+                              selectedDay === dayIndex ? "bg-brand-orange-600 text-white" : "bg-white/20 text-white"
+                            }`}
+                          >
+                            {dayIndex + 1}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expanded content for selected day */}
+                    {selectedDay === dayIndex && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-white p-4 border-t border-gray-200"
+                      >
+                        <p className="text-sm text-brand-gray-500 leading-relaxed">
+                          {day.highlights.join(' • ')}
+                        </p>
+                        <div className="flex gap-2 mt-3">
+                          <Button size="sm" variant="outline" className="text-xs">
+                            <Plane className="w-3 h-3 mr-1" />
+                            Details
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Scroll to selected day button */}
+              <div className="p-4 border-t border-gray-200 flex-shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-brand-blue-600 border-brand-blue-600 hover:bg-brand-blue-600/10 font-semibold"
+                  onClick={() => {
+                    const selectedElement = document.querySelector(`[data-day="${selectedDay}"]`)
+                    if (selectedElement) {
+                      selectedElement.scrollIntoView({ behavior: "smooth", block: "center" })
+                    }
+                  }}
+                >
+                  <Plane className="w-4 h-4 mr-2" />
+                  Scroll to Day {selectedDay + 1}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
