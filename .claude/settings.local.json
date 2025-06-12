@@ -31,7 +31,8 @@
       "WebFetch(domain:vercel.com)",
       "Bash(ls:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

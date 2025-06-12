@@ -14,8 +14,15 @@ interface Message {
 }
 
 export async function POST(request: NextRequest) {
+  let message = ''
+  let conversationHistory: Message[] = []
+  let extractedData: any = {}
+  
   try {
-    const { message, conversationHistory, extractedData } = await request.json()
+    const body = await request.json()
+    message = body.message || ''
+    conversationHistory = body.conversationHistory || []
+    extractedData = body.extractedData || {}
 
     // Check if OpenAI API key is configured
     if (!process.env.OPENAI_API_KEY) {

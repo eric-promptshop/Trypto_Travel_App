@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -96,7 +96,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const [showGallerySidebar, setShowGallerySidebar] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const previousMessagesLength = useRef(messages.length)
+  const isTypingRef = useRef(false)
 
   // Mock location images for demo
   const locationImages: Record<number, string> = {
@@ -108,23 +108,46 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     6: '/images/rio-de-janeiro.png',
   }
 
-  // Only scroll when new messages are added, not on every render
   useEffect(() => {
-    if (messages.length > previousMessagesLength.current) {
-      previousMessagesLength.current = messages.length
-      // Delay scroll to allow DOM update
-      const timer = setTimeout(() => {
-        if (!isMobile || !inputRef.current || document.activeElement !== inputRef.current) {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
-        }
+    // Only scroll to bottom if not typing and on desktop or if a new message was added
+    if (!isTypingRef.current && messages.length > 0) {
+      // Use setTimeout to ensure DOM has updated
+      setTimeout(() => {
+        scrollToBottom()
       }, 100)
-      return () => clearTimeout(timer)
     }
-  }, [messages.length, isMobile])
+  }, [messages.length])
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputMessage(e.target.value)
-  }, [])
+  // Handle visual viewport changes on mobile
+  useEffect(() => {
+    if (!isMobile) return
+
+    const handleViewportChange = () => {
+      // Prevent any actions when keyboard is shown/hidden
+      if (isTypingRef.current) {
+        return
+      }
+    }
+
+    if ('visualViewport' in window) {
+      window.visualViewport?.addEventListener('resize', handleViewportChange)
+      window.visualViewport?.addEventListener('scroll', handleViewportChange)
+    }
+
+    return () => {
+      if ('visualViewport' in window) {
+        window.visualViewport?.removeEventListener('resize', handleViewportChange)
+        window.visualViewport?.removeEventListener('scroll', handleViewportChange)
+      }
+    }
+  }, [isMobile])
+
+  const scrollToBottom = () => {
+    // Don't scroll if user is typing on mobile
+    if (isMobile && isTypingRef.current) return
+    
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
 
   const sendMessage = async () => {
     if (!inputMessage.trim()) return
@@ -140,11 +163,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     setInputMessage("")
     setIsLoading(true)
     setError(null)
-
-    // Keep focus on input for mobile
-    if (isMobile && inputRef.current) {
-      inputRef.current.focus()
-    }
+    isTypingRef.current = false
 
     try {
       // Send message to AI
@@ -189,10 +208,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       setError("Failed to send message. Please try again.")
     } finally {
       setIsLoading(false)
-      // Refocus input on mobile after loading
-      if (isMobile && inputRef.current) {
-        inputRef.current.focus()
-      }
     }
   }
 
@@ -471,49 +486,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     </>
   )
 
-  // Mobile-specific Messages Component
-  const MobileMessages = () => (
-    <div className="flex-1 overflow-y-auto px-4 py-4">
-      <div className="space-y-4">
-        {messages.map((message) => (
-          <motion.div
-            key={message.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div className={cn(
-              "max-w-[85%] rounded-2xl px-4 py-3 shadow-sm",
-              message.role === 'user' 
-                ? 'bg-brand-blue-600 text-white' 
-                : 'bg-gray-50 text-gray-900 border border-gray-200'
-            )}>
-              <p className={cn(
-                "text-sm whitespace-pre-wrap",
-                message.role === 'user' ? 'text-white' : 'text-gray-900'
-              )}>{message.content}</p>
-            </div>
-          </motion.div>
-        ))}
-        
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-50 rounded-2xl px-4 py-3 border border-gray-200 shadow-sm">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </div>
-    </div>
-  )
-
-  // Chat Interface Component for Desktop
+  // Chat Interface Component
   const ChatInterface = () => (
     <>
       <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-white">
@@ -564,7 +537,10 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       )}
 
       {/* Input Area */}
-      <div className="p-6 border-t bg-white">
+      <div className={cn(
+        "p-6 border-t bg-white",
+        isMobile && "flex-shrink-0"
+      )}>
         {!isReadyToProceed ? (
           <>
             <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2 mb-4">
@@ -572,10 +548,24 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
                 ref={inputRef}
                 type="text"
                 value={inputMessage}
-                onChange={handleInputChange}
+                onChange={(e) => {
+                  setInputMessage(e.target.value)
+                  isTypingRef.current = true
+                }}
+                onFocus={() => {
+                  isTypingRef.current = true
+                }}
+                onBlur={() => {
+                  isTypingRef.current = false
+                }}
                 placeholder="Type your message..."
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue-500 focus:border-brand-blue-500 bg-white text-gray-900 placeholder-gray-500"
                 disabled={isLoading}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="sentences"
+                spellCheck={false}
+                inputMode="text"
               />
               <Button type="submit" disabled={!inputMessage.trim() || isLoading}>
                 <Send className="h-4 w-4" />
@@ -631,9 +621,9 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   // Mobile Layout
   if (isMobile) {
     return (
-      <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-blue-50 via-white to-orange-50">
-        {/* Mobile Header */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
+      <div className="h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex flex-col overflow-hidden">
+        {/* Mobile Header with Menu Buttons */}
+        <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between flex-shrink-0 z-40">
           <Sheet open={showProgressSidebar} onOpenChange={setShowProgressSidebar}>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="flex items-center gap-2">
@@ -647,7 +637,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
             </SheetContent>
           </Sheet>
 
-          <h2 className="text-base font-semibold text-gray-900">AI Travel Planner</h2>
+          <h2 className="text-lg font-semibold text-gray-900">AI Travel Planner</h2>
 
           {currentItineraryData.length > 0 && (
             <Sheet open={showGallerySidebar} onOpenChange={setShowGallerySidebar}>
@@ -664,71 +654,9 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           )}
         </div>
 
-        {/* Messages Area */}
-        <MobileMessages />
-
-        {/* Error Alert */}
-        {error && (
-          <div className="px-4 py-2">
-            <Alert variant="destructive">
-              <AlertTriangle className="h-3 w-3" />
-              <AlertDescription className="text-xs">{error}</AlertDescription>
-            </Alert>
-          </div>
-        )}
-
-        {/* Fixed Input Area */}
-        <div className="bg-white border-t px-4 py-3 flex-shrink-0">
-          {!isReadyToProceed ? (
-            <>
-              <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={inputMessage}
-                  onChange={handleInputChange}
-                  placeholder="Type your message..."
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue-500 focus:border-brand-blue-500 bg-white text-gray-900 placeholder-gray-500"
-                  disabled={isLoading}
-                  autoComplete="off"
-                />
-                <Button type="submit" size="sm" disabled={!inputMessage.trim() || isLoading}>
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
-              
-              {completeness > 20 && (
-                <Button
-                  onClick={() => onComplete(extractedData)}
-                  variant="outline"
-                  className="w-full mt-2 text-xs border-brand-blue-600 text-brand-blue-600"
-                  size="sm"
-                >
-                  Continue with Current Info
-                  <ArrowRight className="ml-1 h-3 w-3" />
-                </Button>
-              )}
-            </>
-          ) : (
-            <div className="space-y-2">
-              <Alert className="py-2">
-                <CheckCircle className="h-3 w-3 text-green-500" />
-                <AlertDescription className="text-xs">
-                  Great! I have enough information.
-                </AlertDescription>
-              </Alert>
-              
-              <Button 
-                onClick={() => onComplete(extractedData)}
-                className="w-full bg-gradient-to-r from-brand-blue-600 to-brand-orange-600 text-white text-sm"
-                size="sm"
-              >
-                <CheckCircle className="mr-1 h-3 w-3" />
-                View Your Itinerary
-                <ArrowRight className="ml-1 h-3 w-3" />
-              </Button>
-            </div>
-          )}
+        {/* Mobile Main Content */}
+        <div className="flex-1 flex flex-col bg-white overflow-hidden">
+          <ChatInterface />
         </div>
       </div>
     )
