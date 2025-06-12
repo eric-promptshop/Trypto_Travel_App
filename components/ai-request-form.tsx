@@ -95,6 +95,8 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const [showProgressSidebar, setShowProgressSidebar] = useState(false)
   const [showGallerySidebar, setShowGallerySidebar] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const isTypingRef = useRef(false)
 
   // Mock location images for demo
   const locationImages: Record<number, string> = {
@@ -107,10 +109,43 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   }
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    // Only scroll to bottom if not typing and on desktop or if a new message was added
+    if (!isTypingRef.current && messages.length > 0) {
+      // Use setTimeout to ensure DOM has updated
+      setTimeout(() => {
+        scrollToBottom()
+      }, 100)
+    }
+  }, [messages.length])
+
+  // Handle visual viewport changes on mobile
+  useEffect(() => {
+    if (!isMobile) return
+
+    const handleViewportChange = () => {
+      // Prevent any actions when keyboard is shown/hidden
+      if (isTypingRef.current) {
+        return
+      }
+    }
+
+    if ('visualViewport' in window) {
+      window.visualViewport?.addEventListener('resize', handleViewportChange)
+      window.visualViewport?.addEventListener('scroll', handleViewportChange)
+    }
+
+    return () => {
+      if ('visualViewport' in window) {
+        window.visualViewport?.removeEventListener('resize', handleViewportChange)
+        window.visualViewport?.removeEventListener('scroll', handleViewportChange)
+      }
+    }
+  }, [isMobile])
 
   const scrollToBottom = () => {
+    // Don't scroll if user is typing on mobile
+    if (isMobile && isTypingRef.current) return
+    
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
@@ -128,6 +163,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     setInputMessage("")
     setIsLoading(true)
     setError(null)
+    isTypingRef.current = false
 
     try {
       // Send message to AI
@@ -501,17 +537,35 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       )}
 
       {/* Input Area */}
-      <div className="p-6 border-t bg-white">
+      <div className={cn(
+        "p-6 border-t bg-white",
+        isMobile && "flex-shrink-0"
+      )}>
         {!isReadyToProceed ? (
           <>
             <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2 mb-4">
               <input
+                ref={inputRef}
                 type="text"
                 value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
+                onChange={(e) => {
+                  setInputMessage(e.target.value)
+                  isTypingRef.current = true
+                }}
+                onFocus={() => {
+                  isTypingRef.current = true
+                }}
+                onBlur={() => {
+                  isTypingRef.current = false
+                }}
                 placeholder="Type your message..."
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue-500 focus:border-brand-blue-500 bg-white text-gray-900 placeholder-gray-500"
                 disabled={isLoading}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="sentences"
+                spellCheck={false}
+                inputMode="text"
               />
               <Button type="submit" disabled={!inputMessage.trim() || isLoading}>
                 <Send className="h-4 w-4" />
@@ -567,9 +621,9 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   // Mobile Layout
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex flex-col">
+      <div className="h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex flex-col overflow-hidden">
         {/* Mobile Header with Menu Buttons */}
-        <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between sticky top-0 z-40">
+        <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between flex-shrink-0 z-40">
           <Sheet open={showProgressSidebar} onOpenChange={setShowProgressSidebar}>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="flex items-center gap-2">
@@ -601,7 +655,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         </div>
 
         {/* Mobile Main Content */}
-        <div className="flex-1 flex flex-col bg-white">
+        <div className="flex-1 flex flex-col bg-white overflow-hidden">
           <ChatInterface />
         </div>
       </div>
