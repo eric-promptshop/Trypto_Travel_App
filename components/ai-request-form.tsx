@@ -132,20 +132,23 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     6: '/images/rio-de-janeiro.png',
   }
 
-  // Only scroll when new messages are added, not on every render
+  // Auto-scroll to bottom on new messages - mobile messaging style
   useEffect(() => {
     if (messages.length > previousMessagesLength.current) {
       previousMessagesLength.current = messages.length
-      // Delay scroll to allow DOM update
-      const timer = setTimeout(() => {
-        // Only scroll if the input is not focused AND not currently typing
-        if (document.activeElement !== inputRef.current && !isInputFocused) {
+      // Always scroll on mobile to keep conversation visible
+      if (deviceType === 'mobile') {
+        setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
-        }
-      }, 150)
-      return () => clearTimeout(timer)
+        }, 100)
+      } else if (!isInputFocused) {
+        // Desktop: only scroll if not typing
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
+        }, 150)
+      }
     }
-  }, [messages.length, isInputFocused])
+  }, [messages.length, isInputFocused, deviceType])
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
@@ -528,10 +531,10 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     </>
   )
 
-  // Mobile-specific Messages Component
+  // Mobile-specific Messages Component - Native Messaging Style
   const MobileMessages = () => (
-    <div className="px-4 py-4">
-      <div className="space-y-4 pb-4">
+    <div className="px-4 pt-4 pb-2">
+      <div className="space-y-3">
         {messages.map((message) => (
           <motion.div
             key={message.id}
@@ -547,17 +550,17 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           >
             <motion.div 
               className={cn(
-                "max-w-[85%] rounded-2xl px-4 py-3",
+                "max-w-[80%] rounded-2xl px-4 py-2.5",
                 message.role === 'user' 
-                  ? 'bg-blue-500 text-white shadow-[0_4px_14px_rgba(59,130,246,0.4)]' 
-                  : 'bg-white/80 backdrop-blur-xl text-gray-900 border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]'
+                  ? 'bg-blue-500 text-white ml-auto rounded-br-md' 
+                  : 'bg-white text-gray-900 shadow-sm rounded-bl-md'
               )}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             >
               <p className={cn(
-                "text-sm whitespace-pre-wrap",
-                message.role === 'user' ? 'text-white' : 'text-gray-900'
+                "text-[15px] leading-snug whitespace-pre-wrap",
+                message.role === 'user' ? 'text-white' : 'text-gray-800'
               )}>{message.content}</p>
             </motion.div>
           </motion.div>
@@ -712,10 +715,10 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     </>
   )
 
-  // Mobile Layout
+  // Mobile Layout - Native Messaging Style
   if (deviceType === 'mobile') {
     return (
-      <div className="h-screen-safe flex flex-col bg-gradient-to-br from-blue-50 via-white to-orange-50 overflow-hidden">
+      <div className="fixed inset-0 flex flex-col bg-gray-50" style={{ height: '100vh', maxHeight: '-webkit-fill-available' }}>
         {/* Mobile Header */}
         <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0 z-10">
           <Sheet open={showProgressSidebar} onOpenChange={setShowProgressSidebar}>
@@ -748,26 +751,31 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           )}
         </div>
 
-        {/* Messages and Input Container */}
-        <div className="flex-1 flex flex-col min-h-0 chat-container">
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden -webkit-overflow-scrolling-touch">
+        {/* Messages Area - Takes remaining space */}
+        <div className="flex-1 relative overflow-hidden bg-gray-50">
+          <div 
+            className="absolute inset-0 overflow-y-auto overflow-x-hidden -webkit-overflow-scrolling-touch overscroll-contain"
+            style={{ paddingBottom: '1rem' }}
+          >
             <MobileMessages />
+            <div ref={messagesEndRef} className="h-1" />
           </div>
+        </div>
 
-          {/* Error Alert */}
-          {error && (
-            <div className="px-4 py-2 flex-shrink-0">
-              <Alert variant="destructive">
-                <AlertTriangle className="h-3 w-3" />
-                <AlertDescription className="text-xs">{error}</AlertDescription>
-              </Alert>
-            </div>
-          )}
-
-          {/* Fixed Input Area */}
-          <div className="input-container flex-shrink-0">
-            <div className="px-4 py-3">
+        
+        {/* Error Alert */}
+        {error && (
+          <div className="px-4 py-2 flex-shrink-0 bg-white">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-3 w-3" />
+              <AlertDescription className="text-xs">{error}</AlertDescription>
+            </Alert>
+          </div>
+        )}
+        
+        {/* Fixed Input Area - Always at bottom */}
+        <div className="bg-white border-t border-gray-200 flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <div className="px-4 py-3">
             {!isReadyToProceed ? (
               <>
                 <form 
@@ -825,7 +833,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
                 </Button>
               </div>
             )}
-            </div>
           </div>
         </div>
       </div>
