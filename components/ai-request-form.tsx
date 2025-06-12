@@ -25,10 +25,11 @@ import { useTrips } from '@/hooks/use-trips'
 import { Badge } from "@/components/ui/badge"
 import { truncateTextSmart } from '@/lib/truncate-text'
 import { Progress } from "@/components/ui/progress"
-import { useDeviceType, type DeviceType } from '@/hooks/use-device-type'
-import { AnimatePresence } from 'framer-motion'
-import { fadeIn, slideUp, scaleIn, staggerContainer, staggerItem, cardHover, getDeviceAnimation, smoothSpring } from '@/lib/animations'
-import { usePreventScroll, useVirtualKeyboard } from '@/hooks/use-prevent-scroll'
+import { useDeviceType } from '@/hooks/use-device-type'
+import { motion } from 'framer-motion'
+import { iosSmoothSpring } from '@/lib/ios-animations'
+import { useVirtualKeyboard } from '@/hooks/use-prevent-scroll'
+import { useMobileKeyboard } from '@/hooks/use-mobile-keyboard'
 import { cn } from '@/lib/utils'
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
@@ -76,8 +77,9 @@ interface ItineraryDay {
 export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const { createTrip } = useTrips()
   const deviceType = useDeviceType()
+  const { keyboardHeight, isKeyboardVisible } = useMobileKeyboard()
   
-  // Handle virtual keyboard only (removed scroll prevention)
+  // Handle virtual keyboard
   useVirtualKeyboard()
   
   // Add viewport height CSS variable for mobile and tablet
@@ -715,10 +717,10 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     </>
   )
 
-  // Mobile Layout - Native Messaging Style
+  // Mobile Layout - iMessage Style
   if (deviceType === 'mobile') {
     return (
-      <div className="fixed inset-0 flex flex-col bg-gray-50" style={{ height: '100vh', maxHeight: '-webkit-fill-available' }}>
+      <div className="fixed inset-0 flex flex-col bg-gray-50">
         {/* Mobile Header */}
         <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0 z-10">
           <Sheet open={showProgressSidebar} onOpenChange={setShowProgressSidebar}>
@@ -751,15 +753,16 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           )}
         </div>
 
-        {/* Messages Area - Takes remaining space */}
-        <div className="flex-1 relative overflow-hidden bg-gray-50">
-          <div 
-            className="absolute inset-0 overflow-y-auto overflow-x-hidden -webkit-overflow-scrolling-touch overscroll-contain"
-            style={{ paddingBottom: '1rem' }}
-          >
-            <MobileMessages />
-            <div ref={messagesEndRef} className="h-1" />
-          </div>
+        {/* Messages Area with keyboard adjustment */}
+        <div 
+          className="flex-1 overflow-y-auto overflow-x-hidden -webkit-overflow-scrolling-touch bg-gray-50"
+          style={{ 
+            paddingBottom: isKeyboardVisible ? `${keyboardHeight}px` : '0',
+            transition: 'padding-bottom 0.3s ease-out'
+          }}
+        >
+          <MobileMessages />
+          <div ref={messagesEndRef} className="h-4" />
         </div>
 
         
@@ -773,8 +776,21 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           </div>
         )}
         
-        {/* Fixed Input Area - Always at bottom */}
-        <div className="bg-white border-t border-gray-200 flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        {/* Input Area - Positioned above keyboard like iMessage */}
+        <motion.div 
+          className="bg-white border-t border-gray-200 flex-shrink-0"
+          animate={{ 
+            y: isKeyboardVisible ? -keyboardHeight : 0
+          }}
+          transition={{ 
+            type: "spring",
+            damping: 25,
+            stiffness: 300
+          }}
+          style={{ 
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+          }}
+        >
           <div className="px-4 py-3">
             {!isReadyToProceed ? (
               <>
@@ -834,7 +850,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
     )
   }
