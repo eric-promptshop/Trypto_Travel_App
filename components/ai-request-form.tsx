@@ -25,7 +25,9 @@ import { useTrips } from '@/hooks/use-trips'
 import { Badge } from "@/components/ui/badge"
 import { truncateTextSmart } from '@/lib/truncate-text'
 import { Progress } from "@/components/ui/progress"
-import { useIsMobile } from '@/hooks/use-mobile'
+import { useDeviceType, type DeviceType } from '@/hooks/use-device-type'
+import { AnimatePresence } from 'framer-motion'
+import { fadeIn, slideUp, scaleIn, staggerContainer, staggerItem, cardHover, getDeviceAnimation, smoothSpring } from '@/lib/animations'
 import { cn } from '@/lib/utils'
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
@@ -72,11 +74,11 @@ interface ItineraryDay {
 
 export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const { createTrip } = useTrips()
-  const isMobile = useIsMobile()
+  const deviceType = useDeviceType()
   
-  // Add viewport height CSS variable for mobile
+  // Add viewport height CSS variable for mobile and tablet
   useEffect(() => {
-    if (isMobile) {
+    if (deviceType === 'mobile' || deviceType === 'tablet') {
       const updateViewportHeight = () => {
         const vh = window.innerHeight * 0.01
         document.documentElement.style.setProperty('--vh', `${vh}px`)
@@ -91,7 +93,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         window.removeEventListener('orientationchange', updateViewportHeight)
       }
     }
-  }, [isMobile])
+  }, [deviceType])
   
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -180,8 +182,8 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     setIsLoading(true)
     setError(null)
 
-    // Keep focus on input for mobile
-    if (isMobile && inputRef.current) {
+    // Keep focus on input for mobile and tablet
+    if ((deviceType === 'mobile' || deviceType === 'tablet') && inputRef.current) {
       inputRef.current.focus()
     }
 
@@ -239,8 +241,8 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       setError("Failed to send message. Please try again.")
     } finally {
       setIsLoading(false)
-      // Refocus input on mobile after loading
-      if (isMobile && inputRef.current) {
+      // Refocus input on mobile and tablet after loading
+      if ((deviceType === 'mobile' || deviceType === 'tablet') && inputRef.current) {
         inputRef.current.focus()
       }
     }
@@ -687,7 +689,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   )
 
   // Mobile Layout
-  if (isMobile) {
+  if (deviceType === 'mobile') {
     return (
       <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-blue-50 via-white to-orange-50 overflow-hidden">
         {/* Mobile Header */}
@@ -799,6 +801,68 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
             )}
             </div>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Tablet Layout
+  if (deviceType === 'tablet') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50">
+        <div className="flex flex-col lg:flex-row h-screen">
+          {/* Collapsible Progress Sidebar for Tablet */}
+          <Sheet open={showProgressSidebar} onOpenChange={setShowProgressSidebar}>
+            <SheetContent side="left" className="w-80 p-0">
+              <ProgressSidebarContent />
+            </SheetContent>
+          </Sheet>
+          
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col">
+            {/* Header Bar */}
+            <div className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowProgressSidebar(true)}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">AI Travel Planner</h1>
+                  <p className="text-sm text-gray-600">Tell me about your dream trip</p>
+                </div>
+              </div>
+              <Badge variant="secondary" className="text-sm">
+                {completeness}% Complete
+              </Badge>
+            </div>
+            
+            {/* Chat Interface */}
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full max-w-4xl mx-auto p-4">
+                <motion.div 
+                  className="bg-white rounded-lg shadow-lg h-full flex flex-col"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={smoothSpring}
+                >
+                  <ChatInterface />
+                </motion.div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Gallery Sidebar for Tablet - Optional */}
+          {currentItineraryData.length > 0 && (
+            <Sheet open={showGallerySidebar} onOpenChange={setShowGallerySidebar}>
+              <SheetContent side="right" className="w-80 p-0">
+                <GallerySidebarContent />
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
       </div>
     )
