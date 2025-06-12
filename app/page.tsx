@@ -210,7 +210,7 @@ function TextRotator({ words, className = "" }: { words: string[], className?: s
           exit={{ opacity: 0, y: -20, filter: 'blur(8px)' }}
           transition={{ duration: 0.5, ease: 'easeInOut' }}
         >
-          <span className="bg-gradient-to-r from-brand-orange-400 to-brand-orange-600 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#ff6b35] to-[#ff8759] bg-clip-text text-transparent">
             {words[currentIndex]}
           </span>
         </motion.span>
@@ -272,7 +272,7 @@ export default function Home() {
   const { data: session } = useSession()
   const { track } = useAnalytics()
   const [mounted, setMounted] = useState(false)
-  const [activeFeature] = useState(0)
+  // const [activeFeature] = useState(0) - removed to fix hydration
   const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
@@ -459,7 +459,7 @@ export default function Home() {
                   <Card className="overflow-hidden border-[#e5e7eb] shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
                     <div className={`relative h-48 overflow-hidden bg-gradient-to-br ${destination.color}`}>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <destination.icon className="h-24 w-24 text-white/20" />
+                        {React.createElement(destination.icon, { className: "h-24 w-24 text-white/20" })}
                       </div>
                       
                       {/* Top Badge */}
@@ -496,25 +496,6 @@ export default function Home() {
               ))}
             </div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              viewport={{ once: true }}
-              className="text-center mt-12"
-            >
-              <Button
-                size="lg"
-                variant="outline"
-                className="group border-[#e5e7eb] text-[#1f5582] hover:bg-[#f3f4f6]"
-                asChild
-              >
-                <Link href="/destinations">
-                  Explore All Destinations
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </Link>
-              </Button>
-            </motion.div>
           </div>
         </section>
 
