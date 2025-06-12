@@ -453,7 +453,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   // Chat Interface Component
   const ChatInterface = () => (
     <>
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-white">
         {messages.map((message) => (
           <motion.div
             key={message.id}
@@ -462,19 +462,22 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div className={cn(
-              "max-w-[80%] rounded-lg p-4",
+              "max-w-[80%] rounded-lg p-4 shadow-sm",
               message.role === 'user' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-gray-100 text-gray-900'
+                ? 'bg-brand-blue-600 text-white' 
+                : 'bg-gray-50 text-gray-900 border border-gray-200'
             )}>
-              <p className="whitespace-pre-wrap">{message.content}</p>
+              <p className={cn(
+                "whitespace-pre-wrap",
+                message.role === 'user' ? 'text-white' : 'text-gray-900'
+              )}>{message.content}</p>
             </div>
           </motion.div>
         ))}
         
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-lg p-4">
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 shadow-sm">
               <div className="flex space-x-2">
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
@@ -498,7 +501,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       )}
 
       {/* Input Area */}
-      <div className="p-6 border-t">
+      <div className="p-6 border-t bg-white">
         {!isReadyToProceed ? (
           <>
             <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2 mb-4">
@@ -507,7 +510,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Type your message..."
-                className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue-500 focus:border-brand-blue-500 bg-white text-gray-900 placeholder-gray-500"
                 disabled={isLoading}
               />
               <Button type="submit" disabled={!inputMessage.trim() || isLoading}>
