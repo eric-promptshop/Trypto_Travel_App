@@ -202,6 +202,14 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
 
       const data = await response.json()
       
+      console.log('AI Response data:', {
+        hasResponse: !!data.response,
+        hasFallback: !!data.fallbackResponse,
+        isAI: data.isAI,
+        warning: data.warning,
+        error: data.error
+      })
+      
       if (data.response || data.fallbackResponse) {
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),

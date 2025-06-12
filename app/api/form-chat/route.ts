@@ -23,6 +23,14 @@ export async function POST(request: NextRequest) {
     message = body.message || ''
     conversationHistory = body.conversationHistory || []
     extractedData = body.extractedData || {}
+    
+    console.log('API Request received:', {
+      message,
+      historyLength: conversationHistory.length,
+      extractedData,
+      hasApiKey: !!process.env.OPENAI_API_KEY,
+      apiKeyPrefix: process.env.OPENAI_API_KEY?.substring(0, 10)
+    })
 
     // Check if OpenAI API key is configured
     if (!process.env.OPENAI_API_KEY) {
@@ -103,6 +111,8 @@ export async function POST(request: NextRequest) {
     })
 
     const response = completion.choices[0]?.message?.content || ''
+    
+    console.log('OpenAI response:', response)
 
     return NextResponse.json({
       response,
@@ -117,6 +127,7 @@ export async function POST(request: NextRequest) {
     console.error('Error code:', error.code)
     console.error('Error status:', error.status)
     console.error('Error response:', error.response)
+    console.error('Full error object:', JSON.stringify(error, null, 2))
     
     // Provide more specific error messages
     let debugInfo = error.message || ""

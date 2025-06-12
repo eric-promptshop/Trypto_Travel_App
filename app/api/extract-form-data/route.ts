@@ -37,10 +37,17 @@ interface ExtractedData {
 
 export async function POST(request: NextRequest) {
   try {
-    const { conversationHistory } = await request.json()
+    const body = await request.json()
+    const conversationHistory = body.messages || body.conversationHistory || []
+    
+    console.log('Extract request received:', {
+      historyLength: conversationHistory.length,
+      hasCurrentData: !!body.currentData
+    })
 
     // If no OpenAI API key, use simple extraction
     if (!process.env.OPENAI_API_KEY) {
+      console.log('No OpenAI API key, using simple extraction')
       const extractedData = simpleExtraction(conversationHistory)
       return NextResponse.json({ data: extractedData })
     }
@@ -107,14 +114,16 @@ ${conversationText}`
       extractedData = JSON.parse(jsonStr)
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', responseText)
+      console.error('Parse error:', parseError)
       // Fallback to simple extraction
       extractedData = simpleExtraction(conversationHistory)
     }
 
     return NextResponse.json({ data: extractedData })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Extract form data error:', error)
+    console.error('Error details:', error.message)
     // Fallback to simple extraction on error
     const extractedData = simpleExtraction([])
     return NextResponse.json({ data: extractedData })
