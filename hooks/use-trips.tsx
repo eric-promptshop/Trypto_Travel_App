@@ -38,6 +38,7 @@ export interface CreateTripData {
   endDate: string
   location: string
   participants?: string[]
+  itinerary?: any
 }
 
 export interface UpdateTripData extends Partial<CreateTripData> {

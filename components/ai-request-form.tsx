@@ -26,7 +26,6 @@ import { Badge } from "@/components/ui/badge"
 import { truncateTextSmart } from '@/lib/truncate-text'
 import { Progress } from "@/components/ui/progress"
 import { useDeviceType } from '@/hooks/use-device-type'
-import { motion } from 'framer-motion'
 import { iosSmoothSpring } from '@/lib/ios-animations'
 import { useVirtualKeyboard } from '@/hooks/use-prevent-scroll'
 import { useMobileKeyboard } from '@/hooks/use-mobile-keyboard'
@@ -60,6 +59,7 @@ interface FormData {
   interests?: string[]
   specialRequirements?: string
   completeness?: number
+  tripId?: string
 }
 
 interface AIRequestFormProps {
@@ -720,7 +720,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   // Mobile Layout - iMessage Style
   if (deviceType === 'mobile') {
     return (
-      <div className="fixed inset-0 flex flex-col bg-gray-50">
+      <div className="h-screen flex flex-col bg-gray-50" style={{ position: 'fixed', inset: 0 }}>
         {/* Mobile Header */}
         <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0 z-10">
           <Sheet open={showProgressSidebar} onOpenChange={setShowProgressSidebar}>
@@ -753,16 +753,14 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           )}
         </div>
 
-        {/* Messages Area with keyboard adjustment */}
-        <div 
-          className="flex-1 overflow-y-auto overflow-x-hidden -webkit-overflow-scrolling-touch bg-gray-50"
-          style={{ 
-            paddingBottom: isKeyboardVisible ? `${keyboardHeight}px` : '0',
-            transition: 'padding-bottom 0.3s ease-out'
-          }}
-        >
-          <MobileMessages />
-          <div ref={messagesEndRef} className="h-4" />
+        {/* Messages Area */}
+        <div className="flex-1 overflow-hidden relative">
+          <div 
+            className="absolute inset-0 overflow-y-auto overflow-x-hidden -webkit-overflow-scrolling-touch bg-gray-50 pb-4"
+          >
+            <MobileMessages />
+            <div ref={messagesEndRef} style={{ height: '20px' }} />
+          </div>
         </div>
 
         
@@ -776,19 +774,18 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           </div>
         )}
         
-        {/* Input Area - Positioned above keyboard like iMessage */}
-        <motion.div 
-          className="bg-white border-t border-gray-200 flex-shrink-0"
-          animate={{ 
-            y: isKeyboardVisible ? -keyboardHeight : 0
-          }}
-          transition={{ 
-            type: "spring",
-            damping: 25,
-            stiffness: 300
-          }}
+        {/* Input Area - Fixed at bottom, moves with keyboard */}
+        <div 
+          className="bg-white border-t border-gray-200"
           style={{ 
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            transform: `translateY(${isKeyboardVisible ? -keyboardHeight : 0}px)`,
+            transition: 'transform 0.3s ease-out',
+            paddingBottom: 'env(safe-area-inset-bottom, 20px)',
+            zIndex: 50
           }}
         >
           <div className="px-4 py-3">
@@ -850,7 +847,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
       </div>
     )
   }
@@ -896,7 +893,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
                   className="bg-white rounded-lg shadow-lg h-full flex flex-col"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={smoothSpring}
+                  transition={iosSmoothSpring}
                 >
                   <ChatInterface />
                 </motion.div>
