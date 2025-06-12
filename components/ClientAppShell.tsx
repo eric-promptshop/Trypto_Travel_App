@@ -15,7 +15,6 @@ import { OrientationBanner } from "@/components/OrientationBanner"
 import { BatteryStatusBanner } from "@/components/BatteryStatusBanner"
 import { GeolocationBanner } from "@/components/GeolocationBanner"
 import { MainHeader } from '@/components/layout/MainHeader'
-import { MainNavigation } from '@/components/layout/MainNavigation'
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav'
 import { ErrorBoundary } from '@/components/error-handling/error-boundary'
 import { analytics } from '@/lib/analytics/analytics-service'
@@ -104,8 +103,6 @@ export default function ClientAppShell({ children }: { children: React.ReactNode
                       
                       {/* Add spacing for fixed header */}
                       <div className="pt-20" />
-                      
-                      <MainNavigation />
                       
                       <main className="container mx-auto px-4 py-8 pb-20 md:pb-8">
                         {children}

@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Menu, User, Settings, LogOut, X, Map, BookOpen, Compass } from 'lucide-react'
+import { Menu, User, Settings, LogOut, X, Map, BookOpen, Building2 } from 'lucide-react'
 import { useAnalytics } from '@/lib/analytics/analytics-service'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { TripNavLogo } from '@/components/ui/TripNavLogo'
@@ -47,10 +47,9 @@ export function MainHeader() {
   }
 
   const navigationItems = [
-    { href: '/', label: 'Home', icon: TripNavLogo },
     { href: '/plan', label: 'Plan Trip', icon: Map },
+    { href: '/onboarding', label: 'Tour Operator', icon: Building2 },
     { href: '/docs', label: 'Guide', icon: BookOpen },
-    { href: '/explore', label: 'Explore', icon: Compass },
   ]
 
   return (
