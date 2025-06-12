@@ -22,16 +22,8 @@ import {
   Clock,
   Shield,
   Smartphone,
-  PalmtreeIcon,
-  Star,
-  MapPin,
-  TrendingUp,
-  Heart,
-  Navigation,
-  Compass,
-  Mountains,
-  Waves,
-  Building2
+  Building2,
+  Palmtree
 } from 'lucide-react'
 import { TripNavLogo } from '@/components/ui/TripNavLogo'
 import { cn } from '@/lib/utils'
@@ -107,62 +99,6 @@ const recentTrips = [
   }
 ]
 
-const popularDestinations = [
-  {
-    id: '1',
-    name: 'Machu Picchu, Peru',
-    description: 'Ancient Incan citadel',
-    trips: 234,
-    rating: 4.9,
-    icon: Mountains,
-    color: 'from-[#1f5582] to-[#2d6ba3]'
-  },
-  {
-    id: '2',
-    name: 'Rio de Janeiro, Brazil',
-    description: 'Beaches and carnival city',
-    trips: 189,
-    rating: 4.8,
-    icon: Waves,
-    color: 'from-[#ff6b35] to-[#ff8759]'
-  },
-  {
-    id: '3',
-    name: 'Cusco, Peru',
-    description: 'Historic capital of Inca Empire',
-    trips: 156,
-    rating: 4.7,
-    icon: Building2,
-    color: 'from-[#2d6ba3] to-[#3d8bd3]'
-  },
-  {
-    id: '4',
-    name: 'Sacred Valley, Peru',
-    description: 'Mystical Andean landscapes',
-    trips: 142,
-    rating: 4.9,
-    icon: Compass,
-    color: 'from-[#1f5582] to-[#2d6ba3]'
-  },
-  {
-    id: '5',
-    name: 'Lima, Peru',
-    description: 'Coastal capital with rich cuisine',
-    trips: 128,
-    rating: 4.6,
-    icon: MapPin,
-    color: 'from-[#ff6b35] to-[#ff8759]'
-  },
-  {
-    id: '6',
-    name: 'Puerto Maldonado, Peru',
-    description: 'Gateway to Amazon rainforest',
-    trips: 98,
-    rating: 4.8,
-    icon: PalmtreeIcon,
-    color: 'from-[#2d6ba3] to-[#3d8bd3]'
-  }
-]
 
 // Animation variants for staggered children
 const transitionVariants = {
@@ -304,7 +240,7 @@ export default function Home() {
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           />
-          <PalmtreeIcon className="absolute inset-0 m-auto h-8 w-8 text-primary opacity-70" />
+          <Palmtree className="absolute inset-0 m-auto h-8 w-8 text-primary opacity-70" />
         </div>
       </div>
     )
@@ -423,81 +359,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Popular Destinations Section */}
-        <section className="py-20 bg-gradient-to-b from-white to-[#f3f4f6]">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-              className="text-center mb-12"
-            >
-              <Badge variant="outline" className="mb-4 border-[#e5e7eb]">
-                <MapPin className="h-3 w-3 mr-1" />
-                <span className="text-[#1f5582] font-medium">Popular Destinations</span>
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-bold text-[#1f5582] mb-4">
-                Trending Travel Destinations
-              </h2>
-              <p className="text-xl text-[#6b7280] max-w-2xl mx-auto">
-                Discover the most popular destinations our travelers are exploring right now
-              </p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {popularDestinations.map((destination, index) => (
-                <motion.div
-                  key={destination.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                  whileHover={{ y: -8 }}
-                  className="group cursor-pointer"
-                >
-                  <Card className="overflow-hidden border-[#e5e7eb] shadow-lg hover:shadow-xl transition-all duration-300 bg-white">
-                    <div className={`relative h-48 overflow-hidden bg-gradient-to-br ${destination.color}`}>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        {React.createElement(destination.icon, { className: "h-24 w-24 text-white/20" })}
-                      </div>
-                      
-                      {/* Top Badge */}
-                      {index === 0 && (
-                        <div className="absolute top-4 left-4">
-                          <Badge className="bg-[#ff6b35] text-white border-0">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            Trending
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <CardContent className="p-6">
-                      <h3 className="text-xl font-bold text-[#1f5582] mb-1">{destination.name}</h3>
-                      <p className="text-sm text-[#6b7280] mb-4">{destination.description}</p>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1">
-                            <Navigation className="h-4 w-4 text-[#6b7280]" />
-                            <span className="text-sm text-[#6b7280]">{destination.trips} trips</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-[#ff6b35] text-[#ff6b35]" />
-                            <span className="text-sm text-[#6b7280]">{destination.rating}</span>
-                          </div>
-                        </div>
-                        <Heart className="h-5 w-5 text-[#e5e7eb] group-hover:text-[#ff6b35] transition-colors duration-300" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-
-          </div>
-        </section>
 
         {/* Features Preview */}
         <TravelFeatureShowcase />
