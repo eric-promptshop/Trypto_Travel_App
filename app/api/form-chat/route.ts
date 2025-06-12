@@ -27,6 +27,18 @@ export async function POST(request: NextRequest) {
         success: true
       })
     }
+    
+    // Validate API key format
+    if (process.env.OPENAI_API_KEY.length > 60 || !process.env.OPENAI_API_KEY.startsWith('sk-')) {
+      console.error('Invalid OpenAI API key format detected. Key length:', process.env.OPENAI_API_KEY.length)
+      return NextResponse.json({
+        response: getFallbackResponse(message, conversationHistory),
+        fallbackResponse: getFallbackResponse(message, conversationHistory),
+        warning: 'OpenAI API key appears to be invalid',
+        debugInfo: 'API key should be ~51 characters and start with sk-',
+        success: true
+      })
+    }
 
     // Convert conversation history to OpenAI format
     const messages = conversationHistory.map((msg: Message) => ({
