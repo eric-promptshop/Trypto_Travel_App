@@ -77,27 +77,10 @@ export class TenantResolver {
    */
   private static async resolveByCustomDomain(host: string): Promise<TenantInfo | null> {
     try {
-      // Import Prisma dynamically to avoid edge runtime issues
-      const { prisma } = await import('@/lib/prisma')
-      
-      const tenant = await prisma.tenant.findFirst({
-        where: {
-          domain: host,
-          isActive: true
-        }
-      })
-
-      if (tenant) {
-        return {
-          id: tenant.id,
-          name: tenant.name,
-          slug: tenant.slug,
-          domain: tenant.domain,
-          isActive: tenant.isActive,
-          settings: tenant.settings as any,
-          isCustomDomain: true
-        }
-      }
+      // TODO: Replace with API call or edge-compatible solution
+      // For now, return null to skip custom domain resolution
+      console.log('Custom domain resolution skipped in edge runtime')
+      return null
     } catch (error) {
       console.error('Error resolving tenant by custom domain:', error)
     }
@@ -121,27 +104,10 @@ export class TenantResolver {
     }
 
     try {
-      const { prisma } = await import('@/lib/prisma')
-      
-      const tenant = await prisma.tenant.findFirst({
-        where: {
-          slug: subdomain,
-          isActive: true
-        }
-      })
-
-      if (tenant) {
-        return {
-          id: tenant.id,
-          name: tenant.name,
-          slug: tenant.slug,
-          domain: tenant.domain,
-          isActive: tenant.isActive,
-          settings: tenant.settings as any,
-          subdomain: subdomain,
-          isCustomDomain: false
-        }
-      }
+      // TODO: Replace with API call or edge-compatible solution
+      // For now, return null to skip subdomain resolution
+      console.log('Subdomain resolution skipped in edge runtime')
+      return null
     } catch (error) {
       console.error('Error resolving tenant by subdomain:', error)
     }
@@ -160,26 +126,48 @@ export class TenantResolver {
     if (!slug) return null
 
     try {
-      const { prisma } = await import('@/lib/prisma')
-      
-      const tenant = await prisma.tenant.findFirst({
-        where: {
-          slug: slug,
-          isActive: true
-        }
-      })
-
-      if (tenant) {
-        return {
-          id: tenant.id,
-          name: tenant.name,
-          slug: tenant.slug,
-          domain: tenant.domain,
-          isActive: tenant.isActive,
-          settings: tenant.settings as any,
+      // Mock tenant data for demo purposes
+      // TODO: Replace with API call or edge-compatible solution
+      const mockTenants: Record<string, TenantInfo> = {
+        'adventure-tours': {
+          id: 'adventure-tours',
+          name: 'Adventure Tours Co',
+          slug: 'adventure-tours',
+          domain: 'adventure-tours.example.com',
+          isActive: true,
+          settings: {
+            primaryColor: '#10b981',
+            secondaryColor: '#059669'
+          },
+          isCustomDomain: false
+        },
+        'luxury-escapes': {
+          id: 'luxury-escapes',
+          name: 'Luxury Escapes',
+          slug: 'luxury-escapes',
+          domain: 'luxury-escapes.example.com',
+          isActive: true,
+          settings: {
+            primaryColor: '#8b5cf6',
+            secondaryColor: '#7c3aed'
+          },
+          isCustomDomain: false
+        },
+        'budget-backpackers': {
+          id: 'budget-backpackers',
+          name: 'Budget Backpackers',
+          slug: 'budget-backpackers',
+          domain: 'budget-backpackers.example.com',
+          isActive: true,
+          settings: {
+            primaryColor: '#ef4444',
+            secondaryColor: '#dc2626'
+          },
           isCustomDomain: false
         }
       }
+      
+      return mockTenants[slug] || null
     } catch (error) {
       console.error('Error resolving tenant by path:', error)
     }
