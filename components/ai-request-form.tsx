@@ -77,8 +77,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const { createTrip } = useTrips()
   const deviceType = useDeviceType()
   
-  // Prevent scroll and handle virtual keyboard
-  usePreventScroll(true)
+  // Handle virtual keyboard only (removed scroll prevention)
   useVirtualKeyboard()
   
   // Add viewport height CSS variable for mobile and tablet
@@ -732,7 +731,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         {/* Messages and Input Container */}
         <div className="flex-1 flex flex-col min-h-0 chat-container">
           {/* Messages Area */}
-          <div className="messages-container">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden -webkit-overflow-scrolling-touch">
             <MobileMessages />
           </div>
 

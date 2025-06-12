@@ -31,19 +31,12 @@ export function PolishedLayout({
     window.addEventListener('resize', updateViewportHeight)
     window.addEventListener('orientationchange', updateViewportHeight)
     
-    // Prevent overscroll on iOS
-    document.body.style.position = 'fixed'
-    document.body.style.width = '100%'
-    document.body.style.height = '100%'
-    document.body.style.overflow = 'hidden'
+    // Note: Removed body position fixed to allow normal scrolling
     
     return () => {
       window.removeEventListener('resize', updateViewportHeight)
       window.removeEventListener('orientationchange', updateViewportHeight)
-      document.body.style.position = ''
-      document.body.style.width = ''
-      document.body.style.height = ''
-      document.body.style.overflow = ''
+      // Cleanup not needed since we're not modifying body styles
     }
   }, [])
   
