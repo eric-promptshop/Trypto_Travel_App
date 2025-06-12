@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -134,17 +134,18 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       previousMessagesLength.current = messages.length
       // Delay scroll to allow DOM update
       const timer = setTimeout(() => {
-        if (!isMobile || !inputRef.current || document.activeElement !== inputRef.current) {
+        // Only scroll if the input is not focused (fixes desktop focus loss)
+        if (document.activeElement !== inputRef.current) {
           messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
         }
       }, 100)
       return () => clearTimeout(timer)
     }
-  }, [messages.length, isMobile])
+  }, [messages.length])
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputMessage(e.target.value)
-  }, [])
+  }
 
   const sendMessage = async () => {
     if (!inputMessage.trim()) return
@@ -168,13 +169,16 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     }
 
     try {
+      // Include the current user message in conversation history
+      const updatedHistory = [...messages, userMessage]
+      
       // Send message to AI
       const response = await fetch("/api/form-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           message: messageContent,
-          conversationHistory: messages,
+          conversationHistory: updatedHistory,
           extractedData,
         }),
       })
@@ -196,7 +200,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          messages: [...messages, userMessage],
+          messages: updatedHistory,
           currentData: extractedData,
         }),
       })

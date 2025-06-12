@@ -48,13 +48,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert conversation history to OpenAI format
-    const messages = conversationHistory.map((msg: Message) => ({
-      role: msg.role === 'user' ? 'user' : 'assistant',
+    const messages: Array<{role: 'user' | 'assistant' | 'system', content: string}> = conversationHistory.map((msg: Message) => ({
+      role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
       content: msg.content
     }))
     
     console.log('Processing messages:', messages.length, 'Extracted data:', extractedData)
 
+    // Add current message to the conversation before sending to OpenAI
+    messages.push({
+      role: 'user' as const,
+      content: message
+    })
+    
     // Add system prompt for travel planning context
     const collectedInfo = extractedData ? `
       Already collected information:
@@ -68,7 +74,7 @@ export async function POST(request: NextRequest) {
     ` : ''
     
     const systemPrompt = {
-      role: 'system',
+      role: 'system' as const,
       content: `You are a friendly and knowledgeable travel planning assistant. Help users plan their trips by gathering information about:
       - Destination(s)
       - Travel dates (start and end date, flexibility)
@@ -113,7 +119,6 @@ export async function POST(request: NextRequest) {
     console.error('Error response:', error.response)
     
     // Provide more specific error messages
-    let errorMessage = "I'm having trouble connecting right now. Let me help you plan your trip! What destination are you thinking about?"
     let debugInfo = error.message || ""
     let errorCode = error.code || error.status || ""
     
@@ -121,16 +126,12 @@ export async function POST(request: NextRequest) {
       // Check for OpenAI specific errors
       if (error.message.includes('401') || error.message.includes('Incorrect API key')) {
         debugInfo = 'Invalid OpenAI API key'
-        errorMessage = "I'm having trouble with my connection. While we fix this, tell me about your dream destination!"
       } else if (error.message.includes('429')) {
         debugInfo = 'OpenAI API rate limit exceeded'
-        errorMessage = "I'm a bit busy right now. Let's take a moment - what destination are you considering?"
       } else if (error.message.includes('insufficient_quota') || error.message.includes('quota')) {
         debugInfo = 'OpenAI API quota exceeded'
-        errorMessage = "I'm having some technical difficulties. But I'd still love to hear about where you want to go!"
       } else if (error.message.includes('model')) {
         debugInfo = `Model error: ${error.message}`
-        errorMessage = "I'm having trouble with the AI model. Let me help you plan your trip manually!"
       }
     }
     
