@@ -76,6 +76,26 @@ interface ItineraryDay {
 export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const { createTrip } = useTrips()
   const isMobile = useIsMobile()
+  
+  // Add viewport height CSS variable for mobile
+  useEffect(() => {
+    if (isMobile) {
+      const updateViewportHeight = () => {
+        const vh = window.innerHeight * 0.01
+        document.documentElement.style.setProperty('--vh', `${vh}px`)
+      }
+      
+      updateViewportHeight()
+      window.addEventListener('resize', updateViewportHeight)
+      window.addEventListener('orientationchange', updateViewportHeight)
+      
+      return () => {
+        window.removeEventListener('resize', updateViewportHeight)
+        window.removeEventListener('orientationchange', updateViewportHeight)
+      }
+    }
+  }, [isMobile])
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -129,9 +149,10 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const sendMessage = async () => {
     if (!inputMessage.trim()) return
 
+    const messageContent = inputMessage.trim()
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputMessage,
+      content: messageContent,
       role: "user",
       timestamp: new Date(),
     }
@@ -152,7 +173,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          message: inputMessage,
+          message: messageContent,
           conversationHistory: messages,
           extractedData,
         }),
@@ -473,8 +494,8 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
 
   // Mobile-specific Messages Component
   const MobileMessages = () => (
-    <div className="flex-1 overflow-y-auto px-4 py-4">
-      <div className="space-y-4">
+    <div className="flex-1 overflow-y-auto px-4 py-4 min-h-0 overscroll-contain">
+      <div className="space-y-4 pb-4">
         {messages.map((message) => (
           <motion.div
             key={message.id}
@@ -631,9 +652,9 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   // Mobile Layout
   if (isMobile) {
     return (
-      <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-blue-50 via-white to-orange-50">
+      <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-blue-50 via-white to-orange-50 overflow-hidden">
         {/* Mobile Header */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0 z-10">
           <Sheet open={showProgressSidebar} onOpenChange={setShowProgressSidebar}>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="flex items-center gap-2">
@@ -664,38 +685,41 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           )}
         </div>
 
-        {/* Messages Area */}
-        <MobileMessages />
+        {/* Messages and Input Container */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Messages Area */}
+          <MobileMessages />
 
-        {/* Error Alert */}
-        {error && (
-          <div className="px-4 py-2">
-            <Alert variant="destructive">
-              <AlertTriangle className="h-3 w-3" />
-              <AlertDescription className="text-xs">{error}</AlertDescription>
-            </Alert>
-          </div>
-        )}
+          {/* Error Alert */}
+          {error && (
+            <div className="px-4 py-2 flex-shrink-0">
+              <Alert variant="destructive">
+                <AlertTriangle className="h-3 w-3" />
+                <AlertDescription className="text-xs">{error}</AlertDescription>
+              </Alert>
+            </div>
+          )}
 
-        {/* Fixed Input Area */}
-        <div className="bg-white border-t px-4 py-3 flex-shrink-0">
-          {!isReadyToProceed ? (
-            <>
-              <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={inputMessage}
-                  onChange={handleInputChange}
-                  placeholder="Type your message..."
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue-500 focus:border-brand-blue-500 bg-white text-gray-900 placeholder-gray-500"
-                  disabled={isLoading}
-                  autoComplete="off"
-                />
-                <Button type="submit" size="sm" disabled={!inputMessage.trim() || isLoading}>
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
+          {/* Fixed Input Area */}
+          <div className="bg-white border-t flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            <div className="px-4 py-3">
+            {!isReadyToProceed ? (
+              <>
+                <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputMessage}
+                    onChange={handleInputChange}
+                    placeholder="Type your message..."
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue-500 focus:border-brand-blue-500 bg-white text-gray-900 placeholder-gray-500"
+                    disabled={isLoading}
+                    autoComplete="off"
+                  />
+                  <Button type="submit" size="sm" disabled={!inputMessage.trim() || isLoading}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
               
               {completeness > 20 && (
                 <Button
@@ -708,27 +732,29 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
                   <ArrowRight className="ml-1 h-3 w-3" />
                 </Button>
               )}
-            </>
-          ) : (
-            <div className="space-y-2">
-              <Alert className="py-2">
-                <CheckCircle className="h-3 w-3 text-green-500" />
-                <AlertDescription className="text-xs">
-                  Great! I have enough information.
-                </AlertDescription>
-              </Alert>
-              
-              <Button 
-                onClick={() => onComplete(extractedData)}
-                className="w-full bg-gradient-to-r from-brand-blue-600 to-brand-orange-600 text-white text-sm"
-                size="sm"
-              >
-                <CheckCircle className="mr-1 h-3 w-3" />
-                View Your Itinerary
-                <ArrowRight className="ml-1 h-3 w-3" />
-              </Button>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <Alert className="py-2">
+                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  <AlertDescription className="text-xs">
+                    Great! I have enough information.
+                  </AlertDescription>
+                </Alert>
+                
+                <Button 
+                  onClick={() => onComplete(extractedData)}
+                  className="w-full bg-gradient-to-r from-brand-blue-600 to-brand-orange-600 text-white text-sm"
+                  size="sm"
+                >
+                  <CheckCircle className="mr-1 h-3 w-3" />
+                  View Your Itinerary
+                  <ArrowRight className="ml-1 h-3 w-3" />
+                </Button>
+              </div>
+            )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     )
