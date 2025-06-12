@@ -1,7 +1,7 @@
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { useGeolocation } from "@/hooks/use-geolocation"
 import { useBatteryStatus } from "@/hooks/use-battery-status"
-import { MapPin, LocateFixed, Clock, Moon, Sun, Globe, Battery } from "lucide-react"
+import { MapPin, LocateFixed, Clock, Moon, Sun, Globe, Battery, X } from "lucide-react"
 import { useState, useEffect } from "react"
 
 export function GeolocationBanner() {
@@ -24,6 +24,7 @@ export function GeolocationBanner() {
   
   const [showLocationInsights, setShowLocationInsights] = useState(false)
   const [recommendationText, setRecommendationText] = useState<string>("")
+  const [isDismissed, setIsDismissed] = useState(false)
 
   // Generate location-based recommendations
   useEffect(() => {
@@ -78,14 +79,38 @@ export function GeolocationBanner() {
     }
   }, [locationContext])
 
+  // Load dismissed state from localStorage
+  useEffect(() => {
+    const dismissed = localStorage.getItem('geolocationBannerDismissed')
+    if (dismissed === 'true') {
+      setIsDismissed(true)
+    }
+  }, [])
+
+  const handleDismiss = () => {
+    setIsDismissed(true)
+    localStorage.setItem('geolocationBannerDismissed', 'true')
+  }
+
+  if (isDismissed) {
+    return null
+  }
+
   if (permission === "granted" && coords && locationContext) {
     return (
       <div className="fixed top-24 left-0 w-full z-30 flex justify-center pointer-events-none">
         <div className="max-w-md w-full mx-auto px-2 pt-2">
-          <Alert className="bg-blue-50 border-blue-300 text-blue-900 shadow-lg pointer-events-auto backdrop-blur-sm">
+          <Alert className="bg-blue-50 border-blue-300 text-blue-900 shadow-lg pointer-events-auto backdrop-blur-sm relative">
+            <button
+              onClick={handleDismiss}
+              className="absolute top-2 right-2 text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-100 transition-colors"
+              aria-label="Dismiss location banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
             <div className="flex items-start space-x-3">
               <LocateFixed className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div className="flex-1">
+              <div className="flex-1 pr-6">
                 <AlertTitle className="flex items-center gap-2">
                   Location Context
                   {locationContext.isNightTime ? (
@@ -148,7 +173,14 @@ export function GeolocationBanner() {
     return (
       <div className="fixed top-24 left-0 w-full z-30 flex justify-center pointer-events-none">
         <div className="max-w-md w-full mx-auto px-2 pt-2">
-          <Alert className="bg-red-50 border-red-300 text-red-900 shadow-lg pointer-events-auto backdrop-blur-sm">
+          <Alert className="bg-red-50 border-red-300 text-red-900 shadow-lg pointer-events-auto backdrop-blur-sm relative">
+            <button
+              onClick={handleDismiss}
+              className="absolute top-2 right-2 text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-100 transition-colors"
+              aria-label="Dismiss location banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
             <MapPin className="w-5 h-5 text-red-600" />
             <div>
               <AlertTitle>Location Disabled</AlertTitle>
@@ -166,7 +198,14 @@ export function GeolocationBanner() {
     return (
       <div className="fixed top-24 left-0 w-full z-30 flex justify-center pointer-events-none">
         <div className="max-w-md w-full mx-auto px-2 pt-2">
-          <Alert className="bg-yellow-50 border-yellow-300 text-yellow-900 shadow-lg pointer-events-auto backdrop-blur-sm">
+          <Alert className="bg-yellow-50 border-yellow-300 text-yellow-900 shadow-lg pointer-events-auto backdrop-blur-sm relative">
+            <button
+              onClick={handleDismiss}
+              className="absolute top-2 right-2 text-yellow-600 hover:text-yellow-800 p-1 rounded hover:bg-yellow-100 transition-colors"
+              aria-label="Dismiss location banner"
+            >
+              <X className="w-4 h-4" />
+            </button>
             <MapPin className="w-5 h-5 text-yellow-600" />
             <div>
               <AlertTitle>Enable Smart Location Features</AlertTitle>

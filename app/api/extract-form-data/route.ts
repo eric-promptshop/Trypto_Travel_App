@@ -132,8 +132,8 @@ function simpleExtraction(conversationHistory: Message[]): ExtractedData {
   // Extract destinations
   const destinations: string[] = []
   const destinationPatterns = [
-    /(?:to|visit|going to|planning|destination[s]?:?\s*)([\w\s,]+?)(?:\.|,|!|\?|$)/gi,
-    /(paris|london|tokyo|new york|rome|barcelona|amsterdam|berlin|sydney|bangkok)/gi
+    /(?:to|visit|going to|planning|travel to|trip to|destination[s]?:?\s*)([\w\s,]+?)(?:\.|,|!|\?|for|from|$)/gi,
+    /(paris|london|tokyo|new york|rome|barcelona|amsterdam|berlin|sydney|bangkok|peru|italy|japan|france|spain|thailand|mexico|greece|brazil|argentina|india|egypt|morocco|turkey|vietnam|bali|dubai|singapore|hong kong|seoul|beijing|shanghai|mumbai|delhi|cairo|istanbul|lisbon|prague|vienna|budapest|krakow|dublin|edinburgh|reykjavik|oslo|stockholm|copenhagen|helsinki|moscow|st petersburg|kiev|warsaw|athens|santorini|mykonos|crete|rhodes|cyprus|malta|sicily|sardinia|corsica|majorca|ibiza|tenerife|gran canaria|lanzarote|fuerteventura|madeira|azores|cape verde|seychelles|mauritius|maldives|sri lanka|nepal|bhutan|tibet|mongolia|south korea|taiwan|philippines|malaysia|indonesia|cambodia|laos|myanmar|bangladesh|pakistan|afghanistan|iran|iraq|jordan|lebanon|israel|palestine|saudi arabia|yemen|oman|qatar|kuwait|bahrain|uae|kenya|tanzania|uganda|rwanda|ethiopia|madagascar|south africa|namibia|botswana|zimbabwe|zambia|malawi|mozambique|angola|nigeria|ghana|senegal|morocco|tunisia|algeria|libya|sudan|chile|uruguay|paraguay|bolivia|ecuador|colombia|venezuela|guyana|suriname|costa rica|panama|nicaragua|honduras|guatemala|belize|el salvador|cuba|jamaica|dominican republic|puerto rico|haiti|barbados|trinidad|bahamas|cayman islands|virgin islands|aruba|curacao|st lucia|antigua|grenada|st vincent|dominica|martinique|guadeloupe|canada|usa|united states|america|alaska|hawaii|california|florida|new york|texas|nevada|arizona|colorado|washington|oregon|montana|wyoming|utah|new mexico|louisiana|georgia|north carolina|south carolina|virginia|massachusetts|pennsylvania|illinois|michigan|ohio|indiana|wisconsin|minnesota|iowa|missouri|arkansas|tennessee|kentucky|west virginia|alabama|mississippi|maine|vermont|new hampshire|rhode island|connecticut|new jersey|delaware|maryland|washington dc|australia|new zealand|fiji|samoa|tonga|vanuatu|papua new guinea|solomon islands|new caledonia|tahiti|cook islands|easter island|galapagos)/gi
   ]
   
   for (const pattern of destinationPatterns) {
@@ -148,36 +148,76 @@ function simpleExtraction(conversationHistory: Message[]): ExtractedData {
   if (destinations.length > 0) data.destinations = destinations
 
   // Extract dates
-  const datePattern = /(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{1,2}(?:st|nd|rd|th)?(?:,? \d{4})?)/gi
-  const dateMatches = Array.from(allText.matchAll(datePattern))
+  const datePatterns = [
+    /(\d{4}-\d{2}-\d{2})/gi,
+    /(\d{1,2}\/\d{1,2}\/\d{4})/gi,
+    /(\d{1,2}\/\d{1,2}\/\d{2})/gi,
+    /((?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{1,2}(?:st|nd|rd|th)?(?:,? \d{4})?)/gi,
+    /(\d{1,2}(?:st|nd|rd|th)? (?:of )?(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*(?:,? \d{4})?)/gi,
+    /((?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{4})/gi,
+    /(?:in|during|for) ((?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{4})/gi,
+    /(?:from|between|starting) ([\w\s,]+?) (?:to|until|through|-) ([\w\s,]+?)(?:\.|,|!|\?|$)/gi
+  ]
+  
+  const dateMatches: string[] = []
+  for (const pattern of datePatterns) {
+    const matches = Array.from(allText.matchAll(pattern))
+    for (const match of matches) {
+      if (match[1]) dateMatches.push(match[1])
+      if (match[2]) dateMatches.push(match[2])
+    }
+  }
   if (dateMatches.length > 0) {
     const travelDates: ExtractedData['travelDates'] = {
       flexible: allText.includes('flexible')
     }
     
-    if (dateMatches[0]?.[0]) {
-      travelDates.startDate = dateMatches[0][0]
+    if (dateMatches[0]) {
+      travelDates.startDate = dateMatches[0]
     }
     
-    if (dateMatches[1]?.[0]) {
-      travelDates.endDate = dateMatches[1][0]
+    if (dateMatches[1]) {
+      travelDates.endDate = dateMatches[1]
     }
     
     data.travelDates = travelDates
   }
 
   // Extract travelers
-  const travelersPattern = /(\d+)\s*(?:people|person|adult|traveler|passenger)/gi
-  const childrenPattern = /(\d+)\s*(?:child|children|kid)/gi
+  const travelersPatterns = [
+    /(\d+)\s*(?:people|person|adults?|travelers?|passengers?)/gi,
+    /(\d+)\s*(?:of us|travelers)/gi,
+    /(?:traveling with|party of|group of)\s*(\d+)/gi,
+    /(?:me and|myself and)\s*(\d+)\s*(?:others?|friends?|family)/gi
+  ]
   
-  const adultMatch = allText.match(travelersPattern)
-  if (adultMatch) {
-    data.travelers = { adults: parseInt(adultMatch[0]) || 1 }
+  const childrenPattern = /(\d+)\s*(?:child|children|kids?)/gi
+  
+  let adultCount = 0
+  for (const pattern of travelersPatterns) {
+    const matches = allText.match(pattern)
+    if (matches) {
+      const num = parseInt(matches[0].match(/\d+/)?.[0] || '0')
+      if (num > adultCount) adultCount = num
+    }
+  }
+  
+  // Default to 1 adult if we found destinations but no traveler count
+  if (adultCount === 0 && destinations.length > 0) {
+    adultCount = 1
+  }
+  
+  if (adultCount > 0) {
+    data.travelers = { adults: adultCount }
+  } else if (destinations.length > 0) {
+    // If we have a destination but no traveler count mentioned, assume 1 adult
+    data.travelers = { adults: 1 }
   }
   
   const childMatch = allText.match(childrenPattern)
   if (childMatch && data.travelers) {
-    data.travelers.children = parseInt(childMatch[0]) || 0
+    const childCount = parseInt(childMatch[0].match(/\d+/)?.[0] || '0')
+    data.travelers.children = childCount
   }
 
   // Extract budget
@@ -213,14 +253,16 @@ function simpleExtraction(conversationHistory: Message[]): ExtractedData {
   // Calculate completeness
   let fieldsCompleted = 0
   const totalFields = 6
-  if (data.destinations?.length) fieldsCompleted++
-  if (data.travelDates?.startDate) fieldsCompleted++
-  if (data.travelers?.adults) fieldsCompleted++
-  if (data.budget?.amount) fieldsCompleted++
-  if (data.accommodation) fieldsCompleted++
-  if (data.interests?.length) fieldsCompleted++
+  if (data.destinations && data.destinations.length > 0) fieldsCompleted++
+  if (data.travelDates && data.travelDates.startDate) fieldsCompleted++
+  if (data.travelers && data.travelers.adults && data.travelers.adults > 0) fieldsCompleted++
+  if (data.budget && data.budget.amount && data.budget.amount > 0) fieldsCompleted++
+  if (data.accommodation && data.accommodation.length > 0) fieldsCompleted++
+  if (data.interests && data.interests.length > 0) fieldsCompleted++
   
   data.completeness = Math.round((fieldsCompleted / totalFields) * 100)
+  
+  console.log('Simple extraction - Fields completed:', fieldsCompleted, 'Total fields:', totalFields, 'Completeness:', data.completeness)
 
   return data
 }

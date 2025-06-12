@@ -14,10 +14,18 @@ import {
   RefreshCw,
   Loader2,
   Plane,
+  Calendar,
+  Users,
+  DollarSign,
+  Home,
+  Heart,
+  FileText,
+  MapPin,
 } from "lucide-react"
 import { useTrips } from '@/hooks/use-trips'
 import { Badge } from "@/components/ui/badge"
 import { truncateTextSmart } from '@/lib/truncate-text'
+import { Progress } from "@/components/ui/progress"
 
 interface Message {
   id: string
@@ -121,6 +129,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         body: JSON.stringify({
           message: textToSend,
           conversationHistory: [...messages, userMessage],
+          extractedData: extractedData,
         }),
       })
 
@@ -130,7 +139,18 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       }
 
       const data = await response.json()
-      const responseText = data.fallbackResponse || data.response
+      
+      // Log debug info if available
+      if (data.debugInfo || data.error) {
+        console.error('Chat API Debug Info:', {
+          error: data.error,
+          errorCode: data.errorCode,
+          debugInfo: data.debugInfo,
+          success: data.success
+        })
+      }
+      
+      const responseText = data.response || data.fallbackResponse
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -169,6 +189,8 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
 
       if (response.ok) {
         const result = await response.json()
+        console.log('Extracted data:', result.data)
+        console.log('Completeness:', result.data.completeness)
         setExtractedData(result.data)
         
         // Generate mock itinerary preview when we have enough data
@@ -301,6 +323,166 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex">
+      {/* Left Progress Sidebar */}
+      <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-sm">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Trip Planning Progress</h3>
+          <Progress value={completeness} className="h-2" />
+          <p className="text-sm text-gray-600 mt-2">{completeness}% Complete</p>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Destination */}
+          <motion.div 
+            className={`p-4 rounded-lg border ${extractedData.destinations?.length ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}
+            animate={{ scale: extractedData.destinations?.length ? [1, 1.02, 1] : 1 }}
+            transition={{ duration: 0.3 }}>
+            <div className="flex items-center gap-3 mb-2">
+              <MapPin className={`h-5 w-5 ${extractedData.destinations?.length ? 'text-green-600' : 'text-gray-400'}`} />
+              <h4 className="font-medium text-gray-900">Destination</h4>
+              {extractedData.destinations?.length ? <CheckCircle className="h-4 w-4 text-green-600 ml-auto" /> : null}
+            </div>
+            {extractedData.destinations?.length ? (
+              <div className="space-y-1">
+                {extractedData.destinations.map((dest, i) => (
+                  <Badge key={i} variant="secondary">{dest}</Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Where would you like to go?</p>
+            )}
+          </motion.div>
+          
+          {/* Travel Dates */}
+          <div className={`p-4 rounded-lg border ${extractedData.travelDates?.startDate ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+            <div className="flex items-center gap-3 mb-2">
+              <Calendar className={`h-5 w-5 ${extractedData.travelDates?.startDate ? 'text-green-600' : 'text-gray-400'}`} />
+              <h4 className="font-medium text-gray-900">Travel Dates</h4>
+              {extractedData.travelDates?.startDate ? <CheckCircle className="h-4 w-4 text-green-600 ml-auto" /> : null}
+            </div>
+            {extractedData.travelDates?.startDate ? (
+              <p className="text-sm text-gray-700">
+                {new Date(extractedData.travelDates.startDate).toLocaleDateString()} - 
+                {extractedData.travelDates.endDate && new Date(extractedData.travelDates.endDate).toLocaleDateString()}
+                {extractedData.travelDates.flexible && <Badge variant="outline" className="ml-2 text-xs">Flexible</Badge>}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500">When do you plan to travel?</p>
+            )}
+          </div>
+          
+          {/* Travelers */}
+          <div className={`p-4 rounded-lg border ${extractedData.travelers?.adults ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+            <div className="flex items-center gap-3 mb-2">
+              <Users className={`h-5 w-5 ${extractedData.travelers?.adults ? 'text-green-600' : 'text-gray-400'}`} />
+              <h4 className="font-medium text-gray-900">Travelers</h4>
+              {extractedData.travelers?.adults ? <CheckCircle className="h-4 w-4 text-green-600 ml-auto" /> : null}
+            </div>
+            {extractedData.travelers?.adults ? (
+              <p className="text-sm text-gray-700">
+                {extractedData.travelers.adults} adult{extractedData.travelers.adults > 1 ? 's' : ''}
+                {extractedData.travelers.children ? `, ${extractedData.travelers.children} child${extractedData.travelers.children > 1 ? 'ren' : ''}` : ''}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500">How many people are traveling?</p>
+            )}
+          </div>
+          
+          {/* Budget */}
+          <div className={`p-4 rounded-lg border ${extractedData.budget?.amount ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+            <div className="flex items-center gap-3 mb-2">
+              <DollarSign className={`h-5 w-5 ${extractedData.budget?.amount ? 'text-green-600' : 'text-gray-400'}`} />
+              <h4 className="font-medium text-gray-900">Budget</h4>
+              {extractedData.budget?.amount ? <CheckCircle className="h-4 w-4 text-green-600 ml-auto" /> : null}
+            </div>
+            {extractedData.budget?.amount ? (
+              <p className="text-sm text-gray-700">
+                {extractedData.budget.currency || '$'}{extractedData.budget.amount}
+                {extractedData.budget.perPerson ? ' per person' : ' total'}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500">What's your budget?</p>
+            )}
+          </div>
+          
+          {/* Accommodation */}
+          <div className={`p-4 rounded-lg border ${extractedData.accommodation ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+            <div className="flex items-center gap-3 mb-2">
+              <Home className={`h-5 w-5 ${extractedData.accommodation ? 'text-green-600' : 'text-gray-400'}`} />
+              <h4 className="font-medium text-gray-900">Accommodation</h4>
+              {extractedData.accommodation ? <CheckCircle className="h-4 w-4 text-green-600 ml-auto" /> : null}
+            </div>
+            {extractedData.accommodation ? (
+              <Badge variant="secondary">{extractedData.accommodation}</Badge>
+            ) : (
+              <p className="text-sm text-gray-500">Preferred accommodation type?</p>
+            )}
+          </div>
+          
+          {/* Interests */}
+          <div className={`p-4 rounded-lg border ${extractedData.interests?.length ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+            <div className="flex items-center gap-3 mb-2">
+              <Heart className={`h-5 w-5 ${extractedData.interests?.length ? 'text-green-600' : 'text-gray-400'}`} />
+              <h4 className="font-medium text-gray-900">Interests</h4>
+              {extractedData.interests?.length ? <CheckCircle className="h-4 w-4 text-green-600 ml-auto" /> : null}
+            </div>
+            {extractedData.interests?.length ? (
+              <div className="flex flex-wrap gap-1">
+                {extractedData.interests.map((interest, i) => (
+                  <Badge key={i} variant="secondary" className="text-xs">{interest}</Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">What activities interest you?</p>
+            )}
+          </div>
+          
+          {/* Special Requirements */}
+          {extractedData.specialRequirements && (
+            <div className="p-4 rounded-lg border border-green-200 bg-green-50">
+              <div className="flex items-center gap-3 mb-2">
+                <FileText className="h-5 w-5 text-green-600" />
+                <h4 className="font-medium text-gray-900">Special Requirements</h4>
+                <CheckCircle className="h-4 w-4 text-green-600 ml-auto" />
+              </div>
+              <p className="text-sm text-gray-700">{truncateTextSmart(extractedData.specialRequirements, 100)}</p>
+            </div>
+          )}
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="p-6 border-t border-gray-200 space-y-3">
+          {completeness >= 70 && (
+            <Button
+              onClick={() => onComplete(extractedData)}
+              className="w-full bg-gradient-to-r from-brand-blue-600 to-brand-orange-600 hover:from-brand-blue-700 hover:to-brand-orange-700 text-white"
+              size="lg"
+            >
+              <CheckCircle className="mr-2 h-5 w-5" />
+              View Your Itinerary
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          )}
+          
+          {completeness > 20 && completeness < 70 && (
+            <Button
+              onClick={() => onComplete(extractedData)}
+              variant="outline"
+              className="w-full border-brand-blue-600 text-brand-blue-600 hover:bg-brand-blue-50"
+            >
+              Continue with Current Info
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+          
+          {completeness < 20 && (
+            <p className="text-sm text-center text-gray-500">
+              Keep chatting to gather trip details
+            </p>
+          )}
+        </div>
+      </div>
+      
       <div className="flex-1 flex">
         {/* Main Chat Interface */}
         <div className="flex-1 max-w-4xl mx-auto p-4">
@@ -309,20 +491,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           <div className="p-6 border-b">
             <h1 className="text-2xl font-bold text-gray-900">AI Travel Planner</h1>
             <p className="text-gray-600 mt-1">Tell me about your dream trip</p>
-            
-            {/* Progress Bar */}
-            <div className="mt-4">
-              <div className="flex justify-between text-sm text-gray-600 mb-2">
-                <span>Trip Details</span>
-                <span>{completeness}% Complete</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-orange-500 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${completeness}%` }}
-                />
-              </div>
-            </div>
           </div>
 
           {/* Messages */}
@@ -372,19 +540,43 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           {/* Input Area */}
           <div className="p-6 border-t">
             {!isReadyToProceed ? (
-              <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={isLoading}
-                />
-                <Button type="submit" disabled={!inputMessage.trim() || isLoading}>
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
+              <>
+                <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isLoading}
+                  />
+                  <Button type="submit" disabled={!inputMessage.trim() || isLoading}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+                
+                {/* Manual transition button when completeness > 20% */}
+                {completeness > 20 && (
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-gray-200" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white px-2 text-gray-500">Ready to continue?</span>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => onComplete(extractedData)}
+                      variant="outline"
+                      className="w-full border-brand-blue-600 text-brand-blue-600 hover:bg-brand-blue-50"
+                    >
+                      Continue with Current Info
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="space-y-4">
                 <Alert>
@@ -395,21 +587,40 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
                 </Alert>
                 
                 <Button 
+                  onClick={() => onComplete(extractedData)}
+                  className="w-full bg-gradient-to-r from-brand-blue-600 to-brand-orange-600 hover:from-brand-blue-700 hover:to-brand-orange-700 text-white"
+                  size="lg"
+                >
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  View Your Itinerary
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-gray-300" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-gray-500">Or</span>
+                  </div>
+                </div>
+                
+                <Button 
                   onClick={generateAIItinerary}
                   disabled={isGenerating}
+                  variant="outline"
                   className="w-full"
                   size="lg"
                 >
                   {isGenerating ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Generating Your Itinerary...
+                      Generating AI-Enhanced Itinerary...
                     </>
                   ) : (
                     <>
                       <Sparkles className="mr-2 h-5 w-5" />
-                      Generate AI Itinerary
-                      <ArrowRight className="ml-2 h-5 w-5" />
+                      Generate AI-Enhanced Itinerary
                     </>
                   )}
                 </Button>

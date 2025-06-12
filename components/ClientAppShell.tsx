@@ -55,7 +55,7 @@ export default function ClientAppShell({ children }: { children: React.ReactNode
   useRegisterServiceWorker()
   
   // Determine if banners should be shown based on the current route
-  const shouldShowBanners = !['/', '/onboarding', '/docs', '/admin'].some(path => 
+  const shouldShowBanners = !['/', '/onboarding', '/docs', '/admin', '/plan'].some(path => 
     pathname === path || pathname.startsWith('/onboarding/')
   )
   
