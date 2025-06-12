@@ -535,21 +535,31 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         {messages.map((message) => (
           <motion.div
             key={message.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ 
+              type: "spring",
+              damping: 20,
+              stiffness: 300,
+              mass: 0.8
+            }}
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div className={cn(
-              "max-w-[85%] rounded-2xl px-4 py-3 shadow-sm",
-              message.role === 'user' 
-                ? 'bg-brand-blue-600 text-white' 
-                : 'bg-gray-50 text-gray-900 border border-gray-200'
-            )}>
+            <motion.div 
+              className={cn(
+                "max-w-[85%] rounded-2xl px-4 py-3",
+                message.role === 'user' 
+                  ? 'bg-blue-500 text-white shadow-[0_4px_14px_rgba(59,130,246,0.4)]' 
+                  : 'bg-white/80 backdrop-blur-xl text-gray-900 border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]'
+              )}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            >
               <p className={cn(
                 "text-sm whitespace-pre-wrap",
                 message.role === 'user' ? 'text-white' : 'text-gray-900'
               )}>{message.content}</p>
-            </div>
+            </motion.div>
           </motion.div>
         ))}
         
@@ -577,21 +587,31 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         {messages.map((message) => (
           <motion.div
             key={message.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ 
+              type: "spring",
+              damping: 20,
+              stiffness: 300,
+              mass: 0.8
+            }}
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div className={cn(
-              "max-w-[80%] rounded-lg p-4 shadow-sm",
-              message.role === 'user' 
-                ? 'bg-brand-blue-600 text-white' 
-                : 'bg-gray-50 text-gray-900 border border-gray-200'
-            )}>
+            <motion.div 
+              className={cn(
+                "max-w-[80%] rounded-lg p-4",
+                message.role === 'user' 
+                  ? 'bg-blue-500 text-white shadow-[0_4px_14px_rgba(59,130,246,0.4)]' 
+                  : 'bg-white/80 backdrop-blur-xl text-gray-900 border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)]'
+              )}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            >
               <p className={cn(
                 "whitespace-pre-wrap",
                 message.role === 'user' ? 'text-white' : 'text-gray-900'
               )}>{message.content}</p>
-            </div>
+            </motion.div>
           </motion.div>
         ))}
         

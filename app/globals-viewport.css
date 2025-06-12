@@ -51,19 +51,26 @@ body {
   overflow: hidden;
 }
 
-/* Messages area with proper scrolling */
+/* Messages area with iOS-style scrolling */
 .messages-container {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
+  
+  /* iOS rubber-band scrolling */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  
+  /* Smooth momentum scrolling */
+  scroll-snap-type: y proximity;
 }
 
-/* Hide scrollbars but keep functionality */
+/* iOS-style minimal scrollbars */
 .messages-container::-webkit-scrollbar {
-  width: 6px;
+  width: 3px;
 }
 
 .messages-container::-webkit-scrollbar-track {
@@ -71,12 +78,25 @@ body {
 }
 
 .messages-container::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 1.5px;
+  transition: background 0.2s ease;
 }
 
 .messages-container:hover::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Hide scrollbar on mobile for iOS feel */
+@media (max-width: 768px) {
+  .messages-container::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .messages-container {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* Input area that stays fixed */
