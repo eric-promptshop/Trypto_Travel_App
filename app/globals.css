@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import viewport fixes */
+@import './globals-viewport.css';
+
 /* TripNav Brand Colors */
 :root {
   /* Primary Colors */

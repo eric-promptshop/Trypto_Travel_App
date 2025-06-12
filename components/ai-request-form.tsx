@@ -28,6 +28,7 @@ import { Progress } from "@/components/ui/progress"
 import { useDeviceType, type DeviceType } from '@/hooks/use-device-type'
 import { AnimatePresence } from 'framer-motion'
 import { fadeIn, slideUp, scaleIn, staggerContainer, staggerItem, cardHover, getDeviceAnimation, smoothSpring } from '@/lib/animations'
+import { usePreventScroll, useVirtualKeyboard } from '@/hooks/use-prevent-scroll'
 import { cn } from '@/lib/utils'
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
@@ -75,6 +76,10 @@ interface ItineraryDay {
 export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const { createTrip } = useTrips()
   const deviceType = useDeviceType()
+  
+  // Prevent scroll and handle virtual keyboard
+  usePreventScroll(true)
+  useVirtualKeyboard()
   
   // Add viewport height CSS variable for mobile and tablet
   useEffect(() => {
@@ -526,7 +531,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
 
   // Mobile-specific Messages Component
   const MobileMessages = () => (
-    <div className="flex-1 overflow-y-auto px-4 py-4 min-h-0 overscroll-contain">
+    <div className="px-4 py-4">
       <div className="space-y-4 pb-4">
         {messages.map((message) => (
           <motion.div
@@ -691,7 +696,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   // Mobile Layout
   if (deviceType === 'mobile') {
     return (
-      <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-blue-50 via-white to-orange-50 overflow-hidden">
+      <div className="h-screen-safe flex flex-col bg-gradient-to-br from-blue-50 via-white to-orange-50 overflow-hidden">
         {/* Mobile Header */}
         <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0 z-10">
           <Sheet open={showProgressSidebar} onOpenChange={setShowProgressSidebar}>
@@ -725,9 +730,11 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         </div>
 
         {/* Messages and Input Container */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 chat-container">
           {/* Messages Area */}
-          <MobileMessages />
+          <div className="messages-container">
+            <MobileMessages />
+          </div>
 
           {/* Error Alert */}
           {error && (
@@ -740,7 +747,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           )}
 
           {/* Fixed Input Area */}
-          <div className="bg-white border-t flex-shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <div className="input-container flex-shrink-0">
             <div className="px-4 py-3">
             {!isReadyToProceed ? (
               <>
@@ -870,7 +877,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
 
   // Desktop Layout
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex">
+    <div className="h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 flex overflow-hidden">
       {/* Desktop Left Progress Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-sm">
         <ProgressSidebarContent />
@@ -879,7 +886,12 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       {/* Main Chat Interface */}
       <div className="flex-1 flex">
         <div className="flex-1 max-w-4xl mx-auto p-4">
-          <div className="bg-white rounded-lg shadow-lg h-[calc(100vh-2rem)] flex flex-col">
+          <motion.div 
+            className="bg-white rounded-lg shadow-lg h-full flex flex-col overflow-hidden"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={smoothSpring}
+          >
             {/* Header */}
             <div className="p-6 border-b">
               <h1 className="text-2xl font-bold text-gray-900">AI Travel Planner</h1>
@@ -887,7 +899,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
             </div>
 
             <ChatInterface />
-          </div>
+          </motion.div>
         </div>
       </div>
 
