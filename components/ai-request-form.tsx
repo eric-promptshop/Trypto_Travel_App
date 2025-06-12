@@ -1,19 +1,16 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useRef, useEffect, useCallback } from "react"
+import { flushSync } from "react-dom"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Send,
-  Sparkles,
   ArrowRight,
   CheckCircle,
   AlertTriangle,
-  RefreshCw,
-  Loader2,
-  Plane,
   Calendar,
   Users,
   DollarSign,
@@ -117,6 +114,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const previousMessagesLength = useRef(messages.length)
+  const [isInputFocused, setIsInputFocused] = useState(false)
 
   // Mock location images for demo
   const locationImages: Record<number, string> = {
@@ -134,18 +132,37 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       previousMessagesLength.current = messages.length
       // Delay scroll to allow DOM update
       const timer = setTimeout(() => {
-        // Only scroll if the input is not focused (fixes desktop focus loss)
-        if (document.activeElement !== inputRef.current) {
+        // Only scroll if the input is not focused AND not currently typing
+        if (document.activeElement !== inputRef.current && !isInputFocused) {
           messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
         }
-      }, 100)
+      }, 150)
       return () => clearTimeout(timer)
     }
-  }, [messages.length])
+  }, [messages.length, isInputFocused])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputMessage(e.target.value)
-  }
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    
+    // Use flushSync to ensure synchronous state update and maintain focus
+    flushSync(() => {
+      setInputMessage(newValue)
+    })
+    
+    // Ensure input maintains focus after state update
+    if (inputRef.current && document.activeElement !== inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [])
+  
+  // Focus tracking handlers
+  const handleInputFocus = useCallback(() => {
+    setIsInputFocused(true)
+  }, [])
+  
+  const handleInputBlur = useCallback(() => {
+    setIsInputFocused(false)
+  }, [])
 
   const sendMessage = async () => {
     if (!inputMessage.trim()) return
@@ -317,7 +334,8 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         {/* Destination */}
         <motion.div 
           className={`p-4 rounded-lg border ${extractedData.destinations?.length ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}
-          animate={{ scale: extractedData.destinations?.length ? [1, 1.02, 1] : 1 }}
+          initial={false}
+          animate={isInputFocused ? undefined : { scale: extractedData.destinations?.length ? 1 : 1 }}
           transition={{ duration: 0.3 }}>
           <div className="flex items-center gap-3 mb-2">
             <MapPin className={`h-5 w-5 ${extractedData.destinations?.length ? 'text-green-600' : 'text-gray-400'}`} />
@@ -454,7 +472,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
                 : "hover:shadow-lg hover:scale-102"
             }`}
             onClick={() => setSelectedDay(day.day)}
-            whileHover={{ scale: selectedDay === day.day ? 1.05 : 1.02 }}
+            whileHover={isInputFocused ? undefined : { scale: selectedDay === day.day ? 1.05 : 1.02 }}
             transition={{ duration: 0.2 }}
           >
             <div className="relative">
@@ -592,15 +610,22 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       <div className="p-6 border-t bg-white">
         {!isReadyToProceed ? (
           <>
-            <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2 mb-4">
+            <form 
+              key="chat-form-desktop"
+              onSubmit={(e) => { e.preventDefault(); sendMessage(); }} 
+              className="flex gap-2 mb-4">
               <input
+                key="chat-input-desktop"
                 ref={inputRef}
                 type="text"
                 value={inputMessage}
                 onChange={handleInputChange}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
                 placeholder="Type your message..."
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue-500 focus:border-brand-blue-500 bg-white text-gray-900 placeholder-gray-500"
                 disabled={isLoading}
+                autoFocus={false}
               />
               <Button type="submit" disabled={!inputMessage.trim() || isLoading}>
                 <Send className="h-4 w-4" />
@@ -709,16 +734,23 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
             <div className="px-4 py-3">
             {!isReadyToProceed ? (
               <>
-                <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+                <form 
+                  key="chat-form-mobile"
+                  onSubmit={(e) => { e.preventDefault(); sendMessage(); }} 
+                  className="flex gap-2">
                   <input
+                    key="chat-input-mobile"
                     ref={inputRef}
                     type="text"
                     value={inputMessage}
                     onChange={handleInputChange}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
                     placeholder="Type your message..."
                     className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue-500 focus:border-brand-blue-500 bg-white text-gray-900 placeholder-gray-500"
                     disabled={isLoading}
                     autoComplete="off"
+                    autoFocus={false}
                   />
                   <Button type="submit" size="sm" disabled={!inputMessage.trim() || isLoading}>
                     <Send className="h-4 w-4" />
