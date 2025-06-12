@@ -207,24 +207,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     setError(null)
 
     try {
-      // Convert extracted data to API format
-      const tripData = {
-        destination: extractedData.destinations?.[0] || "",
-        dates: {
-          from: extractedData.travelDates?.startDate || new Date().toISOString(),
-          to: extractedData.travelDates?.endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-        travelers: extractedData.travelers?.adults || 1,
-        budget: [
-          extractedData.budget?.amount || 1000,
-          (extractedData.budget?.amount || 1000) * 1.5
-        ],
-        interests: extractedData.interests || [],
-        email: undefined, // Optional
-        name: undefined, // Optional
-        phone: undefined, // Optional
-      }
-
       // Generate AI itinerary
       const preferences = {
         primaryDestination: extractedData.destinations?.[0] || "Paris",
@@ -273,17 +255,17 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           endDate: result.itinerary.days[result.itinerary.days.length - 1]?.date || preferences.endDate,
           location: preferences.primaryDestination
         })
+        
+        if (newTrip) {
+          onComplete({
+            ...extractedData,
+            tripId: newTrip.id,
+          })
+        } else {
+          throw new Error("Failed to create trip")
+        }
       } else {
         throw new Error("Invalid itinerary response")
-      }
-
-      if (newTrip) {
-        onComplete({
-          ...extractedData,
-          tripId: newTrip.id,
-        })
-      } else {
-        throw new Error("Failed to create trip")
       }
     } catch (error: any) {
       console.error("Error generating AI itinerary:", error)
