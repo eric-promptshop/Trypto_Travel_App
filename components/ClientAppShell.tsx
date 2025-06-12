@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { SessionProvider } from 'next-auth/react'
 import { Toaster } from '@/components/ui/sonner'
 import { TripProvider } from '@/contexts/TripContext'
@@ -46,12 +47,18 @@ function useRegisterServiceWorker() {
 
 export default function ClientAppShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false)
+  const pathname = usePathname()
   
   // Always call the hook, but only use its value in production
   const webVitals = useWebVitals()
   const shouldTrackVitals = process.env.NODE_ENV === 'production'
   
   useRegisterServiceWorker()
+  
+  // Determine if banners should be shown based on the current route
+  const shouldShowBanners = !['/', '/onboarding', '/docs', '/admin'].some(path => 
+    pathname === path || pathname.startsWith('/onboarding/')
+  )
   
   useEffect(() => {
     setMounted(true)
@@ -84,12 +91,20 @@ export default function ClientAppShell({ children }: { children: React.ReactNode
                 <ErrorBoundary>
                   <ThumbZoneWrapper priority="high">
                     <div className="min-h-screen bg-background">
-                      <OrientationBanner />
-                      <BatteryStatusBanner />
-                      <GeolocationBanner />
+                      {shouldShowBanners && (
+                        <>
+                          <OrientationBanner />
+                          <BatteryStatusBanner />
+                          <GeolocationBanner />
+                        </>
+                      )}
                       <OfflineStatusBanner />
                       
                       <MainHeader />
+                      
+                      {/* Add spacing for fixed header */}
+                      <div className="pt-20" />
+                      
                       <MainNavigation />
                       
                       <main className="container mx-auto px-4 py-8 pb-20 md:pb-8">

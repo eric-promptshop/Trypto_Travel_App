@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TenantResolver } from '@/lib/middleware/tenant-resolver';
+import { getToken } from 'next-auth/jwt';
 
 /**
  * Multi-tenant middleware for handling domain-based and subdomain-based routing
- * Supports: white-label deployments, multi-tenant SaaS, subdomain routing
+ * Supports: white-label deployments, multi-tenant SaaS, subdomain routing, authentication
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -18,6 +19,55 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/favicon.ico')
   ) {
     return NextResponse.next();
+  }
+
+  // Protected routes that require authentication
+  const protectedRoutes = [
+    '/trips',
+    '/itinerary',
+    '/itinerary-display',
+    '/profile',
+    '/settings'
+  ];
+
+  // Check if the current path is protected
+  const isProtectedRoute = protectedRoutes.some(route => 
+    pathname === route || pathname.startsWith(`${route}/`)
+  );
+
+  // Skip auth check for auth routes and public pages
+  const isAuthRoute = pathname.startsWith('/auth/');
+  const isPublicRoute = pathname === '/' || 
+                       pathname === '/ui-showcase' || 
+                       pathname === '/ui-showcase-v2' ||
+                       pathname === '/docs' ||
+                       pathname.startsWith('/api/');
+
+  // Check authentication for protected routes
+  if (isProtectedRoute && !isAuthRoute) {
+    try {
+      const token = await getToken({ 
+        req: request, 
+        secret: process.env.NEXTAUTH_SECRET || 'development-secret-key-change-in-production' 
+      });
+
+      if (!token) {
+        console.log(`🔒 Unauthenticated access to protected route: ${pathname}`);
+        const url = request.nextUrl.clone();
+        url.pathname = '/auth/signin';
+        url.searchParams.set('callbackUrl', pathname);
+        return NextResponse.redirect(url);
+      }
+
+      console.log(`✅ Authenticated user accessing: ${pathname}`);
+    } catch (error) {
+      console.error('Authentication check error:', error);
+      // On error, redirect to signin for safety
+      const url = request.nextUrl.clone();
+      url.pathname = '/auth/signin';
+      url.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(url);
+    }
   }
 
   try {
@@ -44,6 +94,30 @@ export async function middleware(request: NextRequest) {
         // Custom domain or subdomain - serve branded version
         console.log(`🎨 Serving branded version for tenant: ${tenant.name}`);
         
+        // Check authentication for protected routes on tenant domains
+        if (isProtectedRoute && !isAuthRoute) {
+          try {
+            const token = await getToken({ 
+              req: request, 
+              secret: process.env.NEXTAUTH_SECRET || 'development-secret-key-change-in-production' 
+            });
+
+            if (!token) {
+              console.log(`🔒 Unauthenticated access to protected tenant route: ${pathname}`);
+              const url = request.nextUrl.clone();
+              url.pathname = '/auth/signin';
+              url.searchParams.set('callbackUrl', pathname);
+              return NextResponse.redirect(url);
+            }
+          } catch (error) {
+            console.error('Tenant auth check error:', error);
+            const url = request.nextUrl.clone();
+            url.pathname = '/auth/signin';
+            url.searchParams.set('callbackUrl', pathname);
+            return NextResponse.redirect(url);
+          }
+        }
+        
         // Add tenant branding headers
         response.headers.set('x-tenant-branded', 'true');
         response.headers.set('x-tenant-custom-domain', tenant.isCustomDomain.toString());
@@ -59,6 +133,34 @@ export async function middleware(request: NextRequest) {
         if (tenantSlug === tenant.slug) {
           const newPath = pathname.replace(`/client/${tenantSlug}`, '') || '/';
           console.log(`🔄 Rewriting path from ${pathname} to ${newPath}`);
+          
+          // Check if the rewritten path is protected
+          const isRewrittenProtected = protectedRoutes.some(route => 
+            newPath === route || newPath.startsWith(`${route}/`)
+          );
+          
+          if (isRewrittenProtected) {
+            try {
+              const token = await getToken({ 
+                req: request, 
+                secret: process.env.NEXTAUTH_SECRET || 'development-secret-key-change-in-production' 
+              });
+
+              if (!token) {
+                console.log(`🔒 Unauthenticated access to protected tenant route: ${newPath}`);
+                const url = request.nextUrl.clone();
+                url.pathname = '/auth/signin';
+                url.searchParams.set('callbackUrl', pathname);
+                return NextResponse.redirect(url);
+              }
+            } catch (error) {
+              console.error('Tenant path auth check error:', error);
+              const url = request.nextUrl.clone();
+              url.pathname = '/auth/signin';
+              url.searchParams.set('callbackUrl', pathname);
+              return NextResponse.redirect(url);
+            }
+          }
           
           // Rewrite the URL to remove the tenant prefix
           const url = request.nextUrl.clone();

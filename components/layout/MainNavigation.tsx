@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useAnalytics } from '@/lib/analytics/analytics-service'
+import { useSession } from 'next-auth/react'
 import { 
   Home, 
   Plane, 
@@ -13,7 +14,8 @@ import {
   User,
   BookOpen,
   BarChart3,
-  Palette
+  Palette,
+  Building2
 } from 'lucide-react'
 
 interface NavigationItem {
@@ -22,6 +24,7 @@ interface NavigationItem {
   icon: React.ComponentType<{ className?: string }>
   description?: string
   adminOnly?: boolean
+  requiresAuth?: boolean
 }
 
 const navigationItems: NavigationItem[] = [
@@ -41,13 +44,15 @@ const navigationItems: NavigationItem[] = [
     href: '/trips',
     label: 'My Trips',
     icon: Map,
-    description: 'View and manage your saved trips'
+    description: 'View and manage your saved trips',
+    requiresAuth: true
   },
   {
     href: '/itinerary-display',
     label: 'Itinerary',
     icon: Calendar,
-    description: 'View your current itinerary'
+    description: 'View your current itinerary',
+    requiresAuth: true
   },
   {
     href: '/ui-showcase',
@@ -60,6 +65,12 @@ const navigationItems: NavigationItem[] = [
     label: 'Guide',
     icon: BookOpen,
     description: 'Learn how to use the platform'
+  },
+  {
+    href: '/onboarding',
+    label: 'White Label',
+    icon: Building2,
+    description: 'Set up your branded platform'
   },
 ]
 
@@ -83,6 +94,7 @@ const adminItems: NavigationItem[] = [
 export function MainNavigation() {
   const pathname = usePathname()
   const { track } = useAnalytics()
+  const { data: session } = useSession()
 
   const handleNavClick = (item: NavigationItem) => {
     track('main_nav_click', {
@@ -99,13 +111,22 @@ export function MainNavigation() {
     return null
   }
 
+  // Filter navigation items based on authentication status
+  const visibleItems = navigationItems.filter(item => {
+    // If item requires auth and user is not authenticated, hide it
+    if (item.requiresAuth && !session) {
+      return false
+    }
+    return true
+  })
+
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           {/* Main Navigation */}
           <div className="flex items-center space-x-8 overflow-x-auto py-4">
-            {navigationItems.map((item) => {
+            {visibleItems.map((item) => {
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
               
               return (
