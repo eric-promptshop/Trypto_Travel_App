@@ -82,7 +82,7 @@ export default function ClientAppShell({ children }: { children: React.ReactNode
 
   return (
     <SessionProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
         <CustomThemeProvider>
           <TripProvider>
             <TemplateProvider>

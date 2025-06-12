@@ -1,11 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import {
-  ThemeProvider as NextThemesProvider,
-  type ThemeProviderProps,
-} from 'next-themes'
 
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+// Since we're only supporting light mode, we can simplify the theme provider
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>
 }

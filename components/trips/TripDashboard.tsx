@@ -58,9 +58,9 @@ interface TripStats {
 }
 
 const statusConfig = {
-  draft: { label: 'Draft', color: 'bg-gray-500', variant: 'secondary' as const },
-  active: { label: 'Active', color: 'bg-blue-500', variant: 'default' as const },
-  completed: { label: 'Completed', color: 'bg-green-500', variant: 'default' as const },
+  draft: { label: 'Draft', color: 'bg-brand-gray-500', variant: 'secondary' as const },
+  active: { label: 'Active', color: 'bg-brand-blue-600', variant: 'default' as const },
+  completed: { label: 'Completed', color: 'bg-brand-green-500', variant: 'default' as const },
   cancelled: { label: 'Cancelled', color: 'bg-red-500', variant: 'destructive' as const }
 }
 
@@ -231,8 +231,8 @@ export function TripDashboard({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Trips</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-brand-gray-600">My Trips</h1>
+          <p className="text-brand-gray-500 mt-1">
             Plan, organize, and manage your travel adventures
           </p>
         </div>
@@ -249,7 +249,7 @@ export function TripDashboard({
             <Sparkles className="h-4 w-4 mr-2" />
             AI Suggestions
           </Button>
-          <Button onClick={onCreateTrip} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={onCreateTrip} className="bg-brand-blue-600 hover:bg-brand-blue-700">
             <Plus className="h-4 w-4 mr-2" />
             New Trip
           </Button>
@@ -261,19 +261,19 @@ export function TripDashboard({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 border border-purple-200"
+          className="bg-gradient-to-r from-brand-orange-50 to-brand-orange-100 rounded-lg p-6 border border-brand-orange-200"
         >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-purple-600" />
-              <h3 className="text-lg font-semibold text-gray-900">AI Trip Suggestions</h3>
+              <Sparkles className="h-5 w-5 text-brand-orange-600" />
+              <h3 className="text-lg font-semibold text-brand-gray-600">AI Trip Suggestions</h3>
             </div>
-            {isLoadingAI && <Loader2 className="h-5 w-5 animate-spin text-purple-600" />}
+            {isLoadingAI && <Loader2 className="h-5 w-5 animate-spin text-brand-orange-600" />}
           </div>
           
           {isLoadingAI ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-brand-orange-600" />
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -287,19 +287,19 @@ export function TripDashboard({
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <p className="text-sm text-gray-600">{suggestion.description}</p>
+                    <p className="text-sm text-brand-gray-500">{suggestion.description}</p>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <span className="text-gray-500">Duration:</span>
+                        <span className="text-brand-gray-500">Duration:</span>
                         <span className="ml-1 font-medium">{suggestion.duration} days</span>
                       </div>
                       <div>
-                        <span className="text-gray-500">Budget:</span>
+                        <span className="text-brand-gray-500">Budget:</span>
                         <span className="ml-1 font-medium">{suggestion.estimatedBudget}</span>
                       </div>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-500">Best time:</span>
+                      <span className="text-sm text-brand-gray-500">Best time:</span>
                       <span className="ml-1 text-sm font-medium">{suggestion.bestTimeToGo}</span>
                     </div>
                     <div className="flex flex-wrap gap-1">
@@ -324,10 +324,10 @@ export function TripDashboard({
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Trips</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                  <p className="text-sm font-medium text-brand-gray-500">Total Trips</p>
+                  <p className="text-2xl font-bold text-brand-gray-600">{stats.total}</p>
                 </div>
-                <Plane className="h-8 w-8 text-blue-500" />
+                <Plane className="h-8 w-8 text-brand-blue-600" />
               </div>
             </CardContent>
           </Card>
@@ -337,8 +337,8 @@ export function TripDashboard({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">{config.label}</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm font-medium text-brand-gray-500">{config.label}</p>
+                    <p className="text-2xl font-bold text-brand-gray-600">
                       {stats.byStatus[status] || 0}
                     </p>
                   </div>
@@ -353,7 +353,7 @@ export function TripDashboard({
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-gray-500" />
           <Input
             placeholder="Search trips by destination..."
             value={searchQuery}
@@ -426,7 +426,7 @@ export function TripDashboard({
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <CardTitle className="text-lg font-semibold text-gray-900 truncate">
+                        <CardTitle className="text-lg font-semibold text-brand-gray-600 truncate">
                           {trip.title}
                         </CardTitle>
                         <CardDescription className="flex items-center gap-1 mt-1">
@@ -490,17 +490,17 @@ export function TripDashboard({
                     onClick={() => router.push(`/trips/${trip.id}/details`)}
                   >
                     {trip.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2">
+                      <p className="text-sm text-brand-gray-500 line-clamp-2">
                         {trip.description}
                       </p>
                     )}
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-1 text-gray-600">
+                      <div className="flex items-center gap-1 text-brand-gray-500">
                         <Calendar className="h-3 w-3" />
                         <span>{format(parseISO(trip.startDate), 'MMM d')}</span>
                       </div>
-                      <div className="flex items-center gap-1 text-gray-600">
+                      <div className="flex items-center gap-1 text-brand-gray-500">
                         <Users className="h-3 w-3" />
                         <span>{formatTripDuration(trip.startDate, trip.endDate)}</span>
                       </div>
@@ -514,14 +514,14 @@ export function TripDashboard({
                         {statusConfig[trip.status]?.label || trip.status}
                       </Badge>
                       
-                      <div className="text-sm font-medium text-gray-900">
-                        <span className="text-gray-600">From </span>
+                      <div className="text-sm font-medium text-brand-gray-600">
+                        <span className="text-brand-gray-500">From </span>
                         {format(parseISO(trip.startDate), 'MMM d, yyyy')}
                       </div>
                     </div>
 
                     {trip.participants && trip.participants.length > 0 && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <div className="flex items-center gap-1 text-xs text-brand-gray-500">
                         <Users className="h-3 w-3" />
                         {trip.participants.length} traveler{trip.participants.length === 1 ? '' : 's'}
                       </div>
@@ -541,18 +541,18 @@ export function TripDashboard({
           animate={{ opacity: 1, y: 0 }}
           className="text-center py-12"
         >
-          <Plane className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <Plane className="h-16 w-16 text-brand-gray-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-brand-gray-600 mb-2">
             {searchQuery || filters.status ? 'No trips found' : 'No trips yet'}
           </h3>
-          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+          <p className="text-brand-gray-500 mb-6 max-w-md mx-auto">
             {searchQuery || filters.status 
               ? 'Try adjusting your search criteria or filters to find trips.'
               : 'Start planning your next adventure by creating your first trip.'
             }
           </p>
           {!searchQuery && !filters.status && (
-            <Button onClick={onCreateTrip} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={onCreateTrip} className="bg-brand-blue-600 hover:bg-brand-blue-700">
               <Plus className="h-4 w-4 mr-2" />
               Create Your First Trip
             </Button>
@@ -563,7 +563,7 @@ export function TripDashboard({
       {/* Pagination */}
       {meta && meta.totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-brand-gray-500">
             Showing {((meta.page - 1) * meta.limit) + 1} to {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} trips
           </p>
           

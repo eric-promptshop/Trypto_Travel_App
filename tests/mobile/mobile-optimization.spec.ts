@@ -308,24 +308,7 @@ test.describe('Mobile Optimization Testing', () => {
       expect(hasLightTheme).toBe(true);
     });
 
-    test('Should have manual theme switcher', async ({ page }) => {
-      await page.goto('/');
-      
-      // Look for theme switcher
-      const themeSwitcher = page.locator('button[data-theme-toggle], .theme-switcher, button:has-text("theme")');
-      
-      if (await themeSwitcher.isVisible()) {
-        await themeSwitcher.click();
-        
-        // Check if theme changed
-        await page.waitForTimeout(500);
-        
-        const body = await page.locator('body');
-        const hasDarkClass = await body.evaluate(el => el.classList.contains('dark'));
-        
-        expect(typeof hasDarkClass).toBe('boolean');
-      }
-    });
+    // Theme switcher test removed - dark mode is no longer supported
   });
 
   test.describe('Reduced Motion Support', () => {

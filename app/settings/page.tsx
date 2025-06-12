@@ -31,7 +31,6 @@ import {
   AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
-import { useTheme } from 'next-themes'
 
 // Demo settings data
 const demoSettings = {
@@ -74,7 +73,6 @@ const demoSettings = {
 
 export default function SettingsPage() {
   const { data: session, status } = useSession()
-  const { theme, setTheme } = useTheme()
   const { toast } = useToast()
   const [settings, setSettings] = useState(demoSettings)
   const [hasChanges, setHasChanges] = useState(false)
@@ -443,27 +441,6 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="theme">Theme</Label>
-                  <Select
-                    value={theme}
-                    onValueChange={setTheme}
-                  >
-                    <SelectTrigger id="theme">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="light">Light</SelectItem>
-                      <SelectItem value="dark">Dark</SelectItem>
-                      <SelectItem value="system">System</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-muted-foreground">
-                    Choose your preferred color theme
-                  </p>
-                </div>
-
-                <Separator />
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">

@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss"
 
 const config = {
-  darkMode: ["class"],
   content: [
     "./pages/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
@@ -19,64 +18,106 @@ const config = {
     },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        // TripNav Brand Colors
+        brand: {
+          blue: {
+            50: "#e6f0f7",
+            100: "#cce1ef",
+            200: "#99c3df",
+            300: "#66a5cf",
+            400: "#3387bf",
+            500: "#2d6ba3",
+            600: "#1f5582",
+            700: "#194466",
+            800: "#143349",
+            900: "#0e222d",
+          },
+          orange: {
+            50: "#fff5f0",
+            100: "#ffebe1",
+            200: "#ffd7c3",
+            300: "#ffc3a5",
+            400: "#ffaf87",
+            500: "#ff8759",
+            600: "#ff6b35",
+            700: "#e55525",
+            800: "#cc4015",
+            900: "#b22a05",
+          },
+          gray: {
+            50: "#f9fafb",
+            100: "#f3f4f6",
+            200: "#e5e7eb",
+            300: "#d1d5db",
+            400: "#9ca3af",
+            500: "#6b7280",
+            600: "#374151",
+            700: "#1f2937",
+            800: "#111827",
+            900: "#030712",
+          },
+          green: {
+            50: "#f0fdf4",
+            100: "#dcfce7",
+            200: "#bbf7d0",
+            300: "#86efac",
+            400: "#4ade80",
+            500: "#22c55e",
+            600: "#16a34a",
+            700: "#15803d",
+            800: "#166534",
+            900: "#14532d",
+          },
+          neutral: {
+            50: "#fafafa",
+            100: "#f5f5f5",
+            200: "#e5e5e5",
+            300: "#d4d4d4",
+            400: "#a3a3a3",
+            500: "#737373",
+            600: "#525252",
+            700: "#404040",
+            800: "#262626",
+            900: "#171717",
+          }
+        },
+        // Map old variables to TripNav colors
+        border: "var(--brand-gray-border)",
+        input: "var(--brand-gray-border)",
+        ring: "var(--brand-blue-primary)",
+        background: "#ffffff",
+        foreground: "var(--brand-gray-text)",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-          blue: "#1f5582", // Custom primary blue
+          DEFAULT: "var(--brand-blue-primary)",
+          foreground: "#ffffff",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "var(--brand-blue-secondary)",
+          foreground: "#ffffff",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "#ef4444",
+          foreground: "#ffffff",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "var(--brand-gray-light)",
+          foreground: "var(--brand-gray-secondary)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-          orange: "#ff6b35", // Custom orange accent
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        success: {
-          DEFAULT: "#22c55e", // Custom success green
+          DEFAULT: "var(--brand-orange-accent)",
           foreground: "#ffffff",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "#ffffff",
+          foreground: "var(--brand-gray-text)",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "#ffffff",
+          foreground: "var(--brand-gray-text)",
+        },
+        success: {
+          DEFAULT: "var(--brand-green-success)",
+          foreground: "#ffffff",
         },
       },
       borderRadius: {

@@ -75,9 +75,9 @@ export function MobileBottomNav({
         // Base positioning and layout
         'fixed bottom-0 left-0 right-0 z-40 safe-area-bottom lg:hidden',
         // Enhanced background and blur effects
-        'bg-white/95 dark:bg-gray-950/95 backdrop-blur-md',
+        'bg-white/95 backdrop-blur-md',
         // Improved border styling
-        'border-t border-gray-200/80 dark:border-gray-800/60',
+        'border-t border-gray-200/80',
         // Smooth transitions for theme changes
         'transition-all duration-300 ease-in-out',
         // Mounting animation
@@ -110,18 +110,18 @@ export function MobileBottomNav({
                     // Touch-friendly sizing
                     'touch-target relative',
                     // Enhanced color transitions and states
-                    'text-gray-600 dark:text-gray-400',
-                    'hover:text-gray-900 dark:hover:text-gray-100',
-                    'hover:bg-gray-100/80 dark:hover:bg-gray-800/60',
+                    'text-gray-600',
+                    'hover:text-gray-900',
+                    'hover:bg-gray-100/80',
                     // Active state styling
                     isActive && [
-                      'text-blue-600 dark:text-blue-400',
-                      'bg-blue-50/80 dark:bg-blue-950/40'
+                      'text-blue-600',
+                      'bg-blue-50/80'
                     ],
                     // Improved focus states for accessibility
                     'focus-visible:outline-none focus-visible:ring-2',
-                    'focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400',
-                    'focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950',
+                    'focus-visible:ring-blue-500',
+                    'focus-visible:ring-offset-2',
                     // Smooth transitions
                     'transition-all duration-200 ease-in-out',
                     'motion-reduce:transition-none'
@@ -134,14 +134,14 @@ export function MobileBottomNav({
                       className={cn(
                         'w-5 h-5 transition-colors duration-200',
                         isActive 
-                          ? 'text-blue-600 dark:text-blue-400' 
+                          ? 'text-blue-600' 
                           : 'text-current'
                       )} 
                     />
                     {/* Active indicator */}
                     {isActive && (
                       <span 
-                        className="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full"
+                        className="absolute -top-1 -right-1 w-2 h-2 bg-blue-600 rounded-full"
                         aria-hidden="true"
                       />
                     )}
@@ -167,9 +167,9 @@ export function MobileBottomNav({
                     : "h-[70vh] rounded-t-xl",
                   // Enhanced background and borders
                   'safe-area-bottom',
-                  'bg-white/95 dark:bg-gray-950/95 backdrop-blur-md',
-                  'border-gray-200/80 dark:border-gray-800/60',
-                  'shadow-lg dark:shadow-gray-900/20',
+                  'bg-white/95 backdrop-blur-md',
+                  'border-gray-200/80',
+                  'shadow-lg',
                   // Smooth transitions
                   'transition-colors duration-200'
                 )}
@@ -177,7 +177,7 @@ export function MobileBottomNav({
                 <SheetHeader className="pb-4">
                   <SheetTitle 
                     className={cn(
-                      'text-gray-900 dark:text-gray-100',
+                      'text-gray-900',
                       'transition-colors duration-200'
                     )}
                   >
@@ -191,7 +191,7 @@ export function MobileBottomNav({
                   className={cn(
                     'overflow-y-auto h-full',
                     'scrollbar-thin scrollbar-track-transparent',
-                    'scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600'
+                    'scrollbar-thumb-gray-300'
                   )}
                 >
                   {item.content}

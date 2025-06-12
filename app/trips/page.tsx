@@ -143,14 +143,14 @@ export default function TripsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
+    <div className="min-h-screen bg-brand-gray-100">
       {/* Navigation breadcrumb */}
       {currentView !== 'dashboard' && (
         <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
           <div className="container mx-auto px-4 py-3">
             <button
               onClick={goBackToDashboard}
-              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              className="flex items-center gap-2 text-sm text-brand-gray-500 hover:text-brand-gray-600 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />

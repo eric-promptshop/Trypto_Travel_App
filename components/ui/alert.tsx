@@ -10,21 +10,21 @@ const alertVariants = cva(
       variant: {
         default: "bg-background text-foreground",
         destructive:
-          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+          "border-destructive/50 text-destructive [&>svg]:text-destructive",
         
         // Travel-specific variants
         booking:
-          "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-100 [&>svg]:text-green-600",
+          "border-green-200 bg-green-50 text-green-800 [&>svg]:text-green-600",
         delay:
-          "border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-100 [&>svg]:text-orange-600",
+          "border-orange-200 bg-orange-50 text-orange-800 [&>svg]:text-orange-600",
         weather:
-          "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-100 [&>svg]:text-blue-600",
+          "border-blue-200 bg-blue-50 text-blue-800 [&>svg]:text-blue-600",
         visa:
-          "border-purple-200 bg-purple-50 text-purple-800 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-100 [&>svg]:text-purple-600",
+          "border-purple-200 bg-purple-50 text-purple-800 [&>svg]:text-purple-600",
         currency:
-          "border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-100 [&>svg]:text-yellow-600",
+          "border-yellow-200 bg-yellow-50 text-yellow-800 [&>svg]:text-yellow-600",
         destination:
-          "border-indigo-200 bg-indigo-50 text-indigo-800 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-100 [&>svg]:text-indigo-600",
+          "border-indigo-200 bg-indigo-50 text-indigo-800 [&>svg]:text-indigo-600",
       },
       appearance: {
         solid: "",

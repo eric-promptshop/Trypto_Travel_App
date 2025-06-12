@@ -17,7 +17,6 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Menu, User, Settings, LogOut, X, Map, BookOpen, Building2 } from 'lucide-react'
 import { useAnalytics } from '@/lib/analytics/analytics-service'
-import { ThemeToggle } from '@/components/theme-toggle'
 import { TripNavLogo } from '@/components/ui/TripNavLogo'
 import { cn } from '@/lib/utils'
 
@@ -109,8 +108,6 @@ export function MainHeader() {
               
               {/* User Actions */}
               <div className="flex items-center space-x-4">
-                <ThemeToggle />
-                
                 {status === 'loading' ? (
                   <div className="h-8 w-8 animate-pulse rounded-full bg-brand-neutral-200" />
                 ) : session ? (
