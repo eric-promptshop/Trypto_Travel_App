@@ -270,85 +270,105 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
   
   try {
-    const body = await request.json() as TripFormData
+    const body = await request.json()
+    console.log('Received body:', body)
+    
+    // Handle both wrapped and unwrapped formats
+    const tripData = (body.tripData || body) as TripFormData
     
     // Validate required fields
-    if (!body.destination || !body.dates?.from || !body.dates?.to) {
+    if (!tripData.destination || !tripData.dates?.from || !tripData.dates?.to) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Missing required fields' 
+        error: 'Missing required fields',
+        received: { destination: tripData.destination, dates: tripData.dates }
       }, { status: 400 })
     }
 
-    // Load available content from database
-    const availableContent = await prisma.content.findMany({
-      where: {
-        OR: [
-          { location: { contains: body.destination } },
-          { city: { contains: body.destination } },
-          { country: { contains: body.destination } }
-        ],
-        active: true
-      }
-    })
+    // Try to load available content from database, but continue if it fails
+    let parsedContent: any[] = []
+    try {
+      const availableContent = await prisma.content.findMany({
+        where: {
+          OR: [
+            { location: { contains: tripData.destination } },
+            { city: { contains: tripData.destination } },
+            { country: { contains: tripData.destination } }
+          ],
+          active: true
+        }
+      })
 
-    // Parse content for AI
-    const parsedContent = availableContent.map(content => ({
-      id: content.id,
-      type: content.type,
-      name: content.name,
-      description: content.description,
-      location: content.location,
-      price: content.price,
-      duration: content.duration,
-      amenities: content.amenities ? JSON.parse(content.amenities) : [],
-      included: content.included ? JSON.parse(content.included) : [],
-      excluded: content.excluded ? JSON.parse(content.excluded) : []
-    }))
+      // Parse content for AI
+      parsedContent = availableContent.map(content => ({
+        id: content.id,
+        type: content.type,
+        name: content.name,
+        description: content.description,
+        location: content.location,
+        price: content.price,
+        duration: content.duration,
+        amenities: content.amenities ? JSON.parse(content.amenities) : [],
+        included: content.included ? JSON.parse(content.included) : [],
+        excluded: content.excluded ? JSON.parse(content.excluded) : []
+      }))
+    } catch (dbError) {
+      console.warn('Database connection failed, continuing without content data:', dbError)
+      // Continue with empty content - AI will generate generic itinerary
+    }
 
     // Generate itinerary with AI
-    const itinerary = await generateItineraryWithAI(body, parsedContent)
+    const itinerary = await generateItineraryWithAI(tripData, parsedContent)
     
-    // Create lead in database with proper tenantId
-    const lead = await prisma.lead.create({
-      data: {
-        email: body.email || `anonymous_${Date.now()}@example.com`,
-        name: body.name || null,
-        phone: body.phone || null,
-        destination: body.destination,
-        startDate: new Date(body.dates.from),
-        endDate: new Date(body.dates.to),
-        travelers: body.travelers,
-        budgetMin: body.budget[0],
-        budgetMax: body.budget[1],
-        interests: JSON.stringify(body.interests),
-        tripData: JSON.stringify(body),
-        itinerary: JSON.stringify(itinerary),
-        score: calculateLeadScore(body, itinerary),
-        status: 'new',
-        tenantId: 'default' // Use default tenant for now
-      }
-    })
+    // Try to save to database, but don't fail if database is down
+    let lead = null
+    let savedItinerary = null
+    
+    try {
+      // Create lead in database with proper tenantId
+      lead = await prisma.lead.create({
+        data: {
+          email: tripData.email || `anonymous_${Date.now()}@example.com`,
+          name: tripData.name || null,
+          phone: tripData.phone || null,
+          destination: tripData.destination,
+          startDate: new Date(tripData.dates.from),
+          endDate: new Date(tripData.dates.to),
+          travelers: tripData.travelers,
+          budgetMin: tripData.budget[0],
+          budgetMax: tripData.budget[1],
+          interests: JSON.stringify(tripData.interests),
+          tripData: JSON.stringify(tripData),
+          itinerary: JSON.stringify(itinerary),
+          score: calculateLeadScore(tripData, itinerary),
+          status: 'new',
+          tenantId: 'default' // Use default tenant for now
+        }
+      })
 
-    // Store full itinerary
-    const savedItinerary = await prisma.itinerary.create({
-      data: {
-        title: `${itinerary.duration}-Day ${itinerary.destination} Adventure`,
-        description: `A personalized ${itinerary.duration}-day itinerary for ${itinerary.destination}`,
-        destination: itinerary.destination,
-        startDate: new Date(itinerary.startDate),
-        endDate: new Date(itinerary.endDate),
-        travelers: itinerary.travelers,
-        totalPrice: itinerary.estimatedTotalCost,
-        days: JSON.stringify(itinerary.days),
-        metadata: JSON.stringify({
-          interests: body.interests,
-          generatedAt: new Date(),
-          generationTime: Date.now() - startTime
-        }),
-        leadId: lead.id
-      }
-    })
+      // Store full itinerary
+      savedItinerary = await prisma.itinerary.create({
+        data: {
+          title: `${itinerary.duration}-Day ${itinerary.destination} Adventure`,
+          description: `A personalized ${itinerary.duration}-day itinerary for ${itinerary.destination}`,
+          destination: itinerary.destination,
+          startDate: new Date(itinerary.startDate),
+          endDate: new Date(itinerary.endDate),
+          travelers: itinerary.travelers,
+          totalPrice: itinerary.estimatedTotalCost,
+          days: JSON.stringify(itinerary.days),
+          metadata: JSON.stringify({
+            interests: tripData.interests,
+            generatedAt: new Date(),
+            generationTime: Date.now() - startTime
+          }),
+          leadId: lead.id
+        }
+      })
+    } catch (dbError) {
+      console.warn('Failed to save to database, but continuing with generated itinerary:', dbError)
+      // Continue without database saves - user still gets their itinerary
+    }
 
     // Trigger CRM sync asynchronously (temporarily disabled)
     // LeadSyncService.getInstance().syncLead(lead.id).catch((error: any) => {
@@ -360,8 +380,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       itinerary,
-      leadId: lead.id,
-      itineraryId: savedItinerary.id,
+      leadId: lead?.id || null,
+      itineraryId: savedItinerary?.id || null,
       generationTime,
       performanceTarget: generationTime < 3000
     })
