@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { AITravelItineraryForm } from "@/components/ui/ai-travel-itinerary-form"
+import { AITravelItineraryForm } from "@/components/ui/ai-travel-itinerary-form-v2"
 import { useTrips } from '@/hooks/use-trips'
 import { toast } from "sonner"
 
@@ -50,19 +50,29 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         },
         travelers: data.travelers || 2,
         budget: [1000, 5000], // Default budget range if not specified
-        interests: data.preferences?.filter((p: any) => p.selected).map((p: any) => p.label.toLowerCase()) || ['culture', 'food'],
+        interests: data.interests || ['culture', 'food'], // Updated to use data.interests directly
         email: 'user@example.com', // You might want to get this from user context
         name: 'Traveler' // You might want to get this from user context
       }
       
-      // Parse budget if provided
+      // Parse budget if provided (now handles budget range strings)
       if (data.budget) {
-        const budgetMatch = data.budget.match(/\$?(\d+)\s*-\s*\$?(\d+)/)
-        if (budgetMatch) {
-          tripFormData.budget = [parseInt(budgetMatch[1]), parseInt(budgetMatch[2])]
-        } else {
-          const singleBudget = parseInt(data.budget.replace(/[^0-9]/g, '')) || 2000
-          tripFormData.budget = [Math.floor(singleBudget * 0.7), singleBudget]
+        // Budget options: budget ($50-150/day), moderate ($150-300/day), premium ($300-500/day), luxury ($500+/day)
+        const budgetMap: { [key: string]: [number, number] } = {
+          'budget': [50, 150],
+          'moderate': [150, 300],
+          'premium': [300, 500],
+          'luxury': [500, 1000]
+        }
+        
+        if (budgetMap[data.budget]) {
+          // Multiply by number of days if dates are available
+          const days = data.startDate && data.endDate ? 
+            Math.ceil((data.endDate.getTime() - data.startDate.getTime()) / (1000 * 60 * 60 * 24)) : 7
+          tripFormData.budget = [
+            budgetMap[data.budget][0] * days,
+            budgetMap[data.budget][1] * days
+          ]
         }
       }
       
@@ -111,9 +121,10 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           budget: data.budget ? {
             amount: tripFormData.budget[1],
             currency: 'USD',
-            perPerson: true
+            perPerson: false // Total budget for the trip
           } : undefined,
-          interests: data.preferences?.filter((p: any) => p.selected).map((p: any) => p.label) || [],
+          accommodation: data.accommodation,
+          interests: data.interests || [], // Now directly using the interests array
           specialRequirements: data.specialRequests || '',
           completeness: 100,
           tripId: newTrip.id
