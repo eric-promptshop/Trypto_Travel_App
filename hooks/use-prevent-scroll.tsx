@@ -66,27 +66,39 @@ export function usePreventScroll(enabled = true) {
 // Hook to handle virtual keyboard
 export function useVirtualKeyboard() {
   useEffect(() => {
+    let rafId: number
+    let lastHeight = window.innerHeight
+    
     const handleViewportChange = () => {
-      // Update viewport height when keyboard appears/disappears
-      const vh = window.innerHeight * 0.01
-      document.documentElement.style.setProperty('--vh', `${vh}px`)
+      // Cancel any pending updates
+      if (rafId) cancelAnimationFrame(rafId)
       
-      // Force layout recalculation
-      document.body.style.height = `${window.innerHeight}px`
+      rafId = requestAnimationFrame(() => {
+        const currentHeight = window.innerHeight
+        
+        // Only update if height actually changed
+        if (Math.abs(currentHeight - lastHeight) > 5) {
+          lastHeight = currentHeight
+          const vh = currentHeight * 0.01
+          document.documentElement.style.setProperty('--vh', `${vh}px`)
+        }
+      })
     }
     
     // Visual viewport API for better keyboard handling
     if ('visualViewport' in window) {
-      window.visualViewport?.addEventListener('resize', handleViewportChange)
-      window.visualViewport?.addEventListener('scroll', handleViewportChange)
+      window.visualViewport?.addEventListener('resize', handleViewportChange, { passive: true })
     }
     
-    window.addEventListener('resize', handleViewportChange)
+    window.addEventListener('resize', handleViewportChange, { passive: true })
+    
+    // Initial setup
+    handleViewportChange()
     
     return () => {
+      if (rafId) cancelAnimationFrame(rafId)
       if ('visualViewport' in window) {
         window.visualViewport?.removeEventListener('resize', handleViewportChange)
-        window.visualViewport?.removeEventListener('scroll', handleViewportChange)
       }
       window.removeEventListener('resize', handleViewportChange)
     }

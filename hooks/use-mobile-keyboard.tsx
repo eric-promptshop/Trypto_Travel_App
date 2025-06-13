@@ -10,15 +10,22 @@ export function useMobileKeyboard() {
     // Only run on mobile devices
     if (typeof window === 'undefined' || !('visualViewport' in window)) return
 
+    let rafId: number
+    
     const handleViewportChange = () => {
       if (!window.visualViewport) return
       
-      const { height: viewportHeight } = window.visualViewport
-      const windowHeight = window.innerHeight
-      const keyboardHeight = windowHeight - viewportHeight
+      // Cancel any pending updates
+      if (rafId) cancelAnimationFrame(rafId)
       
-      setKeyboardHeight(Math.max(0, keyboardHeight))
-      setIsKeyboardVisible(keyboardHeight > 50) // Threshold to detect keyboard
+      rafId = requestAnimationFrame(() => {
+        const { height: viewportHeight } = window.visualViewport!
+        const windowHeight = window.innerHeight
+        const keyboardHeight = windowHeight - viewportHeight
+        
+        setKeyboardHeight(Math.max(0, keyboardHeight))
+        setIsKeyboardVisible(keyboardHeight > 50) // Threshold to detect keyboard
+      })
     }
 
     // Initial check
@@ -51,6 +58,7 @@ export function useMobileKeyboard() {
     document.addEventListener('focusout', handleBlur)
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId)
       window.visualViewport?.removeEventListener('resize', handleViewportChange)
       window.visualViewport?.removeEventListener('scroll', handleViewportChange)
       document.removeEventListener('focusin', handleFocus)

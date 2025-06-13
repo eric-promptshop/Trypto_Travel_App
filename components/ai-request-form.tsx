@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useEffect, useCallback } from "react"
-import { flushSync } from "react-dom"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -21,12 +20,10 @@ import {
   Menu,
   ChevronRight,
 } from "lucide-react"
-import { useTrips } from '@/hooks/use-trips'
 import { Badge } from "@/components/ui/badge"
 import { truncateTextSmart } from '@/lib/truncate-text'
 import { Progress } from "@/components/ui/progress"
 import { useDeviceType } from '@/hooks/use-device-type'
-import { iosSmoothSpring } from '@/lib/ios-animations'
 import { smoothSpring } from '@/lib/animations'
 import { useVirtualKeyboard } from '@/hooks/use-prevent-scroll'
 import { useMobileKeyboard } from '@/hooks/use-mobile-keyboard'
@@ -76,7 +73,6 @@ interface ItineraryDay {
 }
 
 export function AIRequestForm({ onComplete }: AIRequestFormProps) {
-  const { createTrip } = useTrips()
   const deviceType = useDeviceType()
   const { keyboardHeight, isKeyboardVisible } = useMobileKeyboard()
   
@@ -86,20 +82,30 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   // Add viewport height CSS variable for mobile and tablet
   useEffect(() => {
     if (deviceType === 'mobile' || deviceType === 'tablet') {
+      let rafId: number
+      
       const updateViewportHeight = () => {
-        const vh = window.innerHeight * 0.01
-        document.documentElement.style.setProperty('--vh', `${vh}px`)
+        // Cancel any pending updates
+        if (rafId) cancelAnimationFrame(rafId)
+        
+        // Use requestAnimationFrame for smoother updates
+        rafId = requestAnimationFrame(() => {
+          const vh = window.innerHeight * 0.01
+          document.documentElement.style.setProperty('--vh', `${vh}px`)
+        })
       }
       
       updateViewportHeight()
-      window.addEventListener('resize', updateViewportHeight)
-      window.addEventListener('orientationchange', updateViewportHeight)
+      window.addEventListener('resize', updateViewportHeight, { passive: true })
+      window.addEventListener('orientationchange', updateViewportHeight, { passive: true })
       
       return () => {
+        if (rafId) cancelAnimationFrame(rafId)
         window.removeEventListener('resize', updateViewportHeight)
         window.removeEventListener('orientationchange', updateViewportHeight)
       }
     }
+    return undefined
   }, [deviceType])
   
   const [messages, setMessages] = useState<Message[]>([
@@ -113,11 +119,10 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   ])
   const [inputMessage, setInputMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [isGenerating, setIsGenerating] = useState(false)
   const [extractedData, setExtractedData] = useState<FormData>({})
   const [error, setError] = useState<string | null>(null)
   const [selectedDay, setSelectedDay] = useState(1)
-  const [currentItineraryData, setCurrentItineraryData] = useState<ItineraryDay[]>([])
+  const [currentItineraryData] = useState<ItineraryDay[]>([])
   const [showProgressSidebar, setShowProgressSidebar] = useState(false)
   const [showGallerySidebar, setShowGallerySidebar] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -140,33 +145,18 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     if (messages.length > previousMessagesLength.current) {
       previousMessagesLength.current = messages.length
       
-      // Don't scroll if input is focused to avoid stealing focus
-      if (isInputFocused) {
-        return
-      }
-      
-      // Scroll based on device type
-      const scrollDelay = deviceType === 'mobile' ? 100 : 150
-      setTimeout(() => {
+      // Use requestAnimationFrame for smoother scrolling
+      requestAnimationFrame(() => {
         if (messagesEndRef.current && !isInputFocused) {
           messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" })
         }
-      }, scrollDelay)
+      })
     }
-  }, [messages.length, isInputFocused, deviceType])
+  }, [messages.length, isInputFocused])
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
-    
-    // Use flushSync to ensure synchronous state update and maintain focus
-    flushSync(() => {
-      setInputMessage(newValue)
-    })
-    
-    // Ensure input maintains focus after state update
-    if (inputRef.current && document.activeElement !== inputRef.current) {
-      inputRef.current.focus()
-    }
+    setInputMessage(newValue)
   }, [])
   
   // Focus tracking handlers
@@ -260,85 +250,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     }
   }
 
-  const generateAIItinerary = async () => {
-    if (!extractedData.destinations?.length) {
-      setError("Please provide at least one destination")
-      return
-    }
-
-    setIsGenerating(true)
-    setError(null)
-
-    try {
-      const response = await fetch("/api/generate-itinerary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...extractedData,
-          generateAI: true,
-        }),
-      })
-
-      const result = await response.json()
-      console.log("Generate itinerary response:", result)
-
-      if (result.success && result.itinerary?.days) {
-        setCurrentItineraryData(result.itinerary.days.map((day: any, index: number) => ({
-          day: index + 1,
-          title: day.title || `Day ${index + 1}`,
-          location: day.location || extractedData.destinations?.[0] || "Unknown",
-          description: day.description || day.activities?.join(", ") || "",
-          image: day.image,
-        })))
-
-        const newTrip = await createTrip({
-          title: result.itinerary.title || `Trip to ${extractedData.destinations[0]}`,
-          description: result.itinerary.description || "",
-          startDate: extractedData.travelDates?.startDate || new Date().toISOString(),
-          endDate: extractedData.travelDates?.endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          location: extractedData.destinations[0],
-          itinerary: result.itinerary,
-        })
-        
-        if (newTrip) {
-          onComplete({
-            ...extractedData,
-            tripId: newTrip.id,
-          })
-        } else {
-          throw new Error("Failed to create trip")
-        }
-      } else {
-        throw new Error("Invalid itinerary response")
-      }
-    } catch (error: any) {
-      console.error("Error generating AI itinerary:", error)
-      setError(error.message)
-      
-      // Fallback to basic trip creation
-      try {
-        const basicTrip = await createTrip({
-          title: extractedData.destinations?.[0] ? `Trip to ${extractedData.destinations[0]}` : "New Trip",
-          description: extractedData.specialRequirements || "",
-          startDate: extractedData.travelDates?.startDate || new Date().toISOString(),
-          endDate: extractedData.travelDates?.endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          location: extractedData.destinations?.[0] || "Unknown",
-        })
-
-        if (basicTrip) {
-          onComplete({
-            ...extractedData,
-            tripId: basicTrip.id,
-          })
-        }
-      } catch (fallbackError) {
-        console.error("Fallback trip creation failed:", fallbackError)
-        onComplete(extractedData)
-      }
-    } finally {
-      setIsGenerating(false)
-    }
-  }
 
   const completeness = extractedData.completeness || 0
   const isReadyToProceed = completeness >= 70
@@ -534,7 +445,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   )
 
   // Mobile-specific Messages Component - Native Messaging Style
-  const MobileMessages = () => (
+  const MobileMessages = useMemo(() => () => (
     <div className="px-4 pt-4 pb-2">
       <div className="space-y-3">
         {messages.map((message) => (
@@ -583,7 +494,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         <div ref={messagesEndRef} />
       </div>
     </div>
-  )
+  ), [messages, isLoading, messagesEndRef])
 
   // Chat Interface Component for Desktop
   const ChatInterface = () => (
@@ -775,16 +686,17 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         {/* Input Area - Fixed at bottom, moves with keyboard */}
         <div 
           className="bg-white border-t border-gray-200"
-          style={{ 
+          style={useMemo(() => ({ 
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
             transform: `translateY(${isKeyboardVisible ? -keyboardHeight : 0}px)`,
-            transition: 'transform 0.3s ease-out',
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             paddingBottom: 'env(safe-area-inset-bottom, 20px)',
-            zIndex: 50
-          }}
+            zIndex: 50,
+            willChange: 'transform'
+          }), [isKeyboardVisible, keyboardHeight])}
         >
           <div className="px-4 py-3">
             {!isReadyToProceed ? (
