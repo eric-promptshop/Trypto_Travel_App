@@ -209,7 +209,8 @@ export function ContentImportScreen() {
   const renderSelection = () => (
     <div className="grid md:grid-cols-3 gap-6">
       <Card onClick={() => {
-        const companyUrl = onboardingData.companyProfile?.websiteUrl || ''
+        const companyUrl = onboardingData.companyProfile?.websiteUrl || 'https://'
+        console.log('Opening URL dialog with:', companyUrl)
         setCustomUrl(companyUrl)
         setShowUrlDialog(true)
       }} className="cursor-pointer hover:shadow-xl transition-shadow bg-white">
@@ -422,12 +423,18 @@ export function ContentImportScreen() {
               Make sure this is the main page or tour listing page of your website.
             </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUrlDialog(false)}>
+          <div className="mt-6 flex gap-3 justify-end">
+            <Button 
+              type="button"
+              variant="outline" 
+              onClick={() => setShowUrlDialog(false)}
+            >
               Cancel
             </Button>
             <Button 
+              type="button"
               onClick={() => {
+                console.log('Start Scan clicked, customUrl:', customUrl);
                 if (customUrl) {
                   setShowUrlDialog(false)
                   // Update the onboarding data with the custom URL temporarily
@@ -444,11 +451,12 @@ export function ContentImportScreen() {
                 }
               }}
               disabled={!customUrl}
-              className="bg-accent-orange hover:bg-orange-600"
+              className="bg-accent-orange hover:bg-orange-600 text-white disabled:opacity-50"
+              style={{ backgroundColor: !customUrl ? "#ccc" : "#ff6b35" }}
             >
               Start Scan
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
