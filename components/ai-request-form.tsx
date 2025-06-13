@@ -139,17 +139,19 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   useEffect(() => {
     if (messages.length > previousMessagesLength.current) {
       previousMessagesLength.current = messages.length
-      // Always scroll on mobile to keep conversation visible
-      if (deviceType === 'mobile') {
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
-        }, 100)
-      } else if (!isInputFocused) {
-        // Desktop: only scroll if not typing
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
-        }, 150)
+      
+      // Don't scroll if input is focused to avoid stealing focus
+      if (isInputFocused) {
+        return
       }
+      
+      // Scroll based on device type
+      const scrollDelay = deviceType === 'mobile' ? 100 : 150
+      setTimeout(() => {
+        if (messagesEndRef.current && !isInputFocused) {
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" })
+        }
+      }, scrollDelay)
     }
   }, [messages.length, isInputFocused, deviceType])
 
@@ -352,11 +354,8 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {/* Destination */}
-        <motion.div 
-          className={`p-4 rounded-lg border ${extractedData.destinations?.length ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}
-          initial={false}
-          animate={isInputFocused ? undefined : { scale: extractedData.destinations?.length ? 1 : 1 }}
-          transition={{ duration: 0.3 }}>
+        <div 
+          className={`p-4 rounded-lg border ${extractedData.destinations?.length ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
           <div className="flex items-center gap-3 mb-2">
             <MapPin className={`h-5 w-5 ${extractedData.destinations?.length ? 'text-green-600' : 'text-gray-400'}`} />
             <h4 className="font-medium text-gray-900">Destination</h4>
@@ -371,7 +370,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           ) : (
             <p className="text-sm text-gray-500">Where would you like to go?</p>
           )}
-        </motion.div>
+        </div>
         
         {/* Travel Dates */}
         <div className={`p-4 rounded-lg border ${extractedData.travelDates?.startDate ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
@@ -492,7 +491,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
                 : "hover:shadow-lg hover:scale-102"
             }`}
             onClick={() => setSelectedDay(day.day)}
-            whileHover={isInputFocused ? undefined : { scale: selectedDay === day.day ? 1.05 : 1.02 }}
+            whileHover={{ scale: selectedDay === day.day ? 1.05 : 1.02 }}
             transition={{ duration: 0.2 }}
           >
             <div className="relative">
@@ -651,11 +650,9 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         {!isReadyToProceed ? (
           <>
             <form 
-              key="chat-form-desktop"
               onSubmit={(e) => { e.preventDefault(); sendMessage(); }} 
               className="flex gap-2 mb-4">
               <input
-                key="chat-input-desktop"
                 ref={inputRef}
                 type="text"
                 value={inputMessage}
@@ -793,11 +790,9 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
             {!isReadyToProceed ? (
               <>
                 <form 
-                  key="chat-form-mobile"
                   onSubmit={(e) => { e.preventDefault(); sendMessage(); }} 
                   className="flex gap-2">
                   <input
-                    key="chat-input-mobile"
                     ref={inputRef}
                     type="text"
                     value={inputMessage}
