@@ -13,6 +13,14 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useOnboarding } from "@/contexts/onboarding-context"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Search,
   UploadCloud,
   Edit3,
@@ -50,6 +58,8 @@ export function ContentImportScreen() {
   const [selectedTours, setSelectedTours] = useState<string[]>(
     initialTours.filter((t) => t.status === "enabled").map((t) => t.id),
   )
+  const [showUrlDialog, setShowUrlDialog] = useState(false)
+  const [customUrl, setCustomUrl] = useState("")
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -58,8 +68,8 @@ export function ContentImportScreen() {
       setScanProgress(0)
       setScanMessage("Initializing website scanner...")
       
-      // Get website URL from company profile
-      const websiteUrl = onboardingData.companyProfile?.websiteUrl || 'https://example-tours.com'
+      // Get website URL from company profile or custom URL
+      const websiteUrl = customUrl || onboardingData.companyProfile?.websiteUrl || 'https://example-tours.com'
       
       // Start the real scanning process
       const performScan = async () => {
@@ -102,26 +112,30 @@ export function ContentImportScreen() {
           }
           
           const result = await response.json()
+          console.log('Scan API response:', result)
           
-          if (result.data?.tours && result.data.tours.length > 0) {
+          // The API wraps the response in a 'data' property
+          const scanData = result.data || result
+          
+          if (scanData?.tours && scanData.tours.length > 0) {
             // Use real scraped data
             setScanProgress(100)
-            setScanMessage(`Scan complete! Found ${result.data.tours.length} tours from ${result.data.summary.destinations.length} destinations.`)
-            setImportedTours(result.data.tours)
+            const destinationCount = scanData.summary?.destinations?.length || new Set(scanData.tours.map((t: any) => t.destination)).size
+            setScanMessage(`Scan complete! Found ${scanData.tours.length} tours from ${destinationCount} destinations.`)
+            setImportedTours(scanData.tours)
             setStage("scan_results")
           } else {
-            // Fallback to mock data if no tours found
+            // No tours found
             setScanProgress(100)
-            setScanMessage("Scan complete! Using sample data.")
-            setImportedTours(initialTours)
+            setScanMessage("Scan complete but no tours found. Please check if the website has tour listings.")
+            setImportedTours([])
             setStage("scan_results")
           }
         } catch (error) {
           console.error('Scanning error:', error)
-          // On error, use mock data
           setScanProgress(100)
-          setScanMessage("Using sample tour data (website scan unavailable).")
-          setImportedTours(initialTours)
+          setScanMessage(`Error scanning website: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again or contact support.`)
+          setImportedTours([])
           setStage("scan_results")
         }
       }
@@ -129,7 +143,7 @@ export function ContentImportScreen() {
       performScan()
     }
     return undefined
-  }, [stage, onboardingData.companyProfile?.websiteUrl])
+  }, [stage, onboardingData.companyProfile?.websiteUrl, customUrl])
 
   const handleFileUpload = (files: FileList | null) => {
     if (files) {
@@ -194,7 +208,11 @@ export function ContentImportScreen() {
 
   const renderSelection = () => (
     <div className="grid md:grid-cols-3 gap-6">
-      <Card onClick={() => setStage("scanning")} className="cursor-pointer hover:shadow-xl transition-shadow bg-white">
+      <Card onClick={() => {
+        const companyUrl = onboardingData.companyProfile?.websiteUrl || ''
+        setCustomUrl(companyUrl)
+        setShowUrlDialog(true)
+      }} className="cursor-pointer hover:shadow-xl transition-shadow bg-white">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl text-primary-blue">Automatic Website Scan</CardTitle>
@@ -257,6 +275,9 @@ export function ContentImportScreen() {
       </div>
       <Loader2 className="w-12 h-12 text-primary-blue mx-auto mb-4 animate-spin" />
       <p className="text-xl font-medium text-primary-blue mb-2">{scanMessage}</p>
+      <p className="text-sm text-slate-600 mb-4">
+        Scanning: {customUrl || onboardingData.companyProfile?.websiteUrl}
+      </p>
       <Progress value={scanProgress} className="w-1/2 mx-auto h-3 [&>div]:bg-accent-orange" />
       <p className="text-sm text-slate-500 mt-2">{scanProgress}% complete</p>
     </div>
@@ -375,6 +396,61 @@ export function ContentImportScreen() {
             <AlertTriangle className="inline w-4 h-4 mr-1" /> Please enable at least one tour to continue.
           </p>
         )}
+      
+      {/* URL Confirmation Dialog */}
+      <Dialog open={showUrlDialog} onOpenChange={setShowUrlDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Website URL</DialogTitle>
+            <DialogDescription>
+              We'll scan this website for tour information. Please confirm or update the URL.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="website-url">Website URL</Label>
+              <Input
+                id="website-url"
+                type="url"
+                value={customUrl}
+                onChange={(e) => setCustomUrl(e.target.value)}
+                placeholder="https://www.yourwebsite.com"
+                className="mt-1"
+              />
+            </div>
+            <p className="text-sm text-slate-600">
+              Make sure this is the main page or tour listing page of your website.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowUrlDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (customUrl) {
+                  setShowUrlDialog(false)
+                  // Update the onboarding data with the custom URL temporarily
+                  const originalUrl = onboardingData.companyProfile?.websiteUrl
+                  if (originalUrl !== customUrl) {
+                    updateOnboardingData({
+                      companyProfile: {
+                        ...onboardingData.companyProfile!,
+                        websiteUrl: customUrl
+                      }
+                    })
+                  }
+                  setStage("scanning")
+                }
+              }}
+              disabled={!customUrl}
+              className="bg-accent-orange hover:bg-orange-600"
+            >
+              Start Scan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

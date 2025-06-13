@@ -177,6 +177,11 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       
       try {
         const result = await scraper.scrapeUrl(url);
+        console.log(`Scan result for ${url}:`, { 
+          success: result.success, 
+          dataLength: result.data?.length,
+          firstItem: result.data?.[0]
+        });
         
         if (result.success && result.data) {
           results.push(result);
@@ -185,9 +190,12 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
           if (scraper instanceof TripAdvisorScraper || scraper instanceof GetYourGuideScraper || scraper instanceof TourOperatorScraper) {
             // These return activities
             const activities = Array.isArray(result.data) ? result.data : [result.data];
+            console.log(`Processing ${activities.length} activities from ${url}`);
             activities.forEach((activity: any) => {
               if (activity && activity.title) {
-                processedTours.push(activityToTour(activity as Activity, url));
+                const tour = activityToTour(activity as Activity, url);
+                console.log(`Converted activity to tour:`, tour.name);
+                processedTours.push(tour);
               }
             });
           } else if (scraper instanceof BookingComScraper) {
