@@ -26,7 +26,7 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
         requestsPerMinute: 30,
         retryAttempts: 3,
         retryDelay: 5000,
-        timeout: 30000,
+        timeout: 45000, // Increased timeout to 45 seconds
         delayBetweenRequests: 2000
       },
       selectors: {
@@ -36,16 +36,16 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
         price: '',
         location: '',
         duration: '',
-        image: ''
+        images: ''
       },
       browser: {
         headless: true,
         viewport: { width: 1920, height: 1080 },
         blockResources: ['font', 'media'],
-        waitTime: 2000
+        waitTime: 5000, // Increased wait time to ensure content loads
+        enableJavaScript: true
       },
       userAgent: {
-        rotate: true,
         list: [
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -58,40 +58,152 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
   protected extractContentFromDOM($: cheerio.CheerioAPI): Activity[] {
     const activities: Activity[] = [];
     
+    this.logger.info('Starting DOM extraction');
+    
+    // Log page structure for debugging
+    const pageTitle = $('title').text();
+    const h1Count = $('h1').length;
+    const linkCount = $('a').length;
+    const imgCount = $('img').length;
+    
+    this.logger.info('Page structure analysis', {
+      pageTitle,
+      h1Count,
+      linkCount,
+      imgCount,
+      htmlLength: $.html().length
+    });
+    
     // Try multiple extraction strategies
     let tourData = this.extractToursGeneric($);
+    this.logger.info(`Generic extraction found ${tourData.length} tours`);
     
     // If generic extraction fails, try link-based extraction
     if (tourData.length === 0) {
+      this.logger.info('Trying link-based extraction');
       tourData = this.extractToursFromLinks($);
+      this.logger.info(`Link-based extraction found ${tourData.length} tours`);
     }
     
     // If still no tours, try grid/list extraction
     if (tourData.length === 0) {
+      this.logger.info('Trying grid/list extraction');
       tourData = this.extractToursFromGrid($);
+      this.logger.info(`Grid/list extraction found ${tourData.length} tours`);
     }
     
+    // If still no tours, try structured data extraction
+    if (tourData.length === 0) {
+      this.logger.info('Trying structured data extraction');
+      tourData = this.extractFromPageStructure($);
+      this.logger.info(`Structured data extraction found ${tourData.length} tours`);
+    }
+    
+    // Filter out tours that don't look like actual tours
+    const validTours = tourData.filter(tour => {
+      // Must have a price OR duration to be considered a valid tour
+      const hasPrice = tour.price && tour.price !== ',' && tour.price !== '';
+      const hasDuration = tour.duration && tour.duration.length > 0;
+      const hasDescription = tour.description && tour.description.length > 50;
+      const hasImages = tour.images && tour.images.length > 0;
+      
+      // Must have at least 2 of the 4 indicators
+      const indicators = [hasPrice, hasDuration, hasDescription, hasImages].filter(Boolean).length;
+      
+      return indicators >= 2;
+    });
+    
     // Remove duplicates based on title
-    const uniqueTours = this.removeDuplicates(tourData);
+    const uniqueTours = this.removeDuplicates(validTours);
+    this.logger.info(`After deduplication: ${uniqueTours.length} unique tours`);
     
     uniqueTours.forEach((tour, index) => {
-      const activity = new Activity(
-        `tour-${Date.now()}-${index}`,
-        tour.title,
-        tour.description || '',
-        tour.location || 'Various Locations',
-        this.parsePrice(tour.price),
-        tour.currency || 'USD',
-        tour.duration || 'Varies',
-        tour.images || [],
-        tour.highlights || [],
-        tour.includes || [],
-        tour.excludes || []
-      );
+      this.logger.debug(`Processing tour ${index + 1}:`, {
+        title: tour.title,
+        location: tour.location,
+        price: tour.price,
+        duration: tour.duration
+      });
+      
+      // Clean up the title - often contains duration and price info
+      let cleanTitle = tour.title;
+      
+      // First, try to extract structured tour data if title contains duration and price
+      const structuredMatch = cleanTitle.match(/^(.+?)(\d+\s*(?:days?|nights?))\s*(?:from\s*)?\$([\d,]+)(.*)$/i);
+      if (structuredMatch) {
+        cleanTitle = structuredMatch[1].trim();
+        if (!tour.duration || tour.duration === 'Varies') {
+          tour.duration = structuredMatch[2];
+        }
+        if (!tour.price || tour.price === '') {
+          tour.price = structuredMatch[3];
+        }
+        
+        // The rest might contain destination info
+        const remainingText = structuredMatch[4];
+        if (remainingText) {
+          const destinations = (remainingText.match(/(Cusco|Lima|Machu Picchu|Sacred Valley|Inca Trail|Arequipa|Titicaca|Amazon|Nazca|Colca Canyon)/gi) || []);
+          if (destinations.length > 0 && tour.location === 'Various Locations') {
+            // Remove duplicates and clean up
+            const uniqueDestinations = [...new Set(destinations.map(d => d.replace(/Canyon/i, '')))]
+              .map(d => d.trim());
+            tour.location = uniqueDestinations.join(', ');
+          }
+        }
+      } else {
+        // Fallback to individual extraction
+        // Extract duration from title if not already set
+        if (!tour.duration || tour.duration === 'Varies') {
+          const durationInTitle = cleanTitle.match(/(\d+\s*(?:days?|nights?|hours?))/i);
+          if (durationInTitle) {
+            tour.duration = durationInTitle[1];
+            cleanTitle = cleanTitle.replace(durationInTitle[0], '').trim();
+          }
+        }
+        
+        // Extract price from title if not already set
+        if (!tour.price || tour.price === '') {
+          const priceInTitle = cleanTitle.match(/(?:from\s*)?\$([\d,]+)/i);
+          if (priceInTitle) {
+            tour.price = priceInTitle[1];
+            cleanTitle = cleanTitle.replace(priceInTitle[0], '').trim();
+          }
+        }
+        
+        // Remove "from" if it's hanging at the end
+        cleanTitle = cleanTitle.replace(/\s*from\s*$/i, '').trim();
+        
+        // Extract destination info that might be appended
+        const destinationMatch = cleanTitle.match(/^(.+?)(?:Cusco|Lima|Machu Picchu|Sacred Valley|Inca Trail|Arequipa|Titicaca|Amazon|Nazca|Colca)(.*)$/i);
+        if (destinationMatch) {
+          cleanTitle = destinationMatch[1].trim();
+          // Use the destination info to improve location
+          const destinations = (destinationMatch[0].match(/(Cusco|Lima|Machu Picchu|Sacred Valley|Inca Trail|Arequipa|Titicaca|Amazon|Nazca|Colca)/gi) || []);
+          if (destinations.length > 0 && tour.location === 'Various Locations') {
+            tour.location = destinations.join(', ');
+          }
+        }
+      }
+      
+      const activity = new Activity({
+        id: `tour-${Date.now()}-${index}`,
+        url: '', // Will be set in scrapeUrl
+        title: cleanTitle,
+        description: tour.description || '',
+        location: tour.location || 'Various Locations',
+        price: this.parsePrice(tour.price),
+        currency: tour.currency || 'USD',
+        duration: tour.duration || 'Varies',
+        images: tour.images || [],
+        highlights: tour.highlights || [],
+        includes: tour.includes || [],
+        excludes: tour.excludes || []
+      });
       
       activities.push(activity);
     });
 
+    this.logger.info(`Total activities extracted: ${activities.length}`);
     return activities;
   }
 
@@ -105,6 +217,11 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
       '[class*="tour"]', '[class*="package"]', '[class*="product"]',
       '[class*="trip"]', '[class*="itinerary"]', '[class*="destination"]',
       
+      // Common tour listing patterns
+      '.tour', '.tours-list-item', '.trip-tile', '.package-tile',
+      '.tour-list-item', '.tour-listing', '.tour-box', '.tour-wrapper',
+      '.trip-card', '.travel-package', '.vacation-package',
+      
       // Generic card/list selectors
       'article', '.card', '.item', '.listing-item',
       '.box', '.panel', '.module', '.widget',
@@ -114,7 +231,14 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
       
       // Link-based containers
       'a[href*="/tour"]', 'a[href*="/package"]', 'a[href*="/trip"]',
-      'a[href*="/itinerary"]', 'a[href*="/destination"]'
+      'a[href*="/itinerary"]', 'a[href*="/destination"]', 'a[href*="/travel"]',
+      
+      // List items
+      'li[class*="tour"]', 'li[class*="trip"]', 'li[class*="package"]',
+      '.list-item', 'ul > li', 'ol > li',
+      
+      // Divs with tour-related classes
+      'div[class*="result"]', 'div[class*="offer"]', 'div[class*="deal"]'
     ];
     
     // Try each container selector to find tour items
@@ -132,6 +256,8 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
         if (tours.length > 0) {
           this.logger.info(`Found ${tours.length} tours using selector: ${selector}`);
           break;
+        } else {
+          this.logger.debug(`No tours found with selector: ${selector}`);
         }
       }
     }
@@ -147,7 +273,7 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
     return tours;
   }
 
-  private extractTourFromElement($: cheerio.CheerioAPI, element: cheerio.Cheerio): TourData {
+  private extractTourFromElement($: cheerio.CheerioAPI, element: cheerio.Cheerio<cheerio.Element>): TourData {
     // Extended selectors for tour information
     const titleSelectors = [
       'h1', 'h2', 'h3', 'h4', 'h5',
@@ -201,8 +327,18 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
       // Clean up title
       title = title.replace(/\s+/g, ' ').trim();
       
-      // Skip if title is too short or contains only numbers
-      if (title && title.length > 3 && !/^\d+$/.test(title)) {
+      // Skip if title is too short, contains only numbers, or looks like navigation/footer text
+      const skipPatterns = [
+        /^\d+$/,  // Only numbers
+        /^(about|contact|blog|news|faq|terms|privacy|copyright|menu|navigation)/i,
+        /^(follow us|connect|subscribe|newsletter|sign up|log in)/i,
+        /^(home|back|next|previous|close|search)/i,
+        /^[A-Z\s]{2,}$/,  // All caps (likely navigation)
+        /^(our|the|your|my|we|us|them)\s/i  // Starts with generic pronouns
+      ];
+      
+      if (title && title.length > 3 && title.length < 200 && 
+          !skipPatterns.some(pattern => pattern.test(title))) {
         tour.title = title;
         break;
       }
@@ -555,7 +691,7 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
     return 'Various Locations';
   }
 
-  private extractImagesFromContent(element: cheerio.Cheerio, $: cheerio.CheerioAPI): string[] {
+  private extractImagesFromContent(element: cheerio.Cheerio<cheerio.Element>, $: cheerio.CheerioAPI): string[] {
     const images: string[] = [];
     
     element.find('img').each((_, img) => {
@@ -583,29 +719,113 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
     // This will be handled in the actual scraping process
     return src;
   }
-
+  
   /**
-   * Override scrapeUrl to handle relative URLs in images
+   * Fallback extraction method for heavily JavaScript-based sites
    */
-  async scrapeUrl(url: string): Promise<any> {
-    const result = await super.scrapeUrl(url);
+  private extractToursFallback($: cheerio.CheerioAPI): TourData[] {
+    const tours: TourData[] = [];
     
-    // Post-process to fix relative image URLs
-    if (result.success && result.data) {
-      const baseUrl = new URL(url);
-      result.data.forEach((activity: Activity) => {
-        if (activity.images) {
-          activity.images = activity.images.map(img => {
-            if (!img.startsWith('http') && !img.startsWith('//')) {
-              // Resolve relative URL
-              return new URL(img, baseUrl.origin).href;
-            }
-            return img;
-          });
+    // Look for any heading that might be a tour title
+    const headings = $('h1, h2, h3, h4').filter((_, elem) => {
+      const text = $(elem).text().trim();
+      // Basic heuristic: tour titles often contain certain keywords or are reasonably long
+      return text.length > 10 && text.length < 100 && 
+             !text.match(/^(menu|navigation|footer|header|cookie|privacy|terms)/i);
+    });
+    
+    headings.each((_, heading) => {
+      const $heading = $(heading);
+      const title = $heading.text().trim();
+      
+      // Look for related content near the heading
+      const parent = $heading.parent();
+      const nextSiblings = $heading.nextAll().slice(0, 5);
+      const container = $heading.closest('article, section, div[class*="tour"], div[class*="package"], div[class*="trip"]');
+      
+      // Extract description from nearby paragraphs
+      let description = '';
+      container.find('p').slice(0, 3).each((_, p) => {
+        const text = $(p).text().trim();
+        if (text.length > 20) {
+          description += text + ' ';
         }
       });
-    }
+      
+      // Look for price in the container
+      const containerText = container.text();
+      const priceMatch = containerText.match(/(?:from\s*)?(?:USD\s*)?\$\s*([\d,]+(?:\.\d{2})?)/i);
+      
+      // Look for duration
+      const durationMatch = containerText.match(/(\d+)\s*(days?|nights?|hours?)/i);
+      
+      // Look for images in the container
+      const images: string[] = [];
+      container.find('img').each((_, img) => {
+        const src = $(img).attr('src') || $(img).attr('data-src');
+        if (src && this.isValidTourImage(src)) {
+          images.push(this.resolveImageUrl(src));
+        }
+      });
+      
+      if (title && (description || priceMatch || durationMatch || images.length > 0)) {
+        tours.push({
+          title,
+          description: description.trim(),
+          location: this.extractLocationFromText(title + ' ' + description),
+          duration: durationMatch ? durationMatch[0] : '',
+          price: priceMatch ? priceMatch[1] : '',
+          currency: 'USD',
+          images: images.slice(0, 3)
+        });
+      }
+    });
     
-    return result;
+    return tours;
+  }
+
+  /**
+   * Override scrapeUrl to handle relative URLs in images and add better error handling
+   */
+  async scrapeUrl(url: string): Promise<any> {
+    this.logger.info(`Starting to scrape URL: ${url}`);
+    
+    try {
+      const result = await super.scrapeUrl(url);
+      
+      // Post-process to fix relative image URLs and set activity URL
+      if (result.success && result.data) {
+        const baseUrl = new URL(url);
+        result.data.forEach((activity: Activity) => {
+          // Set the URL if not already set
+          if (!activity.url) {
+            activity.url = url;
+          }
+          
+          // Fix relative image URLs
+          if (activity.images) {
+            activity.images = activity.images.map(img => {
+              if (!img.startsWith('http') && !img.startsWith('//')) {
+                // Resolve relative URL
+                return new URL(img, baseUrl.origin).href;
+              }
+              return img;
+            });
+          }
+        });
+        
+        this.logger.info(`Successfully scraped ${result.data.length} activities from ${url}`);
+      } else {
+        this.logger.warn(`Scraping completed but no data found for ${url}`);
+        if (result.errors && result.errors.length > 0) {
+          this.logger.error('Scraping errors:', { errors: result.errors });
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to scrape ${url}:`, { error: (error as Error).message });
+      throw error;
+    }
   }
 }

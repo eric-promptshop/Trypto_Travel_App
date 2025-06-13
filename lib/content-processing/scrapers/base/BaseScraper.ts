@@ -103,16 +103,24 @@ export abstract class BaseScraper<T extends ExtractedContent = ExtractedContent>
 
       try {
         const response = await targetPage.goto(url, {
-          waitUntil: 'domcontentloaded',
+          waitUntil: ['domcontentloaded', 'networkidle2'], // Wait for network to be idle
           timeout: this.config.throttling.timeout
         });
 
-        if (!response || !response.ok()) {
-          throw new Error(`HTTP ${response?.status()}: Failed to load ${url}`);
+        if (!response) {
+          throw new Error(`No response received from ${url}`);
+        }
+
+        const status = response.status();
+        this.logger.info('Page response received', { url, status });
+
+        if (!response.ok() && status !== 304) { // 304 is not an error
+          throw new Error(`HTTP ${status}: Failed to load ${url}`);
         }
 
         // Wait for specific selector if configured
         if (this.config.browser?.waitForSelector) {
+          this.logger.debug('Waiting for selector', { selector: this.config.browser.waitForSelector });
           await targetPage.waitForSelector(this.config.browser.waitForSelector, {
             timeout: this.config.browser.waitTime || 5000
           });
@@ -121,12 +129,35 @@ export abstract class BaseScraper<T extends ExtractedContent = ExtractedContent>
         // Additional wait time if configured
         const waitTime = this.config.browser?.waitTime;
         if (waitTime && waitTime > 0) {
+          this.logger.debug(`Waiting additional ${waitTime}ms for content to load`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
         }
 
+        // Log page metrics for debugging
+        const metrics = await targetPage.metrics();
+        this.logger.debug('Page metrics', {
+          url,
+          timestamp: metrics.Timestamp,
+          documents: metrics.Documents,
+          frames: metrics.Frames,
+          jsEventListeners: metrics.JSEventListeners,
+          nodes: metrics.Nodes,
+          layoutCount: metrics.LayoutCount,
+          jsHeapUsedSize: metrics.JSHeapUsedSize
+        });
+
         return targetPage;
       } catch (error) {
-        this.logger.error('Navigation failed', { url, error: (error as Error).message });
+        this.logger.error('Navigation failed', { url, error: (error as Error).message, stack: (error as Error).stack });
+        
+        // Take a screenshot for debugging if navigation fails
+        try {
+          const screenshot = await targetPage.screenshot({ encoding: 'base64' });
+          this.logger.debug('Failed page screenshot captured', { url, screenshotLength: screenshot.length });
+        } catch (screenshotError) {
+          this.logger.debug('Could not capture screenshot', { error: (screenshotError as Error).message });
+        }
+        
         throw error;
       }
     });
@@ -136,7 +167,14 @@ export abstract class BaseScraper<T extends ExtractedContent = ExtractedContent>
    * Extract content from a page using Cheerio
    */
   protected async extractWithCheerio(html: string): Promise<T[]> {
+    this.logger.debug('Loading HTML into Cheerio', { htmlLength: html.length });
     const $ = cheerio.load(html);
+    
+    // Log basic page structure for debugging
+    const titleText = $('title').text();
+    const metaDescription = $('meta[name="description"]').attr('content');
+    this.logger.debug('Page metadata', { title: titleText, description: metaDescription });
+    
     return this.extractContentFromDOM($);
   }
 
@@ -144,8 +182,59 @@ export abstract class BaseScraper<T extends ExtractedContent = ExtractedContent>
    * Extract content directly from a Puppeteer page
    */
   protected async extractWithPuppeteer(page: Page): Promise<T[]> {
+    // Try to wait for common content indicators
+    try {
+      await Promise.race([
+        page.waitForSelector('article', { timeout: 5000 }),
+        page.waitForSelector('.tour', { timeout: 5000 }),
+        page.waitForSelector('.product', { timeout: 5000 }),
+        page.waitForSelector('.card', { timeout: 5000 }),
+        new Promise(resolve => setTimeout(resolve, 3000)) // Fallback timeout
+      ]);
+    } catch (e) {
+      this.logger.debug('Content wait timeout reached, proceeding with extraction');
+    }
+    
+    // Scroll to load lazy content
+    await this.scrollPage(page);
+    
     const html = await page.content();
     return this.extractWithCheerio(html);
+  }
+  
+  /**
+   * Scroll the page to trigger lazy loading
+   */
+  protected async scrollPage(page: Page): Promise<void> {
+    try {
+      await page.evaluate(async () => {
+        const distance = 100;
+        const delay = 100;
+        const maxScrolls = 20;
+        let scrolls = 0;
+        
+        while (scrolls < maxScrolls) {
+          const scrollHeight = document.body.scrollHeight;
+          const currentScroll = window.scrollY + window.innerHeight;
+          
+          if (currentScroll >= scrollHeight - 50) {
+            break;
+          }
+          
+          window.scrollBy(0, distance);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          scrolls++;
+        }
+        
+        // Scroll back to top
+        window.scrollTo(0, 0);
+      });
+      
+      // Wait a bit for any lazy-loaded content to appear
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (error) {
+      this.logger.debug('Error during page scroll', { error: (error as Error).message });
+    }
   }
 
   /**
@@ -171,17 +260,24 @@ export abstract class BaseScraper<T extends ExtractedContent = ExtractedContent>
       }
     };
 
+    let page: Page | null = null;
+
     try {
       this.logger.logScrapingStart(url, this.config);
 
-      const page = await this.navigateToUrl(url);
+      page = await this.navigateToUrl(url);
+      
+      // Log current URL (in case of redirects)
+      const currentUrl = page.url();
+      if (currentUrl !== url) {
+        this.logger.info('Page redirected', { originalUrl: url, currentUrl });
+      }
+      
       const extractedData = await this.extractWithPuppeteer(page);
 
       result.success = true;
       result.data = extractedData;
       result.metadata.itemsFound = extractedData.length;
-
-      await page.close();
 
       this.logger.logScrapingComplete(url, extractedData.length, Date.now() - startTime);
 
@@ -189,8 +285,29 @@ export abstract class BaseScraper<T extends ExtractedContent = ExtractedContent>
       const errorMessage = (error as Error).message;
       result.errors = [errorMessage];
       this.logger.logScrapingError(url, error as Error);
+      
+      // Add more context to the error
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        result.errors.push('The page took too long to load. The website might be slow or blocking automated access.');
+      }
     } finally {
+      // Always close the page to free resources
+      if (page) {
+        try {
+          await page.close();
+        } catch (closeError) {
+          this.logger.warn('Failed to close page', { error: (closeError as Error).message });
+        }
+      }
+      
       result.metadata.processingTime = Date.now() - startTime;
+      this.logger.info('Scraping result summary', {
+        url,
+        success: result.success,
+        itemsFound: result.metadata.itemsFound,
+        processingTimeMs: result.metadata.processingTime,
+        errors: result.errors
+      });
     }
 
     return result;

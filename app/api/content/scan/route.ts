@@ -128,6 +128,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   
   try {
     console.log(`Starting website scan for ${websiteUrl} with depth ${scanDepth}`);
+    console.log(`Scraper type: ${scraper.constructor.name}`);
     
     // Generate URLs to scan
     const urlsToScan: string[] = [websiteUrl];
@@ -170,15 +171,21 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     // Scan multiple pages with progress tracking
     for (let i = 0; i < Math.min(urlsToScan.length, scanDepth); i++) {
       const url = urlsToScan[i];
-      console.log(`Scanning page ${i + 1}/${urlsToScan.length}: ${url}`);
+      console.log(`Scanning page ${i + 1}/${Math.min(urlsToScan.length, scanDepth)}: ${url}`);
       
       try {
         const result = await scraper.scrapeUrl(url);
         console.log(`Scan result for ${url}:`, { 
           success: result.success, 
           dataLength: result.data?.length,
-          firstItem: result.data?.[0]
+          errors: result.errors,
+          metadata: result.metadata
         });
+        
+        // Log first item for debugging
+        if (result.data && result.data.length > 0) {
+          console.log('First tour found:', JSON.stringify(result.data[0], null, 2));
+        }
         
         if (result.success && result.data) {
           results.push(result);
@@ -188,11 +195,18 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
             // These return activities
             const activities = Array.isArray(result.data) ? result.data : [result.data];
             console.log(`Processing ${activities.length} activities from ${url}`);
-            activities.forEach((activity: any) => {
+            activities.forEach((activity: any, idx: number) => {
               if (activity && activity.title) {
                 const tour = activityToTour(activity as Activity, url);
-                console.log(`Converted activity to tour:`, tour.name);
+                console.log(`Converted activity ${idx + 1} to tour:`, {
+                  name: tour.name,
+                  destination: tour.destination,
+                  duration: tour.duration,
+                  price: tour.price
+                });
                 processedTours.push(tour);
+              } else {
+                console.log(`Skipping invalid activity ${idx + 1}:`, activity);
               }
             });
           } else if (scraper instanceof BookingComScraper) {
@@ -207,6 +221,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
         }
       } catch (error) {
         console.error(`Error scanning ${url}:`, error);
+        console.error('Error stack:', (error as Error).stack);
         // Continue with other URLs
       }
     }
