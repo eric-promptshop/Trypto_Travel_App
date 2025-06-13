@@ -454,7 +454,6 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
     (Object.keys(formData) as Array<keyof TravelFormData>).forEach(field => {
       if (field !== 'specialRequests') { // specialRequests is optional
         const error = validateField(field, formData[field]);
-        console.log(`Validating ${field}:`, formData[field], 'Error:', error);
         if (error) {
           newErrors[field] = error;
           isValid = false;
@@ -462,7 +461,6 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
       }
     });
 
-    console.log('All validation errors:', newErrors);
     setErrors(newErrors);
     setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
     return isValid;
@@ -488,9 +486,6 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('Form data on submit:', formData);
-    console.log('Validation errors:', errors);
     
     if (validateForm()) {
       onComplete(formData);

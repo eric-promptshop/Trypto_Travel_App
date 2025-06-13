@@ -55,6 +55,24 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         name: 'Traveler' // You might want to get this from user context
       }
       
+      // Add transportation and accommodation preferences to interests
+      if (data.transportation && data.transportation.length > 0) {
+        tripFormData.interests = [...tripFormData.interests, ...data.transportation]
+      }
+      
+      if (data.accommodation) {
+        tripFormData.interests.push(`${data.accommodation}-accommodation`)
+      }
+      
+      // Add special requests to interests if provided
+      if (data.specialRequests) {
+        tripFormData.interests.push(`special-request: ${data.specialRequests}`)
+      }
+      
+      // Log what we're sending to the AI
+      console.log('Sending to AI generation endpoint:', tripFormData)
+      console.log('Original form data:', data)
+      
       // Parse budget if provided (now handles budget range strings)
       if (data.budget) {
         // Budget options: budget ($50-150/day), moderate ($150-300/day), premium ($300-500/day), luxury ($500+/day)
@@ -84,7 +102,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ tripData: tripFormData }),
+        body: JSON.stringify(tripFormData), // Send tripFormData directly, not wrapped
       })
       
       const result = await response.json()
