@@ -4,7 +4,6 @@ import { TripAdvisorScraper } from '@/lib/content-processing/scrapers/sites/Trip
 import { GetYourGuideScraper } from '@/lib/content-processing/scrapers/sites/GetYourGuideScraper';
 import { BookingComScraper } from '@/lib/content-processing/scrapers/sites/BookingComScraper';
 import { TourOperatorScraper } from '@/lib/content-processing/scrapers/sites/TourOperatorScraper';
-import { PeruForLessScraper } from '@/lib/content-processing/scrapers/sites/PeruForLessScraper';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import type { ScrapingResult } from '@/lib/content-processing/scrapers/base/ScraperConfig';
@@ -47,8 +46,6 @@ function getScraperForUrl(url: string) {
     return new BookingComScraper();
   } else if (hostname.includes('getyourguide')) {
     return new GetYourGuideScraper();
-  } else if (hostname.includes('peruforless')) {
-    return new PeruForLessScraper();
   }
   
   // Default to TourOperatorScraper for general tour operator websites
