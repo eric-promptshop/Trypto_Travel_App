@@ -27,7 +27,9 @@ export async function middleware(request: NextRequest) {
     '/itinerary',
     '/itinerary-display',
     '/profile',
-    '/settings'
+    '/settings',
+    '/tour-operator',
+    '/admin'
   ];
 
   // Check if the current path is protected

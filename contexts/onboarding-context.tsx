@@ -39,6 +39,14 @@ export interface OnboardingData {
     emailRecipients?: string[]
     emailFormat?: "simple" | "detailed"
   }
+  registration?: {
+    email: string
+    firstName: string
+    lastName: string
+    userId?: string
+    completed?: boolean
+  }
+  tenantId?: string
   isReadyToLaunch?: boolean
 }
 
@@ -62,6 +70,7 @@ export const onboardingSteps = [
   { name: "pricing", path: "/onboarding/pricing", title: "Pricing Configuration" },
   { name: "branding", path: "/onboarding/branding", title: "Branding Customization" },
   { name: "integrations", path: "/onboarding/integrations", title: "CRM & Integrations" },
+  { name: "registration", path: "/onboarding/registration", title: "Account Registration" },
   { name: "review", path: "/onboarding/review", title: "Review & Launch" },
 ]
 

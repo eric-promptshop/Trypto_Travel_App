@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { useOnboarding } from "@/contexts/onboarding-context"
+import { useRouter } from "next/navigation"
 import { useOnboardingIntegration } from "@/components/onboarding/OnboardingIntegrationWrapper"
 import { ChevronLeft, CheckCircle, Rocket, Download, Eye, ExternalLink, Loader2 } from "lucide-react"
 
@@ -48,6 +49,7 @@ const ConfettiExplosion = () => {
 export function ReviewLaunchScreen() {
   const { onboardingData, updateOnboardingData, navigateToPrevStep, navigateToStep } = useOnboarding()
   const { completeOnboarding, deployTenant, tenantData, isLoading } = useOnboardingIntegration()
+  const router = useRouter()
   const [isReadyToLaunch, setIsReadyToLaunch] = useState(onboardingData.isReadyToLaunch || false)
   const [showLaunchModal, setShowLaunchModal] = useState(false)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
@@ -73,6 +75,11 @@ export function ReviewLaunchScreen() {
       title: "Branding",
       details: `Custom look applied (Primary: ${onboardingData.branding?.primaryColor || "Default"})`,
       isSet: !!onboardingData.branding?.primaryColor,
+    },
+    {
+      title: "Account Registration",
+      details: onboardingData.registration?.completed ? `Account created for ${onboardingData.registration.email}` : "Account not created yet",
+      isSet: !!onboardingData.registration?.completed,
     },
     {
       title: "Integration",
@@ -254,9 +261,9 @@ export function ReviewLaunchScreen() {
               <Button
                 type="button"
                 className="bg-primary-blue hover:bg-primary-blue/90 text-white"
-                onClick={() => navigateToStep("welcome")} // Or a dashboard
+                onClick={() => router.push("/tour-operator")}
               >
-                Go to Dashboard (mock)
+                Go to Tour Operator Dashboard
               </Button>
             </DialogClose>
           </DialogFooter>

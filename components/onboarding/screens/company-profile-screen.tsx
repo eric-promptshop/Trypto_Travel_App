@@ -6,22 +6,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
+import { DestinationSearch } from "@/components/ui/destination-search"
 import { useOnboarding, type OnboardingData } from "@/contexts/onboarding-context"
 import { useOnboardingIntegration } from "@/components/onboarding/OnboardingIntegrationWrapper"
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
-
-const allDestinations = [
-  "Peru",
-  "Brazil",
-  "Argentina",
-  "Chile",
-  "Colombia",
-  "Ecuador",
-  "Bolivia",
-  "Uruguay",
-  "Paraguay",
-]
 
 export function CompanyProfileScreen() {
   const { onboardingData, updateOnboardingData, navigateToNextStep, navigateToPrevStep } = useOnboarding()
@@ -49,13 +37,11 @@ export function CompanyProfileScreen() {
     }
   }
 
-  const handleDestinationChange = (destination: string) => {
-    setProfile((prev) => {
-      const newDestinations = prev!.primaryDestinations.includes(destination)
-        ? prev!.primaryDestinations.filter((d) => d !== destination)
-        : [...prev!.primaryDestinations, destination]
-      return { ...prev!, primaryDestinations: newDestinations }
-    })
+  const handleDestinationsChange = (destinations: string[]) => {
+    setProfile((prev) => ({ ...prev, primaryDestinations: destinations }))
+    if (errors.primaryDestinations) {
+      setErrors((prev) => ({ ...prev, primaryDestinations: "" }))
+    }
   }
 
   const validate = () => {
@@ -164,22 +150,13 @@ export function CompanyProfileScreen() {
       <section className="mb-8">
         <h3 className="text-lg font-medium text-primary-blue mb-4 border-b pb-2">Trip Details</h3>
         <div className="mb-6">
-          <Label className="block text-sm font-medium text-slate-700 mb-2">Primary Destinations*</Label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2 border rounded-md">
-            {allDestinations.map((dest) => (
-              <div key={dest} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`dest-${dest}`}
-                  checked={profile.primaryDestinations.includes(dest)}
-                  onCheckedChange={() => handleDestinationChange(dest)}
-                />
-                <Label htmlFor={`dest-${dest}`} className="text-sm font-normal text-slate-700">
-                  {dest}
-                </Label>
-              </div>
-            ))}
-          </div>
-          {errors.primaryDestinations && <p className="text-red-500 text-xs mt-1">{errors.primaryDestinations}</p>}
+          <DestinationSearch
+            destinations={profile.primaryDestinations}
+            onDestinationsChange={handleDestinationsChange}
+            label="Primary Destinations"
+            placeholder="Search for destinations..."
+            error={errors.primaryDestinations}
+          />
         </div>
 
         <div className="mb-6">

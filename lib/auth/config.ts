@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -28,10 +29,24 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          // For demo purposes, accept any password for existing users
-          // In production, you would store and verify hashed passwords
-          // const passwordValid = await bcrypt.compare(credentials.password, user.password);
-          // if (!passwordValid) return null;
+          // Check password from the account table (temporary solution)
+          const account = await prisma.account.findFirst({
+            where: {
+              userId: user.id,
+              provider: 'credentials'
+            }
+          });
+          
+          if (!account?.refresh_token) {
+            // For existing users without password, allow any password (demo mode)
+            console.log('Demo mode: allowing login without password verification');
+          } else {
+            // Verify the password
+            const passwordValid = await bcrypt.compare(credentials.password, account.refresh_token);
+            if (!passwordValid) {
+              return null;
+            }
+          }
 
           return {
             id: user.id,

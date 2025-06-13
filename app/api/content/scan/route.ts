@@ -3,6 +3,7 @@ import { createErrorResponse, createSuccessResponse, withErrorHandling } from '@
 import { TripAdvisorScraper } from '@/lib/content-processing/scrapers/sites/TripAdvisorScraper';
 import { GetYourGuideScraper } from '@/lib/content-processing/scrapers/sites/GetYourGuideScraper';
 import { BookingComScraper } from '@/lib/content-processing/scrapers/sites/BookingComScraper';
+import { TourOperatorScraper } from '@/lib/content-processing/scrapers/sites/TourOperatorScraper';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import type { ScrapingResult } from '@/lib/content-processing/scrapers/base/ScraperConfig';
@@ -47,8 +48,8 @@ function getScraperForUrl(url: string) {
     return new GetYourGuideScraper();
   }
   
-  // Default to TripAdvisor scraper for general websites
-  return new TripAdvisorScraper();
+  // Default to TourOperatorScraper for general tour operator websites
+  return new TourOperatorScraper();
 }
 
 // Convert scraped activities to tour format
@@ -117,11 +118,25 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   try {
     console.log(`Starting website scan for ${websiteUrl} with depth ${scanDepth}`);
     
-    // Generate URLs to scan (in a real implementation, this would crawl the site)
+    // Generate URLs to scan
     const urlsToScan: string[] = [websiteUrl];
     
-    // If it's a listing page, we might want to extract individual tour URLs
-    // For now, we'll just scan the provided URL
+    // For tour operator websites, try to find additional pages to scan
+    if (scraper instanceof TourOperatorScraper) {
+      // Common tour listing page patterns
+      const tourPagePatterns = [
+        '/tours', '/trips', '/packages', '/destinations', '/adventures',
+        '/our-tours', '/tour-packages', '/travel-packages', '/itineraries'
+      ];
+      
+      const baseUrl = new URL(websiteUrl);
+      tourPagePatterns.forEach(pattern => {
+        const potentialUrl = `${baseUrl.origin}${pattern}`;
+        if (!urlsToScan.includes(potentialUrl)) {
+          urlsToScan.push(potentialUrl);
+        }
+      });
+    }
     
     const results: ScrapingResult<any>[] = [];
     const processedTours: ProcessedTour[] = [];
@@ -138,7 +153,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
           results.push(result);
           
           // Process based on scraper type
-          if (scraper instanceof TripAdvisorScraper || scraper instanceof GetYourGuideScraper) {
+          if (scraper instanceof TripAdvisorScraper || scraper instanceof GetYourGuideScraper || scraper instanceof TourOperatorScraper) {
             // These return activities
             const activities = Array.isArray(result.data) ? result.data : [result.data];
             activities.forEach((activity: any) => {

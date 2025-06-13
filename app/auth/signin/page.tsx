@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,8 +16,25 @@ import Link from 'next/link'
 export default function SignInPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  // Always redirect to /trips after sign-in, regardless of callbackUrl
-  const callbackUrl = '/trips'
+  const { data: session, status } = useSession()
+  
+  // Get the intended callback URL or determine based on role
+  const requestedCallbackUrl = searchParams.get('callbackUrl')
+  const [callbackUrl, setCallbackUrl] = useState(requestedCallbackUrl || '/trips')
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      // Redirect based on user role
+      if (session.user.role === 'TOUR_OPERATOR') {
+        router.push('/tour-operator')
+      } else if (session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN') {
+        router.push('/admin')
+      } else {
+        router.push(callbackUrl)
+      }
+    }
+  }, [session, status, router, callbackUrl])
   
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -39,7 +57,9 @@ export default function SignInPage() {
       if (result?.error) {
         setError('Invalid email or password. Please try again.')
       } else {
-        router.push(callbackUrl)
+        // We'll get the session after successful login
+        // The useEffect will handle the role-based redirect
+        router.refresh()
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.')
@@ -64,7 +84,9 @@ export default function SignInPage() {
       if (result?.error) {
         setError('Demo login failed. Please ensure the demo user exists in the database.')
       } else {
-        router.push(callbackUrl)
+        // We'll get the session after successful login
+        // The useEffect will handle the role-based redirect
+        router.refresh()
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.')
