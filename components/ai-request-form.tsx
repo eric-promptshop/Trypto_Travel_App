@@ -73,9 +73,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         tripFormData.interests.push(`special-request: ${data.specialRequests}`)
       }
       
-      // Log what we're sending to the AI
-      console.log('Sending to AI generation endpoint:', tripFormData)
-      console.log('Original form data:', data)
       
       // Parse budget if provided (now handles budget range strings)
       if (data.budget) {
@@ -115,9 +112,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         throw new Error(result.error || 'Failed to generate itinerary')
       }
       
-      // Log the itinerary result
-      console.log('AI Generation Result:', result)
-      
       let newTrip = null
       
       // Only create a trip in the database if user is authenticated
@@ -130,10 +124,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           location: data.destination || 'Unknown',
           itinerary: result.itinerary,
         })
-        
-        console.log('Create trip result:', newTrip)
-      } else {
-        console.log('User not authenticated, skipping trip creation')
       }
       
       // Success regardless of whether we saved the trip
@@ -165,7 +155,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         
         onComplete(formData)
     } catch (error: any) {
-      console.error('Error generating itinerary:', error)
       
       // Still try to complete with the generated data if we have it
       if (result && result.itinerary) {

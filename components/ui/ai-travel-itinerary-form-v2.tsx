@@ -478,22 +478,15 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
     const newErrors: Partial<Record<keyof TravelFormData, string>> = {};
     let isValid = true;
 
-    // Debug: Log the form data structure
-    console.log('Validating form data:', JSON.stringify(formData, null, 2));
-
     (Object.keys(formData) as Array<keyof TravelFormData>).forEach(field => {
       if (field !== 'specialRequests') { // specialRequests is optional
         const error = validateField(field, formData[field]);
-        console.log(`Field: ${field}, Value:`, formData[field], `Error: ${error || 'none'}`);
         if (error) {
           newErrors[field] = error;
           isValid = false;
         }
       }
     });
-
-    console.log('Final validation result:', isValid ? 'VALID' : 'INVALID');
-    console.log('All errors:', newErrors);
     
     setErrors(newErrors);
     setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
@@ -524,10 +517,6 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
     if (validateForm()) {
       onComplete(formData);
     } else {
-      // Log validation state for debugging
-      console.log('Validation failed. Form data:', formData);
-      console.log('Validation errors:', errors);
-      
       // Scroll to first error
       const firstErrorField = Object.keys(errors).find(key => errors[key as keyof TravelFormData]);
       if (firstErrorField) {
@@ -903,13 +892,14 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                     <AlertDescription>
                       <div className="font-semibold mb-2">Please complete the following required fields:</div>
                       <ul className="list-disc list-inside space-y-1">
-                        {Object.entries(errors).map(([field, error]) => 
-                          touched[field as keyof TravelFormData] && error ? (
+                        {Object.entries(errors)
+                          .filter(([field, error]) => field && error && touched[field as keyof TravelFormData])
+                          .map(([field, error]) => (
                             <li key={field} className="text-sm">
                               {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1').trim()}: {error}
                             </li>
-                          ) : null
-                        )}
+                          ))
+                        }
                       </ul>
                     </AlertDescription>
                   </Alert>
