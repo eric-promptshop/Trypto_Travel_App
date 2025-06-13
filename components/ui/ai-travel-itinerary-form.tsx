@@ -310,9 +310,10 @@ interface TravelFormData {
 
 interface AITravelItineraryFormProps {
   onComplete: (data: TravelFormData) => void;
+  isLoading?: boolean;
 }
 
-export function AITravelItineraryForm({ onComplete }: AITravelItineraryFormProps) {
+export function AITravelItineraryForm({ onComplete, isLoading = false }: AITravelItineraryFormProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<TravelFormData>({
     destination: "",
@@ -707,10 +708,20 @@ export function AITravelItineraryForm({ onComplete }: AITravelItineraryFormProps
         ) : (
           <Button 
             onClick={handleSubmit} 
-            className="flex items-center gap-2 bg-gradient-to-r from-brand-blue-primary to-brand-orange-accent hover:from-brand-blue-secondary hover:to-orange-700 text-white"
+            disabled={isLoading}
+            className="flex items-center gap-2 bg-gradient-to-r from-brand-blue-primary to-brand-orange-accent hover:from-brand-blue-secondary hover:to-orange-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Send className="h-4 w-4" />
-            Generate AI Itinerary
+            {isLoading ? (
+              <>
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Generating Itinerary...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                Generate AI Itinerary
+              </>
+            )}
           </Button>
         )}
       </div>
