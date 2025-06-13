@@ -359,6 +359,8 @@ interface AITravelItineraryFormProps {
 export function AITravelItineraryForm({ onComplete, isLoading = false }: AITravelItineraryFormProps) {
   const [formData, setFormData] = useState<TravelFormData>({
     destination: "",
+    startDate: undefined,
+    endDate: undefined,
     travelers: 2,
     budget: "",
     interests: [],
@@ -409,7 +411,12 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
         return !value || value.trim().length < 2 ? 'Please enter a destination' : '';
       case 'startDate':
         if (!value) return 'Please select a start date';
-        if (new Date(value) < new Date()) return 'Start date cannot be in the past';
+        // Create date at midnight for comparison
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const startDate = new Date(value);
+        startDate.setHours(0, 0, 0, 0);
+        if (startDate < today) return 'Start date cannot be in the past';
         return '';
       case 'endDate':
         if (!value) return 'Please select an end date';
@@ -447,6 +454,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
     (Object.keys(formData) as Array<keyof TravelFormData>).forEach(field => {
       if (field !== 'specialRequests') { // specialRequests is optional
         const error = validateField(field, formData[field]);
+        console.log(`Validating ${field}:`, formData[field], 'Error:', error);
         if (error) {
           newErrors[field] = error;
           isValid = false;
@@ -454,6 +462,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
       }
     });
 
+    console.log('All validation errors:', newErrors);
     setErrors(newErrors);
     setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
     return isValid;
@@ -479,6 +488,9 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Form data on submit:', formData);
+    console.log('Validation errors:', errors);
     
     if (validateForm()) {
       onComplete(formData);
@@ -511,8 +523,8 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
               transition={{ delay: 0.2, duration: 0.5 }}
               className="inline-flex items-center gap-2 mb-4"
             >
-              <Sparkles className="w-8 h-8 text-brand-orange-accent" />
-              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-brand-blue-primary to-brand-orange-accent bg-clip-text text-transparent">
+              <Sparkles className="w-8 h-8 text-orange-600" />
+              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-800 to-orange-700 bg-clip-text text-transparent">
                 AI Travel Planner
               </h1>
             </motion.div>
@@ -543,7 +555,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                     className="space-y-2"
                   >
                     <Label htmlFor="destination" className="flex items-center gap-2 text-brand-gray-text">
-                      <MapPin className="w-4 h-4 text-brand-blue-primary" />
+                      <MapPin className="w-4 h-4 text-blue-700" />
                       Destination <span className="text-red-500">*</span>
                     </Label>
                     <div id="destination">
@@ -570,7 +582,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                     className="space-y-2"
                   >
                     <Label className="flex items-center gap-2 text-brand-gray-text">
-                      <Calendar className="w-4 h-4 text-brand-blue-primary" />
+                      <Calendar className="w-4 h-4 text-blue-700" />
                       Start Date <span className="text-red-500">*</span>
                     </Label>
                     <div id="startDate">
@@ -596,7 +608,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                     className="space-y-2"
                   >
                     <Label className="flex items-center gap-2 text-brand-gray-text">
-                      <Calendar className="w-4 h-4 text-brand-blue-primary" />
+                      <Calendar className="w-4 h-4 text-blue-700" />
                       End Date <span className="text-red-500">*</span>
                     </Label>
                     <div id="endDate">
@@ -625,7 +637,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                     className="space-y-2"
                   >
                     <Label className="flex items-center gap-2 text-brand-gray-text">
-                      <Users className="w-4 h-4 text-brand-blue-primary" />
+                      <Users className="w-4 h-4 text-blue-700" />
                       Number of Travelers <span className="text-red-500">*</span>
                     </Label>
                     <div id="travelers">
@@ -729,8 +741,8 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                           className={cn(
                             "p-3 rounded-lg border-2 transition-all duration-200 flex flex-col items-center gap-2",
                             formData.interests.includes(interest.id)
-                              ? "border-brand-blue-primary bg-blue-50 text-brand-blue-primary"
-                              : "border-brand-gray-border hover:border-brand-blue-primary/50 hover:bg-brand-gray-light"
+                              ? "border-blue-700 bg-blue-50 text-blue-700"
+                              : "border-brand-gray-border hover:border-blue-600/50 hover:bg-brand-gray-light"
                           )}
                         >
                           <IconComponent className="w-5 h-5" />
@@ -776,8 +788,8 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                             className={cn(
                               "p-3 rounded-lg border-2 transition-all duration-200 flex items-center gap-2",
                               formData.transportation.includes(transport.id)
-                                ? "border-brand-blue-primary bg-blue-50 text-brand-blue-primary"
-                                : "border-brand-gray-border hover:border-brand-blue-primary/50 hover:bg-brand-gray-light"
+                                ? "border-blue-700 bg-blue-50 text-blue-700"
+                                : "border-brand-gray-border hover:border-blue-600/50 hover:bg-brand-gray-light"
                             )}
                           >
                             <IconComponent className="w-4 h-4" />
@@ -798,7 +810,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                     className="space-y-2"
                   >
                     <Label className="flex items-center gap-2 text-brand-gray-text">
-                      <Hotel className="w-4 h-4 text-brand-blue-primary" />
+                      <Hotel className="w-4 h-4 text-blue-700" />
                       Accommodation Type <span className="text-red-500">*</span>
                     </Label>
                     <div id="accommodation">
@@ -881,7 +893,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                     type="submit"
                     size="lg"
                     disabled={isLoading}
-                    className="relative overflow-hidden group min-w-[200px] bg-gradient-to-r from-brand-blue-primary to-brand-orange-accent hover:from-brand-blue-secondary hover:to-orange-700 text-white"
+                    className="relative overflow-hidden group min-w-[200px] bg-gradient-to-r from-blue-700 to-orange-600 hover:from-blue-800 hover:to-orange-700 text-white shadow-lg"
                   >
                     <AnimatePresence mode="wait">
                       {isLoading ? (
