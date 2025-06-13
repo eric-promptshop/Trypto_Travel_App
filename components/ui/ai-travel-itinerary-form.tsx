@@ -72,6 +72,11 @@ function useAutoResizeTextarea({
 interface Option {
   value: string;
   label: string;
+  country?: string;
+  region?: string;
+  lat?: number;
+  lng?: number;
+  type?: string;
 }
 
 interface AutoCompleteProps {
@@ -96,7 +101,7 @@ function AutoComplete({
   const [searchResults, setSearchResults] = useState<Option[]>([]);
   const timeoutRef = React.useRef<NodeJS.Timeout>();
 
-  // For live search, we'll use Google Places suggestions or a simple search
+  // Use real geocoding API for global location search
   const searchDestinations = React.useCallback(async (query: string) => {
     if (query.length < 2) {
       setSearchResults([]);
@@ -105,76 +110,37 @@ function AutoComplete({
 
     setIsLoading(true);
     
-    // Simulated search - in production, you'd call a real API
-    // For now, we'll use a combination of predefined cities and allow custom input
-    const popularDestinations = [
-      { value: "paris-france", label: "Paris, France" },
-      { value: "tokyo-japan", label: "Tokyo, Japan" },
-      { value: "new-york-usa", label: "New York City, USA" },
-      { value: "london-uk", label: "London, United Kingdom" },
-      { value: "rome-italy", label: "Rome, Italy" },
-      { value: "barcelona-spain", label: "Barcelona, Spain" },
-      { value: "dubai-uae", label: "Dubai, UAE" },
-      { value: "singapore", label: "Singapore" },
-      { value: "sydney-australia", label: "Sydney, Australia" },
-      { value: "amsterdam-netherlands", label: "Amsterdam, Netherlands" },
-      { value: "bangkok-thailand", label: "Bangkok, Thailand" },
-      { value: "istanbul-turkey", label: "Istanbul, Turkey" },
-      { value: "los-angeles-usa", label: "Los Angeles, USA" },
-      { value: "san-francisco-usa", label: "San Francisco, USA" },
-      { value: "miami-usa", label: "Miami, USA" },
-      { value: "las-vegas-usa", label: "Las Vegas, USA" },
-      { value: "hong-kong", label: "Hong Kong" },
-      { value: "seoul-south-korea", label: "Seoul, South Korea" },
-      { value: "vienna-austria", label: "Vienna, Austria" },
-      { value: "prague-czech-republic", label: "Prague, Czech Republic" },
-      { value: "budapest-hungary", label: "Budapest, Hungary" },
-      { value: "lisbon-portugal", label: "Lisbon, Portugal" },
-      { value: "madrid-spain", label: "Madrid, Spain" },
-      { value: "berlin-germany", label: "Berlin, Germany" },
-      { value: "munich-germany", label: "Munich, Germany" },
-      { value: "zurich-switzerland", label: "Zurich, Switzerland" },
-      { value: "vancouver-canada", label: "Vancouver, Canada" },
-      { value: "toronto-canada", label: "Toronto, Canada" },
-      { value: "mexico-city-mexico", label: "Mexico City, Mexico" },
-      { value: "cancun-mexico", label: "Cancun, Mexico" },
-      { value: "rio-de-janeiro-brazil", label: "Rio de Janeiro, Brazil" },
-      { value: "buenos-aires-argentina", label: "Buenos Aires, Argentina" },
-      { value: "cape-town-south-africa", label: "Cape Town, South Africa" },
-      { value: "marrakech-morocco", label: "Marrakech, Morocco" },
-      { value: "cairo-egypt", label: "Cairo, Egypt" },
-      { value: "mumbai-india", label: "Mumbai, India" },
-      { value: "delhi-india", label: "Delhi, India" },
-      { value: "beijing-china", label: "Beijing, China" },
-      { value: "shanghai-china", label: "Shanghai, China" },
-      { value: "moscow-russia", label: "Moscow, Russia" },
-      { value: "st-petersburg-russia", label: "St. Petersburg, Russia" },
-      { value: "athens-greece", label: "Athens, Greece" },
-      { value: "santorini-greece", label: "Santorini, Greece" },
-      { value: "florence-italy", label: "Florence, Italy" },
-      { value: "venice-italy", label: "Venice, Italy" },
-      { value: "milan-italy", label: "Milan, Italy" },
-      { value: "oslo-norway", label: "Oslo, Norway" },
-      { value: "stockholm-sweden", label: "Stockholm, Sweden" },
-      { value: "copenhagen-denmark", label: "Copenhagen, Denmark" },
-      { value: "reykjavik-iceland", label: "Reykjavik, Iceland" },
-      { value: "dublin-ireland", label: "Dublin, Ireland" },
-      { value: "edinburgh-scotland", label: "Edinburgh, Scotland" },
-    ];
-
-    const filtered = popularDestinations.filter(dest => 
-      dest.label.toLowerCase().includes(query.toLowerCase())
-    );
-
-    // If custom value is allowed and no exact match, add the query as an option
-    if (allowCustomValue && filtered.length === 0) {
-      filtered.push({ value: query, label: query });
-    } else if (allowCustomValue && !filtered.find(f => f.label.toLowerCase() === query.toLowerCase())) {
-      filtered.unshift({ value: query, label: query });
+    try {
+      // Call our geocoding API endpoint
+      const response = await fetch(`/api/locations/search?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      
+      if (data.results && Array.isArray(data.results)) {
+        // If custom value is allowed and no exact match, add the query as an option
+        const results = [...data.results];
+        if (allowCustomValue && !results.find(r => r.label.toLowerCase() === query.toLowerCase())) {
+          results.unshift({ value: query, label: query });
+        }
+        setSearchResults(results.slice(0, 10));
+      } else {
+        // Fallback if API fails
+        if (allowCustomValue) {
+          setSearchResults([{ value: query, label: query }]);
+        } else {
+          setSearchResults([]);
+        }
+      }
+    } catch (error) {
+      console.error('Location search error:', error);
+      // On error, still allow custom input if enabled
+      if (allowCustomValue) {
+        setSearchResults([{ value: query, label: query }]);
+      } else {
+        setSearchResults([]);
+      }
+    } finally {
+      setIsLoading(false);
     }
-
-    setSearchResults(filtered.slice(0, 10)); // Limit to 10 results
-    setIsLoading(false);
   }, [allowCustomValue]);
 
   // Debounced search
@@ -229,10 +195,17 @@ function AutoComplete({
             searchResults.map((option) => (
               <div
                 key={option.value}
-                className="px-3 py-2 hover:bg-brand-gray-light cursor-pointer text-sm text-brand-gray-text"
+                className="px-3 py-2 hover:bg-brand-gray-light cursor-pointer text-sm"
                 onClick={() => handleSelect(option)}
               >
-                {option.label}
+                <div className="text-brand-gray-text font-medium">
+                  {option.label.split(',')[0]}
+                </div>
+                {option.country && (
+                  <div className="text-xs text-brand-gray-secondary mt-0.5">
+                    {option.label.split(',').slice(1).join(',').trim() || option.country}
+                  </div>
+                )}
               </div>
             ))
           ) : inputValue.length > 1 ? (
