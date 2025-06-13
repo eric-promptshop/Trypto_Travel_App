@@ -32,7 +32,9 @@
       "Bash(ls:*)",
       "mcp__ide__getDiagnostics",
       "Bash(curl:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }

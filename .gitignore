@@ -1,2 +1,12 @@
 node_modules/
 .env
+.env.*
+.next/
+.vercel/
+build.log
+tasks/
+scripts/debug-*
+scripts/test-*
+docs/
+next-env.d.ts
+*.tsbuildinfo

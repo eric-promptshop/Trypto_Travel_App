@@ -4,6 +4,7 @@ import { TripAdvisorScraper } from '@/lib/content-processing/scrapers/sites/Trip
 import { GetYourGuideScraper } from '@/lib/content-processing/scrapers/sites/GetYourGuideScraper';
 import { BookingComScraper } from '@/lib/content-processing/scrapers/sites/BookingComScraper';
 import { TourOperatorScraper } from '@/lib/content-processing/scrapers/sites/TourOperatorScraper';
+import { SimpleFetchScraper } from '@/lib/content-processing/scrapers/SimpleFetchScraper';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import type { ScrapingResult } from '@/lib/content-processing/scrapers/base/ScraperConfig';
@@ -130,6 +131,14 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     console.log(`Starting website scan for ${websiteUrl} with depth ${scanDepth}`);
     console.log(`Scraper type: ${scraper.constructor.name}`);
     
+    // Check if we're in a serverless environment where Puppeteer might not work
+    const isVercel = process.env.VERCEL === '1';
+    const useSimpleScraper = isVercel || process.env.USE_SIMPLE_SCRAPER === 'true';
+    
+    if (useSimpleScraper) {
+      console.warn('Using SimpleFetchScraper for serverless environment');
+    }
+    
     // Generate URLs to scan
     const urlsToScan: string[] = [websiteUrl];
     
@@ -174,7 +183,35 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       console.log(`Scanning page ${i + 1}/${Math.min(urlsToScan.length, scanDepth)}: ${url}`);
       
       try {
-        const result = await scraper.scrapeUrl(url);
+        let result;
+        
+        // Use SimpleFetchScraper in serverless environment or as fallback
+        if (useSimpleScraper || scraper instanceof TourOperatorScraper) {
+          console.log('Using SimpleFetchScraper for', url);
+          const simpleScraper = new SimpleFetchScraper();
+          
+          try {
+            result = await simpleScraper.scrapeUrl(url);
+            console.log(`SimpleFetchScraper result for ${url}:`, { 
+              success: result.success, 
+              dataLength: result.data?.length,
+              errors: result.errors
+            });
+          } catch (fetchError) {
+            console.error('SimpleFetchScraper failed, trying Puppeteer:', fetchError);
+            
+            // If simple scraper fails and we're not in Vercel, try Puppeteer
+            if (!isVercel) {
+              result = await scraper.scrapeUrl(url);
+            } else {
+              throw fetchError;
+            }
+          }
+        } else {
+          // Use the regular scraper for non-tour operator sites
+          result = await scraper.scrapeUrl(url);
+        }
+        
         console.log(`Scan result for ${url}:`, { 
           success: result.success, 
           dataLength: result.data?.length,
@@ -191,7 +228,7 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
           results.push(result);
           
           // Process based on scraper type
-          if (scraper instanceof TripAdvisorScraper || scraper instanceof GetYourGuideScraper || scraper instanceof TourOperatorScraper) {
+          if (scraper instanceof TripAdvisorScraper || scraper instanceof GetYourGuideScraper || scraper instanceof TourOperatorScraper || useSimpleScraper) {
             // These return activities
             const activities = Array.isArray(result.data) ? result.data : [result.data];
             console.log(`Processing ${activities.length} activities from ${url}`);
@@ -227,7 +264,11 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     }
     
     // Clean up scraper resources
-    await scraper.dispose();
+    try {
+      await scraper.dispose();
+    } catch (disposeError) {
+      console.error('Error disposing scraper:', disposeError);
+    }
     
     // Remove duplicate tours based on title and price
     const uniqueTours = processedTours.filter((tour, index, self) => 
@@ -237,6 +278,36 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     );
     
     console.log(`Filtered from ${processedTours.length} to ${uniqueTours.length} unique tours`);
+    
+    // If no tours found, provide helpful feedback
+    if (uniqueTours.length === 0) {
+      console.warn('No tours found during scan', {
+        websiteUrl,
+        urlsScanned: Math.min(urlsToScan.length, scanDepth),
+        scraper: useSimpleScraper ? 'SimpleFetchScraper' : scraper.constructor.name
+      });
+      
+      // Provide specific guidance based on the URL
+      let guidance = 'No tours found on the provided page. ';
+      if (!websiteUrl.includes('/tours') && !websiteUrl.includes('/packages')) {
+        guidance += 'Try providing a direct link to your tours or packages page (e.g., yoursite.com/tours).';
+      } else {
+        guidance += 'The page structure might not be compatible with automatic scanning. Please contact support for assistance.';
+      }
+      
+      return createSuccessResponse({
+        tours: [],
+        summary: {
+          totalFound: 0,
+          destinations: [],
+          priceRange: null,
+          websiteUrl,
+          scanDate: new Date().toISOString(),
+          scraperUsed: useSimpleScraper ? 'SimpleFetchScraper' : scraper.constructor.name,
+          message: guidance
+        },
+      });
+    }
     
     // Store the results in the database (if needed)
     if (uniqueTours.length > 0 && tenantId !== 'default') {

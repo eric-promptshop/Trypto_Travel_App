@@ -81,20 +81,25 @@ export function ContentImportScreen() {
                 const messages = [
                   "Connecting to website...",
                   "Analyzing page structure...",
+                  "Looking for tour listings...",
                   "Extracting tour information...",
-                  "Processing activity data...",
-                  "Gathering pricing details...",
-                  "Collecting images and descriptions...",
+                  "Processing tour details...",
+                  "Gathering pricing and duration data...",
+                  "Organizing tour data...",
+                  "Finalizing results...",
                 ]
-                const messageIndex = Math.floor(prev / 15)
+                const messageIndex = Math.floor(prev / 11)
                 setScanMessage(messages[messageIndex] || "Processing...")
-                return prev + 5
+                return prev + 3
               }
               return prev
             })
-          }, 500)
+          }, 800)
           
           // Call the actual scanning API
+          console.log('Starting scan for URL:', websiteUrl)
+          const scanStartTime = Date.now()
+          
           const response = await fetch('/api/content/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -105,14 +110,20 @@ export function ContentImportScreen() {
             }),
           })
           
+          const scanDuration = Date.now() - scanStartTime
+          console.log(`Scan completed in ${scanDuration}ms`)
+          
           clearInterval(progressInterval)
           
           if (!response.ok) {
-            throw new Error('Scanning failed')
+            const errorText = await response.text()
+            console.error('Scan API error:', errorText)
+            throw new Error(`Scanning failed: ${response.status} ${errorText}`)
           }
           
           const result = await response.json()
           console.log('Scan API response:', result)
+          console.log('Tours found:', result.data?.tours?.length || 0)
           
           // The API wraps the response in a 'data' property
           const scanData = result.data || result
@@ -127,7 +138,8 @@ export function ContentImportScreen() {
           } else {
             // No tours found
             setScanProgress(100)
-            setScanMessage("Scan complete but no tours found. Please check if the website has tour listings.")
+            const message = scanData?.summary?.message || "Scan complete but no tours found. Please check if the website has tour listings."
+            setScanMessage(message)
             setImportedTours([])
             setStage("scan_results")
           }
