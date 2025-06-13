@@ -27,6 +27,7 @@ import { truncateTextSmart } from '@/lib/truncate-text'
 import { Progress } from "@/components/ui/progress"
 import { useDeviceType } from '@/hooks/use-device-type'
 import { iosSmoothSpring } from '@/lib/ios-animations'
+import { smoothSpring } from '@/lib/animations'
 import { useVirtualKeyboard } from '@/hooks/use-prevent-scroll'
 import { useMobileKeyboard } from '@/hooks/use-mobile-keyboard'
 import { cn } from '@/lib/utils'
@@ -893,7 +894,7 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
                   className="bg-white rounded-lg shadow-lg h-full flex flex-col"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={iosSmoothSpring}
+                  transition={smoothSpring}
                 >
                   <ChatInterface />
                 </motion.div>
