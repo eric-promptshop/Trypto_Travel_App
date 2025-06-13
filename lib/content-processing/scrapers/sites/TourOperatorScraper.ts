@@ -58,10 +58,23 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
   protected extractContentFromDOM($: cheerio.CheerioAPI): Activity[] {
     const activities: Activity[] = [];
     
-    // Try to identify tours from common patterns
-    const tourData = this.extractToursGeneric($);
+    // Try multiple extraction strategies
+    let tourData = this.extractToursGeneric($);
     
-    tourData.forEach((tour, index) => {
+    // If generic extraction fails, try link-based extraction
+    if (tourData.length === 0) {
+      tourData = this.extractToursFromLinks($);
+    }
+    
+    // If still no tours, try grid/list extraction
+    if (tourData.length === 0) {
+      tourData = this.extractToursFromGrid($);
+    }
+    
+    // Remove duplicates based on title
+    const uniqueTours = this.removeDuplicates(tourData);
+    
+    uniqueTours.forEach((tour, index) => {
       const activity = new Activity(
         `tour-${Date.now()}-${index}`,
         tour.title,
@@ -85,11 +98,23 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
   private extractToursGeneric($: cheerio.CheerioAPI): TourData[] {
     const tours: TourData[] = [];
     
-    // Common selectors for tour/product listings
+    // Extended selectors for tour/product listings
     const possibleContainers = [
+      // Specific tour selectors
       '.tour-item', '.tour-card', '.product-card', '.package-item',
       '[class*="tour"]', '[class*="package"]', '[class*="product"]',
-      'article', '.card', '.item', '.listing-item'
+      '[class*="trip"]', '[class*="itinerary"]', '[class*="destination"]',
+      
+      // Generic card/list selectors
+      'article', '.card', '.item', '.listing-item',
+      '.box', '.panel', '.module', '.widget',
+      
+      // Grid/flex containers
+      '.grid-item', '.flex-item', '[class*="col-"]',
+      
+      // Link-based containers
+      'a[href*="/tour"]', 'a[href*="/package"]', 'a[href*="/trip"]',
+      'a[href*="/itinerary"]', 'a[href*="/destination"]'
     ];
     
     // Try each container selector to find tour items
@@ -123,13 +148,41 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
   }
 
   private extractTourFromElement($: cheerio.CheerioAPI, element: cheerio.Cheerio): TourData {
-    // Common selectors for tour information
-    const titleSelectors = ['h2', 'h3', 'h4', '.title', '.tour-title', '.product-title', '[class*="title"]', 'a'];
-    const descSelectors = ['.description', '.desc', '.summary', 'p', '[class*="desc"]'];
-    const priceSelectors = ['.price', '.cost', '[class*="price"]', '[class*="cost"]'];
-    const durationSelectors = ['.duration', '.days', '[class*="duration"]', '[class*="days"]'];
-    const locationSelectors = ['.location', '.destination', '[class*="location"]', '[class*="destination"]'];
-    const imageSelectors = ['img', '.image img', '[class*="image"] img'];
+    // Extended selectors for tour information
+    const titleSelectors = [
+      'h1', 'h2', 'h3', 'h4', 'h5',
+      '.title', '.tour-title', '.product-title', '.package-title',
+      '[class*="title"]', '[class*="heading"]', '[class*="name"]',
+      'a > span', 'a > div', 'a[href*="/"]'
+    ];
+    const descSelectors = [
+      '.description', '.desc', '.summary', '.excerpt',
+      '[class*="desc"]', '[class*="summary"]', '[class*="excerpt"]',
+      'p', 'span'
+    ];
+    const priceSelectors = [
+      '.price', '.cost', '.rate', '.fare',
+      '[class*="price"]', '[class*="cost"]', '[class*="rate"]',
+      '[class*="from"]', 'span:contains("$")', 'div:contains("$")',
+      '[data-price]', '[data-cost]'
+    ];
+    const durationSelectors = [
+      '.duration', '.days', '.nights', '.length',
+      '[class*="duration"]', '[class*="days"]', '[class*="nights"]',
+      '[class*="length"]', '[class*="time"]',
+      'span:contains("day")', 'div:contains("day")',
+      'span:contains("night")', 'div:contains("night")'
+    ];
+    const locationSelectors = [
+      '.location', '.destination', '.place', '.region',
+      '[class*="location"]', '[class*="destination"]', '[class*="place"]',
+      '[class*="region"]', '[class*="country"]', '[class*="city"]'
+    ];
+    const imageSelectors = [
+      'img', 'picture img', '.image img', '[class*="image"] img',
+      '[class*="photo"] img', '[class*="thumbnail"] img',
+      'img[src*="tour"]', 'img[src*="package"]', 'img[src*="trip"]'
+    ];
 
     const tour: TourData = {
       title: '',
@@ -140,12 +193,29 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
       images: []
     };
 
-    // Extract title
+    // Extract title (with text cleaning)
     for (const selector of titleSelectors) {
-      const title = element.find(selector).first().text().trim();
-      if (title) {
+      const titleElem = element.find(selector).first();
+      let title = titleElem.text().trim();
+      
+      // Clean up title
+      title = title.replace(/\s+/g, ' ').trim();
+      
+      // Skip if title is too short or contains only numbers
+      if (title && title.length > 3 && !/^\d+$/.test(title)) {
         tour.title = title;
         break;
+      }
+    }
+    
+    // If no title found, try to extract from href
+    if (!tour.title) {
+      const href = element.attr('href') || element.find('a').first().attr('href');
+      if (href) {
+        const titleFromHref = this.extractTitleFromUrl(href);
+        if (titleFromHref) {
+          tour.title = titleFromHref;
+        }
       }
     }
 
@@ -158,41 +228,95 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
       }
     }
 
-    // Extract price
+    // Extract price (with better pattern matching)
     for (const selector of priceSelectors) {
-      const priceText = element.find(selector).first().text().trim();
-      if (priceText) {
+      const priceElem = element.find(selector).first();
+      let priceText = priceElem.text().trim();
+      
+      // Also check data attributes
+      if (!priceText) {
+        priceText = priceElem.attr('data-price') || priceElem.attr('data-cost') || '';
+      }
+      
+      if (priceText && /\d/.test(priceText)) {
         tour.price = priceText;
         tour.currency = this.extractCurrency(priceText);
         break;
       }
     }
-
-    // Extract duration
-    for (const selector of durationSelectors) {
-      const duration = element.find(selector).first().text().trim();
-      if (duration) {
-        tour.duration = duration;
-        break;
+    
+    // Look for price in the entire element text if not found
+    if (!tour.price) {
+      const fullText = element.text();
+      const priceMatch = fullText.match(/(?:from\s*)?(?:USD\s*)?\$?\s*([\d,]+(?:\.\d{2})?)/i);
+      if (priceMatch) {
+        tour.price = priceMatch[0];
+        tour.currency = 'USD';
       }
     }
 
-    // Extract location
+    // Extract duration (with pattern matching)
+    for (const selector of durationSelectors) {
+      const durationText = element.find(selector).first().text().trim();
+      if (durationText) {
+        // Look for duration patterns
+        const durationMatch = durationText.match(/(\d+)\s*(days?|nights?|hours?|weeks?)/i);
+        if (durationMatch) {
+          tour.duration = durationMatch[0];
+          break;
+        }
+      }
+    }
+    
+    // Look for duration in the entire element text if not found
+    if (!tour.duration) {
+      const fullText = element.text();
+      const durationMatch = fullText.match(/(\d+)\s*(days?|nights?|hours?|weeks?)(?:\s*\/\s*\d+\s*nights?)?/i);
+      if (durationMatch) {
+        tour.duration = durationMatch[0];
+      }
+    }
+
+    // Extract location (with fallback to title/description)
     for (const selector of locationSelectors) {
       const location = element.find(selector).first().text().trim();
-      if (location) {
+      if (location && location.length > 2) {
         tour.location = location;
         break;
       }
     }
+    
+    // If no location found, try to extract from title or description
+    if (!tour.location) {
+      tour.location = this.extractLocationFromText(tour.title + ' ' + tour.description);
+    }
 
-    // Extract images
-    element.find('img').each((_, img) => {
-      const src = $(img).attr('src') || $(img).attr('data-src');
-      if (src && !src.includes('placeholder') && !src.includes('icon')) {
-        tour.images?.push(this.resolveImageUrl(src));
+    // Extract images (with better filtering)
+    const imageUrls = new Set<string>();
+    
+    imageSelectors.forEach(selector => {
+      element.find(selector).each((_, img) => {
+        const src = $(img).attr('src') || 
+                   $(img).attr('data-src') || 
+                   $(img).attr('data-lazy-src') ||
+                   $(img).attr('data-original');
+        
+        if (src && this.isValidTourImage(src)) {
+          imageUrls.add(this.resolveImageUrl(src));
+        }
+      });
+    });
+    
+    // Also check background images
+    element.find('[style*="background-image"]').each((_, elem) => {
+      const style = $(elem).attr('style') || '';
+      const match = style.match(/url\(['"]?([^'"\)]+)['"]?\)/i);
+      if (match && match[1] && this.isValidTourImage(match[1])) {
+        imageUrls.add(this.resolveImageUrl(match[1]));
       }
     });
+    
+    tour.images = Array.from(imageUrls).slice(0, 5);
 
     return tour;
   }
@@ -239,6 +363,152 @@ export class TourOperatorScraper extends BaseScraper<Activity> {
     }
 
     return tours;
+  }
+  
+  private extractToursFromLinks($: cheerio.CheerioAPI): TourData[] {
+    const tours: TourData[] = [];
+    const processedUrls = new Set<string>();
+    
+    // Find all links that might be tours
+    const tourLinks = $('a[href*="/tour"], a[href*="/package"], a[href*="/trip"], a[href*="/itinerary"], a[href*="/destination"], a[href*="/travel"]');
+    
+    tourLinks.each((_, link) => {
+      const $link = $(link);
+      const href = $link.attr('href');
+      
+      // Skip if already processed
+      if (!href || processedUrls.has(href)) return;
+      processedUrls.add(href);
+      
+      // Extract tour data from link and its container
+      const container = $link.parent();
+      const tour: TourData = {
+        title: '',
+        description: '',
+        location: '',
+        duration: '',
+        price: '',
+        images: []
+      };
+      
+      // Title from link text or nearby headings
+      tour.title = $link.text().trim() || 
+                  container.find('h1, h2, h3, h4').first().text().trim() ||
+                  this.extractTitleFromUrl(href);
+      
+      // Clean up title
+      tour.title = tour.title.replace(/\s+/g, ' ').trim();
+      
+      // Skip if no valid title
+      if (!tour.title || tour.title.length < 3) return;
+      
+      // Extract other data from container
+      const containerText = container.text();
+      
+      // Price
+      const priceMatch = containerText.match(/(?:from\s*)?(?:USD\s*)?\$?\s*([\d,]+(?:\.\d{2})?)/i);
+      if (priceMatch) {
+        tour.price = priceMatch[0];
+        tour.currency = 'USD';
+      }
+      
+      // Duration
+      const durationMatch = containerText.match(/(\d+)\s*(days?|nights?|hours?|weeks?)(?:\s*\/\s*\d+\s*nights?)?/i);
+      if (durationMatch) {
+        tour.duration = durationMatch[0];
+      }
+      
+      // Images
+      container.find('img').each((_, img) => {
+        const src = $(img).attr('src') || $(img).attr('data-src');
+        if (src && this.isValidTourImage(src)) {
+          tour.images?.push(this.resolveImageUrl(src));
+        }
+      });
+      
+      // Location
+      tour.location = this.extractLocationFromText(containerText);
+      
+      if (tour.title) {
+        tours.push(tour);
+      }
+    });
+    
+    return tours;
+  }
+  
+  private extractToursFromGrid($: cheerio.CheerioAPI): TourData[] {
+    const tours: TourData[] = [];
+    
+    // Look for grid or list containers
+    const gridSelectors = [
+      '.grid', '.row', '.products', '.tours', '.packages',
+      '[class*="grid"]', '[class*="list"]', '[class*="items"]',
+      'ul.tours', 'div.tours', 'section.tours'
+    ];
+    
+    for (const gridSelector of gridSelectors) {
+      const grid = $(gridSelector).first();
+      if (grid.length === 0) continue;
+      
+      // Find items within the grid
+      const items = grid.find('> *').filter((_, elem) => {
+        const $elem = $(elem);
+        // Must have some content
+        return $elem.text().trim().length > 20;
+      });
+      
+      if (items.length > 0) {
+        items.each((_, item) => {
+          const tour = this.extractTourFromElement($, $(item));
+          if (tour && tour.title) {
+            tours.push(tour);
+          }
+        });
+        
+        if (tours.length > 0) break;
+      }
+    }
+    
+    return tours;
+  }
+  
+  private extractTitleFromUrl(url: string): string {
+    // Extract title from URL path
+    const match = url.match(/\/([^/]+?)(?:\.html?|\/)?$/i);
+    if (match && match[1]) {
+      // Convert URL slug to title
+      return match[1]
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase())
+        .trim();
+    }
+    return '';
+  }
+  
+  private isValidTourImage(src: string): boolean {
+    const invalidPatterns = [
+      'placeholder', 'icon', 'logo', 'banner', 'sprite',
+      'pixel', 'tracking', '1x1', 'blank', 'loading',
+      'avatar', 'profile', 'user', '.svg'
+    ];
+    
+    const lowercaseSrc = src.toLowerCase();
+    return !invalidPatterns.some(pattern => lowercaseSrc.includes(pattern));
+  }
+  
+  private removeDuplicates(tours: TourData[]): TourData[] {
+    const seen = new Map<string, TourData>();
+    
+    tours.forEach(tour => {
+      const key = tour.title.toLowerCase().replace(/\s+/g, '');
+      if (!seen.has(key) || !seen.get(key)?.price) {
+        // Prefer tours with price information
+        seen.set(key, tour);
+      }
+    });
+    
+    return Array.from(seen.values());
   }
 
   private parsePrice(priceText: string | number | undefined): number {

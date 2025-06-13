@@ -4,6 +4,7 @@ import { TripAdvisorScraper } from '@/lib/content-processing/scrapers/sites/Trip
 import { GetYourGuideScraper } from '@/lib/content-processing/scrapers/sites/GetYourGuideScraper';
 import { BookingComScraper } from '@/lib/content-processing/scrapers/sites/BookingComScraper';
 import { TourOperatorScraper } from '@/lib/content-processing/scrapers/sites/TourOperatorScraper';
+import { PeruForLessScraper } from '@/lib/content-processing/scrapers/sites/PeruForLessScraper';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import type { ScrapingResult } from '@/lib/content-processing/scrapers/base/ScraperConfig';
@@ -46,6 +47,8 @@ function getScraperForUrl(url: string) {
     return new BookingComScraper();
   } else if (hostname.includes('getyourguide')) {
     return new GetYourGuideScraper();
+  } else if (hostname.includes('peruforless')) {
+    return new PeruForLessScraper();
   }
   
   // Default to TourOperatorScraper for general tour operator websites
@@ -54,6 +57,17 @@ function getScraperForUrl(url: string) {
 
 // Convert scraped activities to tour format
 function activityToTour(activity: Activity, sourceUrl: string): ProcessedTour {
+  // Handle price conversion
+  let price: number | undefined;
+  if (typeof activity.price === 'number') {
+    price = activity.price;
+  } else if (typeof activity.price === 'string') {
+    const priceMatch = activity.price.match(/[\d,]+\.?\d*/);
+    if (priceMatch) {
+      price = parseFloat(priceMatch[0].replace(/,/g, ''));
+    }
+  }
+  
   return {
     id: `activity-${activity.id || Date.now()}`,
     name: activity.title,
@@ -61,14 +75,14 @@ function activityToTour(activity: Activity, sourceUrl: string): ProcessedTour {
     duration: activity.duration || 'Varies',
     status: 'enabled',
     description: activity.description,
-    price: typeof activity.price === 'number' ? activity.price : undefined,
-    currency: activity.currency,
+    price: price,
+    currency: activity.currency || 'USD',
     metadata: {
       images: activity.images || [],
       highlights: activity.highlights || [],
       included: activity.includes || [],
       excluded: activity.excludes || [],
-      sourceUrl,
+      sourceUrl: activity.url || sourceUrl,
       scannedAt: new Date().toISOString(),
       type: 'activity',
     },
@@ -126,15 +140,30 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       // Common tour listing page patterns
       const tourPagePatterns = [
         '/tours', '/trips', '/packages', '/destinations', '/adventures',
-        '/our-tours', '/tour-packages', '/travel-packages', '/itineraries'
+        '/our-tours', '/tour-packages', '/travel-packages', '/itineraries',
+        '/experiences', '/journeys', '/expeditions', '/vacations',
+        '/holiday-packages', '/tour-listing', '/all-tours', '/tour-catalog'
       ];
       
       const baseUrl = new URL(websiteUrl);
+      
+      // Add base patterns
       tourPagePatterns.forEach(pattern => {
         const potentialUrl = `${baseUrl.origin}${pattern}`;
         if (!urlsToScan.includes(potentialUrl)) {
           urlsToScan.push(potentialUrl);
         }
+      });
+      
+      // Also try with common language variations
+      const languages = ['en', 'es', 'fr'];
+      languages.forEach(lang => {
+        tourPagePatterns.slice(0, 5).forEach(pattern => {
+          const potentialUrl = `${baseUrl.origin}/${lang}${pattern}`;
+          if (!urlsToScan.includes(potentialUrl)) {
+            urlsToScan.push(potentialUrl);
+          }
+        });
       });
     }
     
@@ -180,10 +209,19 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     // Clean up scraper resources
     await scraper.dispose();
     
+    // Remove duplicate tours based on title and price
+    const uniqueTours = processedTours.filter((tour, index, self) => 
+      index === self.findIndex((t) => (
+        t.name === tour.name && t.price === tour.price
+      ))
+    );
+    
+    console.log(`Filtered from ${processedTours.length} to ${uniqueTours.length} unique tours`);
+    
     // Store the results in the database (if needed)
-    if (processedTours.length > 0 && tenantId !== 'default') {
+    if (uniqueTours.length > 0 && tenantId !== 'default') {
       // Save to TenantContent or Content table
-      for (const tour of processedTours) {
+      for (const tour of uniqueTours) {
         await prisma.content.create({
           data: {
             type: 'activity',
@@ -206,8 +244,8 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     }
     
     // Calculate summary statistics
-    const destinations = [...new Set(processedTours.map(t => t.destination))];
-    const priceRange = processedTours.reduce(
+    const destinations = [...new Set(uniqueTours.map(t => t.destination))];
+    const priceRange = uniqueTours.reduce(
       (acc, tour) => {
         if (tour.price) {
           return {
@@ -221,9 +259,9 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     );
     
     return createSuccessResponse({
-      tours: processedTours,
+      tours: uniqueTours,
       summary: {
-        totalFound: processedTours.length,
+        totalFound: uniqueTours.length,
         destinations,
         priceRange: priceRange.min !== Infinity ? priceRange : null,
         websiteUrl,
