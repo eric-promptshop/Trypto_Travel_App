@@ -5,6 +5,7 @@ import { useState } from "react"
 import { AITravelItineraryForm } from "@/components/ui/ai-travel-itinerary-form-v2"
 import { useTrips } from '@/hooks/use-trips'
 import { toast } from "sonner"
+import { useSession } from 'next-auth/react'
 
 interface FormData {
   destinations?: string[]
@@ -35,14 +36,17 @@ interface AIRequestFormProps {
 
 export function AIRequestForm({ onComplete }: AIRequestFormProps) {
   const { createTrip } = useTrips()
+  const { data: session } = useSession()
   const [isGenerating, setIsGenerating] = useState(false)
   
   const handleFormComplete = async (data: any) => {
     setIsGenerating(true)
+    let result: any = null // Declare result in outer scope
+    let tripFormData: any = null // Declare tripFormData in outer scope
     
     try {
       // Transform the form data for the AI generation endpoint
-      const tripFormData = {
+      tripFormData = {
         destination: data.destination || '',
         dates: {
           from: data.startDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
@@ -105,27 +109,38 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         body: JSON.stringify(tripFormData), // Send tripFormData directly, not wrapped
       })
       
-      const result = await response.json()
+      result = await response.json()
       
       if (!response.ok || result.error) {
         throw new Error(result.error || 'Failed to generate itinerary')
       }
       
-      // Create a trip in the database
-      const newTrip = await createTrip({
-        title: `Trip to ${data.destination || 'Unknown'}`,
-        description: data.specialRequests || `A wonderful ${data.travelers}-person trip`,
-        startDate: data.startDate?.toISOString() || new Date().toISOString(),
-        endDate: data.endDate?.toISOString() || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        location: data.destination || 'Unknown',
-        itinerary: result.itinerary,
-      })
+      // Log the itinerary result
+      console.log('AI Generation Result:', result)
       
-      if (newTrip) {
-        toast.success('Itinerary generated successfully!')
+      let newTrip = null
+      
+      // Only create a trip in the database if user is authenticated
+      if (session?.user) {
+        newTrip = await createTrip({
+          title: `Trip to ${data.destination || 'Unknown'}`,
+          description: data.specialRequests || `A wonderful ${data.travelers}-person trip`,
+          startDate: data.startDate?.toISOString() || new Date().toISOString(),
+          endDate: data.endDate?.toISOString() || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          location: data.destination || 'Unknown',
+          itinerary: result.itinerary,
+        })
         
-        // Transform to match expected format and complete
-        const formData: FormData = {
+        console.log('Create trip result:', newTrip)
+      } else {
+        console.log('User not authenticated, skipping trip creation')
+      }
+      
+      // Success regardless of whether we saved the trip
+      toast.success('Itinerary generated successfully!')
+      
+      // Transform to match expected format and complete
+      const formData: FormData = {
           destinations: data.destination ? [data.destination] : [],
           travelDates: {
             startDate: data.startDate?.toISOString(),
@@ -145,15 +160,42 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
           interests: data.interests || [], // Now directly using the interests array
           specialRequirements: data.specialRequests || '',
           completeness: 100,
-          tripId: newTrip.id
+          tripId: newTrip?.id // Optional trip ID (only if saved)
         }
         
         onComplete(formData)
-      } else {
-        throw new Error('Failed to create trip')
-      }
     } catch (error: any) {
       console.error('Error generating itinerary:', error)
+      
+      // Still try to complete with the generated data if we have it
+      if (result && result.itinerary) {
+        toast.warning('Generated itinerary but could not save to your account. Please sign in to save trips.')
+        const formData: FormData = {
+          destinations: data.destination ? [data.destination] : [],
+          travelDates: {
+            startDate: data.startDate?.toISOString(),
+            endDate: data.endDate?.toISOString(),
+            flexible: false
+          },
+          travelers: {
+            adults: data.travelers || 2,
+            children: 0
+          },
+          budget: data.budget ? {
+            amount: tripFormData.budget[1],
+            currency: 'USD',
+            perPerson: false
+          } : undefined,
+          accommodation: data.accommodation,
+          interests: data.interests || [],
+          specialRequirements: data.specialRequests || '',
+          completeness: 100,
+          tripId: undefined // No trip ID since we couldn't save
+        }
+        onComplete(formData)
+        return
+      }
+      
       toast.error(error.message || 'Failed to generate itinerary. Please try again.')
       setIsGenerating(false)
     }
