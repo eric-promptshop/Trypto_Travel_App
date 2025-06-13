@@ -212,10 +212,33 @@ function DatePicker({
   error
 }: DatePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    // Detect mobile devices
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia('(max-width: 768px)').matches || 
+                  /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   const handleDateClick = () => {
     if (inputRef.current) {
-      inputRef.current.showPicker?.() || inputRef.current.click();
+      // Focus first to ensure the input is ready
+      inputRef.current.focus();
+      // Try showPicker if available, otherwise click
+      if (inputRef.current.showPicker) {
+        try {
+          inputRef.current.showPicker();
+        } catch (e) {
+          inputRef.current.click();
+        }
+      } else {
+        inputRef.current.click();
+      }
     }
   };
 
@@ -252,7 +275,10 @@ function DatePicker({
             onDateChange?.(undefined);
           }
         }}
-        className="sr-only"
+        className={cn(
+          "absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10",
+          isMobile && "opacity-100 bg-white" // Show on mobile
+        )}
         aria-label={placeholder}
       />
       <Input
@@ -262,7 +288,8 @@ function DatePicker({
         onClick={handleDateClick}
         className={cn(
           "cursor-pointer border-brand-gray-border focus:border-brand-blue-primary focus:ring-brand-blue-primary pr-10",
-          error && "border-red-500 focus:border-red-500"
+          error && "border-red-500 focus:border-red-500",
+          isMobile && "pointer-events-none" // Disable on mobile to let native input work
         )}
       />
       <Calendar 
@@ -451,9 +478,13 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
     const newErrors: Partial<Record<keyof TravelFormData, string>> = {};
     let isValid = true;
 
+    // Debug: Log the form data structure
+    console.log('Validating form data:', JSON.stringify(formData, null, 2));
+
     (Object.keys(formData) as Array<keyof TravelFormData>).forEach(field => {
       if (field !== 'specialRequests') { // specialRequests is optional
         const error = validateField(field, formData[field]);
+        console.log(`Field: ${field}, Value:`, formData[field], `Error: ${error || 'none'}`);
         if (error) {
           newErrors[field] = error;
           isValid = false;
@@ -461,6 +492,9 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
       }
     });
 
+    console.log('Final validation result:', isValid ? 'VALID' : 'INVALID');
+    console.log('All errors:', newErrors);
+    
     setErrors(newErrors);
     setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
     return isValid;
@@ -490,6 +524,10 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
     if (validateForm()) {
       onComplete(formData);
     } else {
+      // Log validation state for debugging
+      console.log('Validation failed. Form data:', formData);
+      console.log('Validation errors:', errors);
+      
       // Scroll to first error
       const firstErrorField = Object.keys(errors).find(key => errors[key as keyof TravelFormData]);
       if (firstErrorField) {
