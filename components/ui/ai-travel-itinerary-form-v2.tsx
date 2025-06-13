@@ -493,10 +493,10 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50 overflow-hidden">
+    <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50">
       <BackgroundBeams className="opacity-20" />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
+      <div className="relative z-10 container mx-auto px-4 py-8 pb-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -532,7 +532,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
           >
-            <Card className="p-8 shadow-xl border-brand-gray-border bg-white/95 backdrop-blur-sm">
+            <Card className="p-8 shadow-xl border-brand-gray-border bg-white/95 backdrop-blur-sm mb-8">
               <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Destination and Dates Row */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -546,19 +546,21 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                       <MapPin className="w-4 h-4 text-brand-blue-primary" />
                       Destination <span className="text-red-500">*</span>
                     </Label>
-                    <AutoComplete
-                      options={[]}
-                      placeholder="Search any destination worldwide..."
-                      value={formData.destination}
-                      onValueChange={(value) => {
-                        setFormData(prev => ({ ...prev, destination: value }));
-                        if (touched.destination) {
-                          setErrors(prev => ({ ...prev, destination: validateField('destination', value) }));
-                        }
-                      }}
-                      allowCustomValue={true}
-                      error={touched.destination ? errors.destination : undefined}
-                    />
+                    <div id="destination">
+                      <AutoComplete
+                        options={[]}
+                        placeholder="Search any destination worldwide..."
+                        value={formData.destination}
+                        onValueChange={(value) => {
+                          setFormData(prev => ({ ...prev, destination: value }));
+                          if (touched.destination) {
+                            setErrors(prev => ({ ...prev, destination: validateField('destination', value) }));
+                          }
+                        }}
+                        allowCustomValue={true}
+                        error={touched.destination ? errors.destination : undefined}
+                      />
+                    </div>
                   </motion.div>
 
                   <motion.div
@@ -571,18 +573,20 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                       <Calendar className="w-4 h-4 text-brand-blue-primary" />
                       Start Date <span className="text-red-500">*</span>
                     </Label>
-                    <DatePicker
-                      date={formData.startDate}
-                      onDateChange={(date) => {
-                        setFormData(prev => ({ ...prev, startDate: date }));
-                        if (touched.startDate) {
-                          setErrors(prev => ({ ...prev, startDate: validateField('startDate', date) }));
-                        }
-                      }}
-                      placeholder="Departure date"
-                      minDate={new Date()}
-                      error={touched.startDate ? errors.startDate : undefined}
-                    />
+                    <div id="startDate">
+                      <DatePicker
+                        date={formData.startDate}
+                        onDateChange={(date) => {
+                          setFormData(prev => ({ ...prev, startDate: date }));
+                          if (touched.startDate) {
+                            setErrors(prev => ({ ...prev, startDate: validateField('startDate', date) }));
+                          }
+                        }}
+                        placeholder="Departure date"
+                        minDate={new Date()}
+                        error={touched.startDate ? errors.startDate : undefined}
+                      />
+                    </div>
                   </motion.div>
 
                   <motion.div
@@ -595,18 +599,20 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                       <Calendar className="w-4 h-4 text-brand-blue-primary" />
                       End Date <span className="text-red-500">*</span>
                     </Label>
-                    <DatePicker
-                      date={formData.endDate}
-                      onDateChange={(date) => {
-                        setFormData(prev => ({ ...prev, endDate: date }));
-                        if (touched.endDate) {
-                          setErrors(prev => ({ ...prev, endDate: validateField('endDate', date) }));
-                        }
-                      }}
-                      placeholder="Return date"
-                      minDate={formData.startDate || new Date()}
-                      error={touched.endDate ? errors.endDate : undefined}
-                    />
+                    <div id="endDate">
+                      <DatePicker
+                        date={formData.endDate}
+                        onDateChange={(date) => {
+                          setFormData(prev => ({ ...prev, endDate: date }));
+                          if (touched.endDate) {
+                            setErrors(prev => ({ ...prev, endDate: validateField('endDate', date) }));
+                          }
+                        }}
+                        placeholder="Return date"
+                        minDate={formData.startDate || new Date()}
+                        error={touched.endDate ? errors.endDate : undefined}
+                      />
+                    </div>
                   </motion.div>
                 </div>
 
@@ -622,24 +628,26 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                       <Users className="w-4 h-4 text-brand-blue-primary" />
                       Number of Travelers <span className="text-red-500">*</span>
                     </Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="20"
-                      value={formData.travelers}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value) || 1;
-                        setFormData(prev => ({ ...prev, travelers: value }));
-                        if (touched.travelers) {
-                          setErrors(prev => ({ ...prev, travelers: validateField('travelers', value) }));
-                        }
-                      }}
-                      onBlur={() => handleBlur('travelers')}
-                      className={cn(
-                        "border-brand-gray-border focus:border-brand-blue-primary focus:ring-brand-blue-primary",
-                        touched.travelers && errors.travelers && "border-red-500 focus:border-red-500"
-                      )}
-                    />
+                    <div id="travelers">
+                      <Input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={formData.travelers}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 1;
+                          setFormData(prev => ({ ...prev, travelers: value }));
+                          if (touched.travelers) {
+                            setErrors(prev => ({ ...prev, travelers: validateField('travelers', value) }));
+                          }
+                        }}
+                        onBlur={() => handleBlur('travelers')}
+                        className={cn(
+                          "border-brand-gray-border focus:border-brand-blue-primary focus:ring-brand-blue-primary",
+                          touched.travelers && errors.travelers && "border-red-500 focus:border-red-500"
+                        )}
+                      />
+                    </div>
                     {touched.travelers && errors.travelers && (
                       <p className="text-xs text-red-500">{errors.travelers}</p>
                     )}
@@ -655,28 +663,30 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                       <span className="text-lg">💰</span>
                       Budget Range <span className="text-red-500">*</span>
                     </Label>
-                    <select
-                      value={formData.budget}
-                      onChange={(e) => {
-                        setFormData(prev => ({ ...prev, budget: e.target.value }));
-                        if (touched.budget) {
-                          setErrors(prev => ({ ...prev, budget: validateField('budget', e.target.value) }));
-                        }
-                      }}
-                      onBlur={() => handleBlur('budget')}
-                      className={cn(
-                        "flex h-9 w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-shadow focus:outline-none focus:ring-2",
-                        "border-brand-gray-border focus:border-brand-blue-primary focus:ring-brand-blue-primary",
-                        touched.budget && errors.budget && "border-red-500 focus:border-red-500"
-                      )}
-                    >
+                    <div id="budget">
+                      <select
+                        value={formData.budget}
+                        onChange={(e) => {
+                          setFormData(prev => ({ ...prev, budget: e.target.value }));
+                          if (touched.budget) {
+                            setErrors(prev => ({ ...prev, budget: validateField('budget', e.target.value) }));
+                          }
+                        }}
+                        onBlur={() => handleBlur('budget')}
+                        className={cn(
+                          "flex h-9 w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-shadow focus:outline-none focus:ring-2",
+                          "border-brand-gray-border focus:border-brand-blue-primary focus:ring-brand-blue-primary",
+                          touched.budget && errors.budget && "border-red-500 focus:border-red-500"
+                        )}
+                      >
                       <option value="">Select budget</option>
                       {budgetOptions.map(option => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
                       ))}
-                    </select>
+                      </select>
+                    </div>
                     {touched.budget && errors.budget && (
                       <p className="text-xs text-red-500">{errors.budget}</p>
                     )}
@@ -689,6 +699,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.3, duration: 0.4 }}
                   className="space-y-4"
+                  id="interests"
                 >
                   <Label className="text-lg font-semibold text-brand-gray-text">
                     What interests you? <span className="text-red-500">*</span>
@@ -740,6 +751,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 1.8, duration: 0.4 }}
                     className="space-y-4"
+                    id="transportation"
                   >
                     <Label className="text-lg font-semibold text-brand-gray-text">
                       Transportation Needed <span className="text-red-500">*</span>
@@ -789,28 +801,30 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                       <Hotel className="w-4 h-4 text-brand-blue-primary" />
                       Accommodation Type <span className="text-red-500">*</span>
                     </Label>
-                    <select
-                      value={formData.accommodation}
-                      onChange={(e) => {
-                        setFormData(prev => ({ ...prev, accommodation: e.target.value }));
-                        if (touched.accommodation) {
-                          setErrors(prev => ({ ...prev, accommodation: validateField('accommodation', e.target.value) }));
-                        }
-                      }}
-                      onBlur={() => handleBlur('accommodation')}
-                      className={cn(
-                        "flex h-9 w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-shadow focus:outline-none focus:ring-2",
-                        "border-brand-gray-border focus:border-brand-blue-primary focus:ring-brand-blue-primary",
-                        touched.accommodation && errors.accommodation && "border-red-500 focus:border-red-500"
-                      )}
-                    >
+                    <div id="accommodation">
+                      <select
+                        value={formData.accommodation}
+                        onChange={(e) => {
+                          setFormData(prev => ({ ...prev, accommodation: e.target.value }));
+                          if (touched.accommodation) {
+                            setErrors(prev => ({ ...prev, accommodation: validateField('accommodation', e.target.value) }));
+                          }
+                        }}
+                        onBlur={() => handleBlur('accommodation')}
+                        className={cn(
+                          "flex h-9 w-full rounded-lg border bg-white px-3 py-2 text-sm shadow-sm transition-shadow focus:outline-none focus:ring-2",
+                          "border-brand-gray-border focus:border-brand-blue-primary focus:ring-brand-blue-primary",
+                          touched.accommodation && errors.accommodation && "border-red-500 focus:border-red-500"
+                        )}
+                      >
                       <option value="">Select accommodation</option>
                       {accommodationOptions.map(option => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
                       ))}
-                    </select>
+                      </select>
+                    </div>
                     {touched.accommodation && errors.accommodation && (
                       <p className="text-xs text-red-500">{errors.accommodation}</p>
                     )}
@@ -839,10 +853,19 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
 
                 {/* Error Summary */}
                 {Object.keys(errors).length > 0 && Object.values(touched).some(t => t) && (
-                  <Alert variant="destructive">
+                  <Alert variant="destructive" className="mb-6">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      Please fix the errors above before submitting.
+                      <div className="font-semibold mb-2">Please complete the following required fields:</div>
+                      <ul className="list-disc list-inside space-y-1">
+                        {Object.entries(errors).map(([field, error]) => 
+                          touched[field as keyof TravelFormData] && error ? (
+                            <li key={field} className="text-sm">
+                              {field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1').trim()}: {error}
+                            </li>
+                          ) : null
+                        )}
+                      </ul>
                     </AlertDescription>
                   </Alert>
                 )}
@@ -852,7 +875,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 2.1, duration: 0.4 }}
-                  className="flex justify-center pt-4"
+                  className="flex justify-center pt-6 pb-4"
                 >
                   <Button
                     type="submit"
@@ -898,6 +921,8 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
               </form>
             </Card>
           </motion.div>
+          {/* Add some padding at the bottom for mobile */}
+          <div className="h-20 sm:h-0" />
         </motion.div>
       </div>
     </div>
