@@ -87,45 +87,159 @@ function AutoComplete({
   placeholder = "Search...",
   value = "",
   onValueChange,
-  className
-}: AutoCompleteProps) {
+  className,
+  allowCustomValue = false
+}: AutoCompleteProps & { allowCustomValue?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<Option[]>([]);
+  const timeoutRef = React.useRef<NodeJS.Timeout>();
 
-  const filteredOptions = options.filter(option =>
-    option.label.toLowerCase().includes(inputValue.toLowerCase())
-  );
+  // For live search, we'll use Google Places suggestions or a simple search
+  const searchDestinations = React.useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Simulated search - in production, you'd call a real API
+    // For now, we'll use a combination of predefined cities and allow custom input
+    const popularDestinations = [
+      { value: "paris-france", label: "Paris, France" },
+      { value: "tokyo-japan", label: "Tokyo, Japan" },
+      { value: "new-york-usa", label: "New York City, USA" },
+      { value: "london-uk", label: "London, United Kingdom" },
+      { value: "rome-italy", label: "Rome, Italy" },
+      { value: "barcelona-spain", label: "Barcelona, Spain" },
+      { value: "dubai-uae", label: "Dubai, UAE" },
+      { value: "singapore", label: "Singapore" },
+      { value: "sydney-australia", label: "Sydney, Australia" },
+      { value: "amsterdam-netherlands", label: "Amsterdam, Netherlands" },
+      { value: "bangkok-thailand", label: "Bangkok, Thailand" },
+      { value: "istanbul-turkey", label: "Istanbul, Turkey" },
+      { value: "los-angeles-usa", label: "Los Angeles, USA" },
+      { value: "san-francisco-usa", label: "San Francisco, USA" },
+      { value: "miami-usa", label: "Miami, USA" },
+      { value: "las-vegas-usa", label: "Las Vegas, USA" },
+      { value: "hong-kong", label: "Hong Kong" },
+      { value: "seoul-south-korea", label: "Seoul, South Korea" },
+      { value: "vienna-austria", label: "Vienna, Austria" },
+      { value: "prague-czech-republic", label: "Prague, Czech Republic" },
+      { value: "budapest-hungary", label: "Budapest, Hungary" },
+      { value: "lisbon-portugal", label: "Lisbon, Portugal" },
+      { value: "madrid-spain", label: "Madrid, Spain" },
+      { value: "berlin-germany", label: "Berlin, Germany" },
+      { value: "munich-germany", label: "Munich, Germany" },
+      { value: "zurich-switzerland", label: "Zurich, Switzerland" },
+      { value: "vancouver-canada", label: "Vancouver, Canada" },
+      { value: "toronto-canada", label: "Toronto, Canada" },
+      { value: "mexico-city-mexico", label: "Mexico City, Mexico" },
+      { value: "cancun-mexico", label: "Cancun, Mexico" },
+      { value: "rio-de-janeiro-brazil", label: "Rio de Janeiro, Brazil" },
+      { value: "buenos-aires-argentina", label: "Buenos Aires, Argentina" },
+      { value: "cape-town-south-africa", label: "Cape Town, South Africa" },
+      { value: "marrakech-morocco", label: "Marrakech, Morocco" },
+      { value: "cairo-egypt", label: "Cairo, Egypt" },
+      { value: "mumbai-india", label: "Mumbai, India" },
+      { value: "delhi-india", label: "Delhi, India" },
+      { value: "beijing-china", label: "Beijing, China" },
+      { value: "shanghai-china", label: "Shanghai, China" },
+      { value: "moscow-russia", label: "Moscow, Russia" },
+      { value: "st-petersburg-russia", label: "St. Petersburg, Russia" },
+      { value: "athens-greece", label: "Athens, Greece" },
+      { value: "santorini-greece", label: "Santorini, Greece" },
+      { value: "florence-italy", label: "Florence, Italy" },
+      { value: "venice-italy", label: "Venice, Italy" },
+      { value: "milan-italy", label: "Milan, Italy" },
+      { value: "oslo-norway", label: "Oslo, Norway" },
+      { value: "stockholm-sweden", label: "Stockholm, Sweden" },
+      { value: "copenhagen-denmark", label: "Copenhagen, Denmark" },
+      { value: "reykjavik-iceland", label: "Reykjavik, Iceland" },
+      { value: "dublin-ireland", label: "Dublin, Ireland" },
+      { value: "edinburgh-scotland", label: "Edinburgh, Scotland" },
+    ];
+
+    const filtered = popularDestinations.filter(dest => 
+      dest.label.toLowerCase().includes(query.toLowerCase())
+    );
+
+    // If custom value is allowed and no exact match, add the query as an option
+    if (allowCustomValue && filtered.length === 0) {
+      filtered.push({ value: query, label: query });
+    } else if (allowCustomValue && !filtered.find(f => f.label.toLowerCase() === query.toLowerCase())) {
+      filtered.unshift({ value: query, label: query });
+    }
+
+    setSearchResults(filtered.slice(0, 10)); // Limit to 10 results
+    setIsLoading(false);
+  }, [allowCustomValue]);
+
+  // Debounced search
+  React.useEffect(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      searchDestinations(inputValue);
+    }, 300);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [inputValue, searchDestinations]);
 
   const handleSelect = (option: Option) => {
     setInputValue(option.label);
-    onValueChange?.(option.value);
+    onValueChange?.(option.label); // Pass the label as the value for flexibility
     setIsOpen(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    setIsOpen(true);
+    
+    // For custom values, update the parent immediately
+    if (allowCustomValue) {
+      onValueChange?.(newValue);
+    }
   };
 
   return (
     <div className={cn("relative", className)}>
       <Input
         value={inputValue}
-        onChange={(e) => {
-          setInputValue(e.target.value);
-          setIsOpen(true);
-        }}
+        onChange={handleInputChange}
         onFocus={() => setIsOpen(true)}
         onBlur={() => setTimeout(() => setIsOpen(false), 200)}
         placeholder={placeholder}
         className="border-brand-gray-border focus:border-brand-blue-primary focus:ring-brand-blue-primary"
       />
-      {isOpen && filteredOptions.length > 0 && (
+      {isOpen && (inputValue.length > 1 || searchResults.length > 0) && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-brand-gray-border rounded-md shadow-lg max-h-60 overflow-auto">
-          {filteredOptions.map((option) => (
-            <div
-              key={option.value}
-              className="px-3 py-2 hover:bg-brand-gray-light cursor-pointer text-sm text-brand-gray-text"
-              onClick={() => handleSelect(option)}
-            >
-              {option.label}
+          {isLoading ? (
+            <div className="px-3 py-2 text-sm text-brand-gray-secondary">Searching...</div>
+          ) : searchResults.length > 0 ? (
+            searchResults.map((option) => (
+              <div
+                key={option.value}
+                className="px-3 py-2 hover:bg-brand-gray-light cursor-pointer text-sm text-brand-gray-text"
+                onClick={() => handleSelect(option)}
+              >
+                {option.label}
+              </div>
+            ))
+          ) : inputValue.length > 1 ? (
+            <div className="px-3 py-2 text-sm text-brand-gray-secondary">
+              No results found. Type to use "{inputValue}" as your destination.
             </div>
-          ))}
+          ) : null}
         </div>
       )}
     </div>
@@ -144,28 +258,65 @@ function DatePicker({
   date, 
   onDateChange, 
   placeholder = "Select date",
-  className 
-}: DatePickerProps) {
+  className,
+  minDate,
+  maxDate
+}: DatePickerProps & { minDate?: Date; maxDate?: Date }) {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  
+  const handleDateClick = () => {
+    if (inputRef.current) {
+      inputRef.current.showPicker?.() || inputRef.current.click();
+    }
+  };
+
+  const formatDateForInput = (date: Date | undefined) => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatDateForDisplay = (date: Date | undefined) => {
+    if (!date) return '';
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
     <div className={cn("relative", className)}>
+      <input
+        ref={inputRef}
+        type="date"
+        value={formatDateForInput(date)}
+        min={minDate ? formatDateForInput(minDate) : undefined}
+        max={maxDate ? formatDateForInput(maxDate) : undefined}
+        onChange={(e) => {
+          if (e.target.value) {
+            const newDate = new Date(e.target.value + 'T00:00:00');
+            onDateChange?.(newDate);
+          } else {
+            onDateChange?.(undefined);
+          }
+        }}
+        className="sr-only"
+        aria-label={placeholder}
+      />
       <Input
-        value={date ? date.toLocaleDateString() : ""}
+        value={formatDateForDisplay(date)}
         placeholder={placeholder}
         readOnly
-        className="cursor-pointer border-brand-gray-border focus:border-brand-blue-primary focus:ring-brand-blue-primary"
-        onClick={() => {
-          const input = document.createElement('input');
-          input.type = 'date';
-          input.onchange = (e) => {
-            const target = e.target as HTMLInputElement;
-            if (target.value) {
-              onDateChange?.(new Date(target.value));
-            }
-          };
-          input.click();
-        }}
+        onClick={handleDateClick}
+        className="cursor-pointer border-brand-gray-border focus:border-brand-blue-primary focus:ring-brand-blue-primary pr-10"
       />
-      <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-brand-gray-secondary pointer-events-none" />
+      <Calendar 
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-brand-gray-secondary pointer-events-none" 
+        onClick={handleDateClick}
+      />
     </div>
   );
 }
@@ -334,18 +485,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
     maxHeight: 200,
   });
 
-  const destinations = [
-    { value: "paris", label: "Paris, France" },
-    { value: "tokyo", label: "Tokyo, Japan" },
-    { value: "nyc", label: "New York City, USA" },
-    { value: "london", label: "London, UK" },
-    { value: "bali", label: "Bali, Indonesia" },
-    { value: "rome", label: "Rome, Italy" },
-    { value: "dubai", label: "Dubai, UAE" },
-    { value: "singapore", label: "Singapore" },
-    { value: "barcelona", label: "Barcelona, Spain" },
-    { value: "sydney", label: "Sydney, Australia" },
-  ];
+  // Destinations are now dynamically searched in the AutoComplete component
 
   const steps = [
     { title: "Destination & Dates", description: "Where and when" },
@@ -418,13 +558,13 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                 Destination
               </Label>
               <AutoComplete
-                options={destinations}
-                placeholder="Where would you like to go?"
+                options={[]}
+                placeholder="Search any destination worldwide..."
                 value={formData.destination}
                 onValueChange={(value) => {
-                  const destination = destinations.find(d => d.value === value)?.label || value;
-                  setFormData(prev => ({ ...prev, destination }));
+                  setFormData(prev => ({ ...prev, destination: value }));
                 }}
+                allowCustomValue={true}
               />
             </div>
 
@@ -435,6 +575,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                   date={formData.startDate}
                   onDateChange={(date) => setFormData(prev => ({ ...prev, startDate: date }))}
                   placeholder="Departure date"
+                  minDate={new Date()}
                 />
               </div>
               <div className="space-y-2">
@@ -443,6 +584,7 @@ export function AITravelItineraryForm({ onComplete, isLoading = false }: AITrave
                   date={formData.endDate}
                   onDateChange={(date) => setFormData(prev => ({ ...prev, endDate: date }))}
                   placeholder="Return date"
+                  minDate={formData.startDate || new Date()}
                 />
               </div>
             </div>
