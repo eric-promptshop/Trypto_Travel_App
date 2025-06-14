@@ -136,22 +136,22 @@ function TextRotator({ words, className = "" }: { words: string[], className?: s
   }, [words.length])
 
   return (
-    <span className={cn("relative inline-block min-w-[200px]", className)}>
+    <span className={cn("relative inline-block min-w-[200px] sm:min-w-[250px] md:min-w-[300px]", className)}>
       <AnimatePresence mode="wait">
         <motion.span
           key={currentIndex}
-          className="absolute inset-0 flex items-center justify-center"
+          className="absolute inset-0 flex items-center justify-start"
           initial={{ opacity: 0, y: 20, filter: 'blur(8px)' }}
           animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
           exit={{ opacity: 0, y: -20, filter: 'blur(8px)' }}
           transition={{ duration: 0.5, ease: 'easeInOut' }}
         >
-          <span className="bg-gradient-to-r from-[#ff6b35] to-[#ff8759] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#ff6b35] to-[#ff8759] bg-clip-text text-transparent font-bold text-4xl sm:text-5xl md:text-6xl lg:text-6xl whitespace-nowrap">
             {words[currentIndex]}
           </span>
         </motion.span>
       </AnimatePresence>
-      <span className="opacity-0">{words[0]}</span>
+      <span className="opacity-0 font-bold text-4xl sm:text-5xl md:text-6xl lg:text-6xl">{words[0]}</span>
     </span>
   )
 }
@@ -269,7 +269,7 @@ export default function Home() {
                 {/* Main Heading */}
                 <motion.h1 
                   variants={transitionVariants.item}
-                  className="text-4xl md:text-6xl font-bold text-[#1f5582] max-w-4xl mx-auto leading-tight"
+                  className="text-4xl sm:text-5xl md:text-6xl lg:text-6xl font-bold text-[#1f5582] max-w-4xl mx-auto leading-tight"
                 >
                   Plan Epic{' '}
                   <TextRotator words={travelWords} />
