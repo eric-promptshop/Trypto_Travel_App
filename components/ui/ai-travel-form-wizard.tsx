@@ -142,7 +142,31 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
   const progress = (currentStep / 3) * 100
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 sm:p-8">
+    <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50">
+      <div className="relative z-10 w-full max-w-4xl mx-auto p-4 sm:p-8">
+      {/* AI Travel Planner Header */}
+      <div className="text-center mb-8">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="inline-flex items-center gap-2 mb-4"
+        >
+          <Sparkles className="w-8 h-8 text-orange-600" />
+          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-800 to-orange-700 bg-clip-text text-transparent">
+            AI Travel Planner
+          </h1>
+        </motion.div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="text-lg text-gray-600 max-w-2xl mx-auto"
+        >
+          Let our AI create the perfect itinerary for your next adventure
+        </motion.p>
+      </div>
+
       {/* Progress Bar */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -195,7 +219,7 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       </div>
 
       {/* Form Steps */}
-      <Card className="shadow-lg border-gray-200">
+      <Card className="shadow-xl border-gray-200 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-8">
           <form onSubmit={onFormSubmit}>
             <AnimatePresence mode="wait">
@@ -701,6 +725,7 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
           Tip: You can skip optional fields and we'll provide general recommendations
         </p>
       )}
+      </div>
     </div>
   )
 }
