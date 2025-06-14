@@ -17,7 +17,10 @@ import {
   ChevronLeft,
   Sparkles,
   Check,
-  AlertCircle
+  AlertCircle,
+  Plane,
+  Car,
+  Train
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -414,6 +417,54 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
                       <p className="text-sm text-red-500">{errors.interests.message}</p>
                     )}
                   </div>
+
+                  {/* Transportation */}
+                  <div className="space-y-2">
+                    <Label>
+                      <Plane className="w-4 h-4 inline mr-1" />
+                      Transportation Preferences (Optional)
+                    </Label>
+                    <Controller
+                      name="transportation"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {[
+                            { id: "flights", label: "Flights", icon: Plane },
+                            { id: "car-rental", label: "Car Rental", icon: Car },
+                            { id: "public-transport", label: "Public Transit", icon: Train },
+                            { id: "walking", label: "Walking", icon: Users }
+                          ].map((transport) => {
+                            const Icon = transport.icon
+                            const isSelected = field.value?.includes(transport.id)
+                            return (
+                              <button
+                                key={transport.id}
+                                type="button"
+                                onClick={() => {
+                                  const newValue = isSelected
+                                    ? field.value?.filter(v => v !== transport.id) || []
+                                    : [...(field.value || []), transport.id]
+                                  field.onChange(newValue)
+                                }}
+                                className={cn(
+                                  "flex flex-col items-center p-3 rounded-lg border-2 transition-all",
+                                  isSelected
+                                    ? "border-[#2563eb] bg-blue-50 text-[#1f5582]"
+                                    : "border-gray-200 hover:border-gray-300"
+                                )}
+                              >
+                                <Icon className="w-5 h-5 mb-1" />
+                                <span className="text-xs font-medium text-center">
+                                  {transport.label}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    />
+                  </div>
                 </motion.div>
               )}
 
@@ -437,46 +488,149 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
                   </div>
 
                   {/* Trip Summary */}
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                    <h3 className="font-semibold text-gray-900">Trip Summary</h3>
-                    <div className="grid gap-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Destination:</span>
-                        <span className="font-medium">{watchedFields.destination}</span>
+                  <div className="space-y-4">
+                    {/* Basic Details */}
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-gray-600" />
+                          Trip Details
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentStep(1)}
+                          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          Edit
+                        </button>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Dates:</span>
-                        <span className="font-medium">
-                          {watchedFields.startDate && format(watchedFields.startDate, "MMM d")} - 
-                          {watchedFields.endDate && format(watchedFields.endDate, "MMM d, yyyy")}
-                        </span>
+                      <div className="grid gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Destination:</span>
+                          <span className="font-medium">{watchedFields.destination || "Not selected"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Dates:</span>
+                          <span className="font-medium">
+                            {watchedFields.startDate && watchedFields.endDate ? (
+                              <>
+                                {format(watchedFields.startDate, "MMM d")} - {format(watchedFields.endDate, "MMM d, yyyy")}
+                                <span className="text-gray-500 ml-1">
+                                  ({Math.ceil((watchedFields.endDate.getTime() - watchedFields.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1} days)
+                                </span>
+                              </>
+                            ) : (
+                              "Not selected"
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Travelers:</span>
+                          <span className="font-medium">{watchedFields.travelers} {watchedFields.travelers === 1 ? 'person' : 'people'}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Travelers:</span>
-                        <span className="font-medium">{watchedFields.travelers}</span>
+                    </div>
+
+                    {/* Preferences */}
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                          <Heart className="w-4 h-4 text-gray-600" />
+                          Your Preferences
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentStep(2)}
+                          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          Edit
+                        </button>
                       </div>
-                      {watchedFields.budget && (
+                      <div className="grid gap-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Budget:</span>
-                          <span className="font-medium">{watchedFields.budget}</span>
+                          <span className="font-medium">
+                            {watchedFields.budget ? 
+                              (watchedFields.budget.includes('$') ? watchedFields.budget : `$${watchedFields.budget} per person`) 
+                              : "No preference"}
+                          </span>
                         </div>
-                      )}
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Accommodation:</span>
+                          <span className="font-medium capitalize">
+                            {watchedFields.accommodation === "any" ? "No preference" : watchedFields.accommodation}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Interests:</span>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {watchedFields.interests && watchedFields.interests.length > 0 ? (
+                              watchedFields.interests.map((interest) => (
+                                <span
+                                  key={interest}
+                                  className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-blue-700 text-xs font-medium"
+                                >
+                                  {INTERESTS.find(i => i.id === interest)?.label || interest}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-gray-500">None selected</span>
+                            )}
+                          </div>
+                        </div>
+                        {watchedFields.transportation && watchedFields.transportation.length > 0 && (
+                          <div>
+                            <span className="text-gray-600">Transportation:</span>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {watchedFields.transportation.map((transport) => {
+                                const transportLabels: Record<string, string> = {
+                                  "flights": "Flights",
+                                  "car-rental": "Car Rental",
+                                  "public-transport": "Public Transit",
+                                  "walking": "Walking"
+                                }
+                                return (
+                                  <span
+                                    key={transport}
+                                    className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium"
+                                  >
+                                    {transportLabels[transport] || transport}
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Special Requests */}
-                  <div className="space-y-2">
-                    <Label htmlFor="specialRequests">
-                      Special Requests (Optional)
-                    </Label>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="specialRequests" className="text-base font-semibold text-gray-900">
+                        Anything else we should know?
+                      </Label>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Help us personalize your itinerary with any special requests or preferences
+                      </p>
+                    </div>
                     <Controller
                       name="specialRequests"
                       control={control}
                       render={({ field }) => (
                         <Textarea
                           {...field}
-                          placeholder="Any dietary restrictions, accessibility needs, or specific activities you'd like to include?"
-                          rows={4}
+                          placeholder="Examples:
+• Dietary restrictions (vegetarian, gluten-free, etc.)
+• Accessibility needs
+• Celebrating a special occasion
+• Specific activities or experiences you want
+• Places you've heard about and want to visit
+• Travel pace preferences (relaxed vs packed schedule)
+• Any concerns or things to avoid"
+                          rows={6}
+                          className="resize-none"
                         />
                       )}
                     />
