@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { AITravelItineraryForm } from "@/components/ui/ai-travel-itinerary-form-v2"
+import { AITravelFormWizard } from "@/components/ui/ai-travel-form-wizard"
 import { useTrips } from '@/hooks/use-trips'
 import { toast } from "sonner"
 import { useSession } from 'next-auth/react'
@@ -32,15 +32,22 @@ interface FormData {
 
 interface AIRequestFormProps {
   onComplete: (data: FormData) => void
+  onGenerating?: () => void
 }
 
-export function AIRequestForm({ onComplete }: AIRequestFormProps) {
+export function AIRequestForm({ onComplete, onGenerating }: AIRequestFormProps) {
   const { createTrip } = useTrips()
   const { data: session } = useSession()
   const [isGenerating, setIsGenerating] = useState(false)
   
   const handleFormComplete = async (data: any) => {
     setIsGenerating(true)
+    
+    // Notify parent component that we're generating
+    if (onGenerating) {
+      onGenerating()
+    }
+    
     let result: any = null // Declare result in outer scope
     let tripFormData: any = null // Declare tripFormData in outer scope
     
@@ -190,5 +197,5 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     }
   }
 
-  return <AITravelItineraryForm onComplete={handleFormComplete} isLoading={isGenerating} />
+  return <AITravelFormWizard onSubmit={handleFormComplete} isGenerating={isGenerating} />
 }

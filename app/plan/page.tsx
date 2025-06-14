@@ -5,6 +5,7 @@ import { AIRequestForm } from '@/components/ai-request-form'
 import { ConnectedItineraryViewer } from '@/components/itinerary/ConnectedItineraryViewer'
 import { motion } from 'framer-motion'
 import { useAnalytics } from '@/lib/analytics/analytics-service'
+import { SkeletonItinerary } from '@/components/ui/skeleton-itinerary'
 
 interface FormData {
   destinations?: string[]
@@ -31,7 +32,7 @@ interface FormData {
 
 export default function PlanTripPage() {
   const { track } = useAnalytics()
-  const [currentView, setCurrentView] = useState<'form' | 'itinerary'>('form')
+  const [currentView, setCurrentView] = useState<'form' | 'itinerary' | 'generating'>('form')
   const [formData, setFormData] = useState<FormData>({})
 
   const handleFormComplete = (data: FormData) => {
@@ -48,7 +49,20 @@ export default function PlanTripPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <AIRequestForm onComplete={handleFormComplete} />
+          <AIRequestForm 
+            onComplete={handleFormComplete} 
+            onGenerating={() => setCurrentView('generating')}
+          />
+        </motion.div>
+      )}
+
+      {currentView === 'generating' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <SkeletonItinerary />
         </motion.div>
       )}
 
