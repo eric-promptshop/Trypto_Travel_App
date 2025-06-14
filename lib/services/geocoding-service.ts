@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import { LocationStandardizer } from './location-standardizer'
 
 export interface LocationResult {
   value: string
@@ -156,10 +157,16 @@ export class GeocodingService {
       results = this.getFallbackSuggestions(query)
     }
 
+    // Standardize and deduplicate results
+    const standardizedResults = LocationStandardizer.standardizeResults(results)
+    
+    // Filter to major destinations only
+    const filteredResults = LocationStandardizer.filterMajorDestinations(standardizedResults)
+    
     // Cache the results
-    searchCache.set(cacheKey, { results, timestamp: Date.now() })
+    searchCache.set(cacheKey, { results: filteredResults, timestamp: Date.now() })
 
-    return results
+    return filteredResults
   }
 
   /**
