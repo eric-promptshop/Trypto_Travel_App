@@ -1,8 +1,8 @@
 "use client"
 
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { MapPin, Calendar, Users, ArrowLeft, Heart, Share2, Star } from "lucide-react"
+import { LogoDisplay } from "./logo-display"
 
 interface MobilePreviewProps {
   logoUrl?: string
@@ -44,13 +44,13 @@ export function MobilePreview({ logoUrl, primaryColor, secondaryColor, font }: M
             >
               <ArrowLeft className="h-5 w-5 text-white" />
               {logoUrl ? (
-                <Image
+                <LogoDisplay
                   src={logoUrl}
                   alt="Logo"
-                  width={80}
-                  height={30}
-                  className="object-contain h-6 w-auto"
-                  style={{ filter: 'brightness(0) invert(1)' }}
+                  width={70}
+                  height={24}
+                  className="object-contain h-5 w-auto max-w-[70px]"
+                  containerClassName="bg-white rounded px-1.5 py-0.5 shadow-sm"
                 />
               ) : (
                 <div className="h-6 w-16 bg-white/30 rounded animate-pulse" />

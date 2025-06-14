@@ -1,27 +1,24 @@
 "use client"
 
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Calendar, MapPin, Users, Clock, ChevronRight, Menu, Search, Heart, User } from "lucide-react"
+import { LogoDisplay } from "./logo-display"
 
 interface BrandingPreviewProps {
   logoUrl?: string
   primaryColor: string
   secondaryColor?: string
   font: string
-  scale?: number
 }
 
-export function BrandingPreview({ logoUrl, primaryColor, secondaryColor, font, scale = 1 }: BrandingPreviewProps) {
+export function BrandingPreview({ logoUrl, primaryColor, secondaryColor, font }: BrandingPreviewProps) {
   const accentColor = secondaryColor || primaryColor
 
   return (
     <div 
       className="bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200"
       style={{ 
-        fontFamily: font,
-        transform: `scale(${scale})`,
-        transformOrigin: 'top center'
+        fontFamily: font
       }}
     >
       {/* Header */}
@@ -33,13 +30,13 @@ export function BrandingPreview({ logoUrl, primaryColor, secondaryColor, font, s
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {logoUrl ? (
-                <Image
+                <LogoDisplay
                   src={logoUrl}
                   alt="Logo"
                   width={120}
-                  height={40}
-                  className="object-contain h-8 w-auto"
-                  style={{ filter: 'brightness(0) invert(1)' }}
+                  height={30}
+                  className="object-contain h-7 w-auto max-w-[120px]"
+                  containerClassName="bg-white rounded px-2 py-1 shadow-sm"
                 />
               ) : (
                 <div className="h-8 w-24 bg-white/30 rounded animate-pulse" />

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useOnboarding } from "@/contexts/onboarding-context"
-import { ChevronLeft, ChevronRight, UploadCloud, Monitor, Smartphone } from "lucide-react"
+import { ChevronLeft, ChevronRight, UploadCloud, Monitor, Smartphone, RotateCcw } from "lucide-react"
 import { BrandingPreview } from "@/components/onboarding/preview/branding-preview"
 import { MobilePreview } from "@/components/onboarding/preview/mobile-preview"
 import { FontLoader } from "@/components/onboarding/font-loader"
@@ -99,6 +99,14 @@ export function BrandingCustomizationScreen() {
       },
     })
     navigateToNextStep()
+  }
+
+  const handleReset = () => {
+    setLogoUrl(undefined)
+    setLogoFile(undefined)
+    setPrimaryColor("#1f5582")
+    setSecondaryColor("#ff6b35")
+    setFont("Inter")
   }
 
   return (
@@ -297,7 +305,18 @@ export function BrandingCustomizationScreen() {
 
         {/* Right Side: Live Preview */}
         <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
-          <h3 className="text-lg font-medium text-primary-blue mb-4">Live Preview</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-primary-blue">Live Preview</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="text-slate-600 hover:text-slate-900"
+            >
+              <RotateCcw className="w-4 h-4 mr-1" />
+              Reset
+            </Button>
+          </div>
           
           <Tabs defaultValue="desktop" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -312,19 +331,22 @@ export function BrandingCustomizationScreen() {
             </TabsList>
             
             <TabsContent value="desktop" className="mt-0">
-              <div className="overflow-auto max-h-[600px] rounded-lg border border-slate-200">
-                <BrandingPreview
-                  logoUrl={logoUrl}
-                  primaryColor={primaryColor}
-                  secondaryColor={secondaryColor}
-                  font={font}
-                  scale={0.75}
-                />
+              <div className="relative bg-slate-100 rounded-lg border border-slate-200 p-4 h-[600px] overflow-hidden">
+                <div className="h-full w-full overflow-auto rounded-lg">
+                  <div style={{ transform: 'scale(0.75)', transformOrigin: 'top left', width: '133.33%' }}>
+                    <BrandingPreview
+                      logoUrl={logoUrl}
+                      primaryColor={primaryColor}
+                      secondaryColor={secondaryColor}
+                      font={font}
+                    />
+                  </div>
+                </div>
               </div>
             </TabsContent>
             
             <TabsContent value="mobile" className="mt-0">
-              <div className="flex justify-center">
+              <div className="h-[600px] flex items-center justify-center">
                 <MobilePreview
                   logoUrl={logoUrl}
                   primaryColor={primaryColor}
