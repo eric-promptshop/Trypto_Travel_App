@@ -14,6 +14,7 @@ interface LogoDisplayProps {
 
 export function LogoDisplay({ src, alt, width, height, className = "", containerClassName = "" }: LogoDisplayProps) {
   const [error, setError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   if (error || !src) {
     return (
@@ -25,14 +26,19 @@ export function LogoDisplay({ src, alt, width, height, className = "", container
 
   return (
     <div className={containerClassName}>
+      {!imageLoaded && (
+        <div className={`${className} bg-slate-200 animate-pulse rounded`} style={{ width, height }} />
+      )}
       <Image
         src={src}
         alt={alt}
         width={width}
         height={height}
-        className={className}
+        className={`${className} ${imageLoaded ? '' : 'hidden'}`}
         onError={() => setError(true)}
+        onLoad={() => setImageLoaded(true)}
         unoptimized={src.startsWith('data:')}
+        priority
       />
     </div>
   )

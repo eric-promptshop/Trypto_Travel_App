@@ -39,25 +39,29 @@ export function MobilePreview({ logoUrl, primaryColor, secondaryColor, font }: M
           <div className="h-[667px] overflow-hidden relative">
             {/* Header */}
             <header 
-              className="px-4 py-3 flex items-center justify-between"
+              className="px-4 py-3"
               style={{ backgroundColor: primaryColor }}
             >
-              <ArrowLeft className="h-5 w-5 text-white" />
-              {logoUrl ? (
-                <LogoDisplay
-                  src={logoUrl}
-                  alt="Logo"
-                  width={70}
-                  height={24}
-                  className="object-contain h-5 w-auto max-w-[70px]"
-                  containerClassName="bg-white rounded px-1.5 py-0.5 shadow-sm"
-                />
-              ) : (
-                <div className="h-6 w-16 bg-white/30 rounded animate-pulse" />
-              )}
-              <div className="flex gap-2">
-                <Heart className="h-5 w-5 text-white" />
-                <Share2 className="h-5 w-5 text-white" />
+              <div className="flex items-center justify-between">
+                <ArrowLeft className="h-5 w-5 text-white flex-shrink-0" />
+                <div className="flex-1 mx-3 flex justify-center">
+                  {logoUrl ? (
+                    <LogoDisplay
+                      src={logoUrl}
+                      alt="Logo"
+                      width={100}
+                      height={32}
+                      className="object-contain h-6 w-auto max-w-[100px]"
+                      containerClassName="bg-white rounded px-2 py-1 shadow-sm inline-block"
+                    />
+                  ) : (
+                    <div className="h-7 w-20 bg-white/30 rounded" />
+                  )}
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <Heart className="h-5 w-5 text-white" />
+                  <Share2 className="h-5 w-5 text-white" />
+                </div>
               </div>
             </header>
 
