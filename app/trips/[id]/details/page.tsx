@@ -28,7 +28,7 @@ import { LodgingView } from '@/components/lodging-view'
 import { FlightsView } from '@/components/flights-view'
 import { TravelersView } from '@/components/travelers-view'
 import { TripCostView } from '@/components/trip-cost-view'
-import { ModernItineraryViewer } from '@/components/itinerary/ModernItineraryViewer'
+import { EnhancedItineraryViewer } from '@/components/itinerary/EnhancedItineraryViewer'
 
 // Import context
 import { EnhancedTripProvider, useEnhancedTrip } from '@/contexts/EnhancedTripContext'
@@ -243,11 +243,13 @@ function TripDetailContent() {
               transition={{ duration: 0.3 }}
             >
               {state.itinerary ? (
-                <ModernItineraryViewer 
+                <EnhancedItineraryViewer 
+                  tripId={tripId}
                   itinerary={state.itinerary}
                   onEdit={() => {/* TODO: Implement edit functionality */}}
                   onShare={() => {/* TODO: Implement share functionality */}}
                   onDownload={() => {/* TODO: Implement download functionality */}}
+                  onSave={(updates) => {/* TODO: Implement save functionality */}}
                 />
               ) : (
                 <Card>
