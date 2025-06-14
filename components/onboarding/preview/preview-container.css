@@ -1,0 +1,33 @@
+/* Preview Container Styles */
+.preview-container {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.preview-container * {
+  position: relative;
+}
+
+.preview-desktop-wrapper {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+}
+
+.preview-mobile-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Ensure tabs content is properly isolated */
+[role="tabpanel"] {
+  isolation: isolate;
+}
+
+[role="tabpanel"][data-state="inactive"] {
+  display: none !important;
+}

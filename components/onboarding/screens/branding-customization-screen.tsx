@@ -13,6 +13,7 @@ import { ChevronLeft, ChevronRight, UploadCloud, Monitor, Smartphone, RotateCcw 
 import { BrandingPreview } from "@/components/onboarding/preview/branding-preview"
 import { MobilePreview } from "@/components/onboarding/preview/mobile-preview"
 import { FontLoader } from "@/components/onboarding/font-loader"
+import "@/components/onboarding/preview/preview-container.css"
 
 const fontOptions = [
   { value: "Inter", label: "Modern (Inter)" },
@@ -62,6 +63,7 @@ export function BrandingCustomizationScreen() {
   const [font, setFont] = useState(onboardingData.branding?.font || "Inter")
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [activeTab, setActiveTab] = useState("desktop")
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -107,6 +109,10 @@ export function BrandingCustomizationScreen() {
     setPrimaryColor("#1f5582")
     setSecondaryColor("#ff6b35")
     setFont("Inter")
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
   }
 
   return (
@@ -318,7 +324,7 @@ export function BrandingCustomizationScreen() {
             </Button>
           </div>
           
-          <Tabs defaultValue="desktop" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="desktop" className="flex items-center gap-2">
                 <Monitor className="h-4 w-4" />
@@ -330,29 +336,33 @@ export function BrandingCustomizationScreen() {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="desktop" className="mt-0">
-              <div className="relative bg-slate-100 rounded-lg border border-slate-200 p-4 h-[600px] overflow-hidden">
-                <div className="h-full w-full overflow-auto rounded-lg">
-                  <div style={{ transform: 'scale(0.75)', transformOrigin: 'top left', width: '133.33%' }}>
-                    <BrandingPreview
-                      logoUrl={logoUrl}
-                      primaryColor={primaryColor}
-                      secondaryColor={secondaryColor}
-                      font={font}
-                    />
+            <TabsContent value="desktop" className="mt-0 focus-visible:outline-none">
+              <div className="preview-container bg-slate-100 rounded-lg border border-slate-200 p-4" style={{ height: '600px' }}>
+                <div className="h-full w-full overflow-hidden rounded-lg bg-white preview-container">
+                  <div className="preview-desktop-wrapper">
+                    <div style={{ transform: 'scale(0.75)', transformOrigin: '0 0', width: '133.33%' }}>
+                      <BrandingPreview
+                        logoUrl={logoUrl}
+                        primaryColor={primaryColor}
+                        secondaryColor={secondaryColor}
+                        font={font}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </TabsContent>
             
-            <TabsContent value="mobile" className="mt-0">
-              <div className="h-[600px] flex items-center justify-center">
-                <MobilePreview
-                  logoUrl={logoUrl}
-                  primaryColor={primaryColor}
-                  secondaryColor={secondaryColor}
-                  font={font}
-                />
+            <TabsContent value="mobile" className="mt-0 focus-visible:outline-none">
+              <div className="preview-container bg-slate-100 rounded-lg border border-slate-200 p-4" style={{ height: '600px' }}>
+                <div className="preview-mobile-wrapper">
+                  <MobilePreview
+                    logoUrl={logoUrl}
+                    primaryColor={primaryColor}
+                    secondaryColor={secondaryColor}
+                    font={font}
+                  />
+                </div>
               </div>
             </TabsContent>
           </Tabs>

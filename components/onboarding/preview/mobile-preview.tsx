@@ -36,7 +36,7 @@ export function MobilePreview({ logoUrl, primaryColor, secondaryColor, font }: M
           </div>
 
           {/* App Content */}
-          <div className="h-[667px] overflow-hidden">
+          <div className="h-[667px] overflow-hidden relative">
             {/* Header */}
             <header 
               className="px-4 py-3 flex items-center justify-between"
