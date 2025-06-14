@@ -12,15 +12,16 @@ import {
   DollarSign,
   Hotel,
   Heart,
-  Send,
   ChevronRight,
   ChevronLeft,
   Sparkles,
   Check,
-  AlertCircle,
   Plane,
   Car,
-  Train
+  Train,
+  Mic,
+  MicOff,
+  Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -29,10 +30,11 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Progress } from "@/components/ui/progress"
 import { LocationSearch } from "./location-search"
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range"
 import { format } from "date-fns"
+import { useVoiceInput, VoiceControlButton } from "./voice-input"
+import { AudioVisualizer, CircularVisualizer } from "./audio-visualizer"
 
 // Form schema with Zod
 const travelFormSchema = z.object({
@@ -93,6 +95,7 @@ const ACCOMMODATIONS = [
 
 export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelFormWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
+  const [voiceTranscript, setVoiceTranscript] = useState<string>("")
   
   const {
     control,
@@ -114,7 +117,236 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
   const watchedFields = watch()
 
-  const handleNext = async () => {
+  // Voice input setup
+  const {
+    isListening,
+    isSupported,
+    error: voiceError,
+    startListening,
+    stopListening
+  } = useVoiceInput({
+    onTranscript: (transcript, isFinal) => {
+      if (isFinal && transcript) {
+        setVoiceTranscript(transcript)
+        processVoiceInput(transcript)
+      }
+    },
+    onError: (error) => {
+      console.error('Voice input error:', error)
+    }
+  })
+
+  // Process voice transcript to extract trip details
+  const processVoiceInput = (transcript: string) => {
+    // Parse the transcript to extract trip details
+    const lowerTranscript = transcript.toLowerCase()
+    
+    // Extract destination (look for city names or "to" patterns)
+    const destinationMatch = lowerTranscript.match(/(?:to|visit|going to|travel to|trip to|want to go to)\s+([a-z\s,]+?)(?:from|on|for|with|in|\.|$)/)
+    if (destinationMatch) {
+      // Capitalize first letter of each word
+      const destination = destinationMatch[1].trim().split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ')
+      setValue('destination', destination)
+    }
+    
+    // Extract dates - handle various date formats
+    const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+    const monthsShort = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    const currentYear = new Date().getFullYear()
+    const currentMonth = new Date().getMonth()
+    
+    // Handle date ranges like "10 to 19 July" or "from May 12 to May 18"
+    const dateRangePattern1 = /(\d{1,2})(?:st|nd|rd|th)?\s*(?:to|through|-)\s*(\d{1,2})(?:st|nd|rd|th)?\s*(?:of\s+)?(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i
+    const dateRangePattern2 = /from\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*(\d{1,2})(?:st|nd|rd|th)?\s*to\s*(?:(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*)?(\d{1,2})(?:st|nd|rd|th)?/i
+    
+    let rangeMatch = lowerTranscript.match(dateRangePattern1)
+    let isPattern2 = false
+    
+    if (!rangeMatch) {
+      rangeMatch = lowerTranscript.match(dateRangePattern2)
+      isPattern2 = true
+    }
+    
+    if (rangeMatch) {
+      let startDay, endDay, startMonthStr, endMonthStr
+      
+      if (isPattern2) {
+        // Pattern: "from May 12 to May 18"
+        startMonthStr = rangeMatch[1].toLowerCase()
+        startDay = parseInt(rangeMatch[2])
+        endMonthStr = rangeMatch[3] ? rangeMatch[3].toLowerCase() : startMonthStr
+        endDay = parseInt(rangeMatch[4])
+      } else {
+        // Pattern: "10 to 19 July"
+        startDay = parseInt(rangeMatch[1])
+        endDay = parseInt(rangeMatch[2])
+        startMonthStr = rangeMatch[3].toLowerCase()
+        endMonthStr = startMonthStr
+      }
+      
+      // Find month indices
+      let startMonthIndex = monthNames.indexOf(startMonthStr)
+      if (startMonthIndex === -1) {
+        startMonthIndex = monthsShort.indexOf(startMonthStr.substring(0, 3))
+      }
+      
+      let endMonthIndex = monthNames.indexOf(endMonthStr)
+      if (endMonthIndex === -1) {
+        endMonthIndex = monthsShort.indexOf(endMonthStr.substring(0, 3))
+      }
+      
+      if (startMonthIndex !== -1 && endMonthIndex !== -1) {
+        const startYear = startMonthIndex < currentMonth ? currentYear + 1 : currentYear
+        const endYear = endMonthIndex < currentMonth ? currentYear + 1 : currentYear
+        setValue('startDate', new Date(startYear, startMonthIndex, startDay))
+        setValue('endDate', new Date(endYear, endMonthIndex, endDay))
+      }
+    } else {
+      // Look for single date patterns
+      monthNames.forEach((month, index) => {
+        const datePattern = new RegExp(`(\\d{1,2})(?:st|nd|rd|th)?\\s*(?:of\\s+)?${month}`, 'i')
+        const match = lowerTranscript.match(datePattern)
+        if (match) {
+          const day = parseInt(match[1])
+          const year = index < currentMonth ? currentYear + 1 : currentYear
+          const startDate = new Date(year, index, day)
+          setValue('startDate', startDate)
+          
+          // Look for duration
+          const durationMatch = lowerTranscript.match(/(\\d+)\\s*(?:days?|nights?)/)
+          if (durationMatch) {
+            const duration = parseInt(durationMatch[1])
+            const endDate = new Date(startDate)
+            endDate.setDate(endDate.getDate() + duration)
+            setValue('endDate', endDate)
+          }
+        }
+      })
+    }
+    
+    // Extract number of travelers
+    const travelersPatterns = [
+      /(\\d+)\\s*(?:people|persons|travelers|of us|adults)/,
+      /we\\s*are\\s*(\\d+)\\s*(?:people|persons)?/,
+      /there\\s*are\\s*(\\d+)\\s*of\\s*us/,
+      /party\\s*of\\s*(\\d+)/,
+      /traveling\\s*with\\s*(\\d+)\\s*(?:people|persons|friends)?/
+    ]
+    
+    for (const pattern of travelersPatterns) {
+      const match = lowerTranscript.match(pattern)
+      if (match) {
+        setValue('travelers', parseInt(match[1]))
+        break
+      }
+    }
+    
+    // Extract budget - handle various formats
+    const budgetPatterns = [
+      /budget\s*(?:is|of)?\s*\$?([\d,]+)(?:\s*dollars?)?\s*(?:per\s*person)?/i,
+      /\$([\d,]+)\s*(?:dollar|dollars)?\s*(?:per\s*person)?\s*budget/i,
+      /spend(?:ing)?\s*\$?([\d,]+)(?:\s*dollars?)?\s*(?:per\s*person)?/i,
+      /\$([\d,]+)\s*per\s*person/i,
+      /(\d{1,3}(?:,\d{3})*)\s*dollars?\s*per\s*person/i,
+      /my\s*budget\s*is\s*\$?([\d,]+)(?:\s*per\s*person)?/i
+    ]
+    
+    let budgetFound = false
+    for (const pattern of budgetPatterns) {
+      const match = lowerTranscript.match(pattern)
+      if (match && !budgetFound) {
+        const amount = match[1].replace(/,/g, '')
+        const isPerPerson = lowerTranscript.includes('per person')
+        setValue('budget', isPerPerson ? `$${amount} per person` : `$${amount}`)
+        budgetFound = true
+        break
+      }
+    }
+    
+    // Extract accommodation
+    if (lowerTranscript.includes('any accommodation') || lowerTranscript.includes('no preference')) {
+      setValue('accommodation', 'any')
+    } else if (lowerTranscript.includes('hotel')) {
+      setValue('accommodation', 'hotel')
+    } else if (lowerTranscript.includes('airbnb') || lowerTranscript.includes('rental') || lowerTranscript.includes('vacation rental')) {
+      setValue('accommodation', 'airbnb')
+    } else if (lowerTranscript.includes('hostel')) {
+      setValue('accommodation', 'hostel')
+    } else if (lowerTranscript.includes('resort')) {
+      setValue('accommodation', 'resort')
+    }
+    
+    // Extract interests
+    const interestKeywords = {
+      culture: ['culture', 'museum', 'history', 'art', 'heritage', 'historical', 'cultural'],
+      food: ['food', 'restaurant', 'cuisine', 'eat', 'dining', 'foodie', 'culinary'],
+      adventure: ['adventure', 'hiking', 'outdoor', 'trek', 'sport', 'adventurous'],
+      relaxation: ['relax', 'spa', 'beach', 'rest', 'peaceful', 'relaxation'],
+      nature: ['nature', 'park', 'wildlife', 'animal', 'forest', 'natural'],
+      shopping: ['shopping', 'shop', 'market', 'mall', 'boutique', 'stores'],
+      nightlife: ['nightlife', 'bar', 'club', 'party', 'night', 'bars', 'clubs'],
+      photography: ['photo', 'picture', 'instagram', 'scenic', 'photography', 'photos']
+    }
+    
+    const foundInterests: string[] = []
+    Object.entries(interestKeywords).forEach(([interest, keywords]) => {
+      if (keywords.some(keyword => lowerTranscript.includes(keyword))) {
+        foundInterests.push(interest)
+      }
+    })
+    
+    if (foundInterests.length > 0) {
+      setValue('interests', foundInterests)
+    } else {
+      // Default to some common interests if none detected
+      setValue('interests', ['culture', 'food'])
+    }
+    
+    // Extract transportation preferences
+    const transportationKeywords = {
+      'flights': ['fly', 'flight', 'flying', 'plane', 'airplane'],
+      'car-rental': ['car', 'drive', 'driving', 'rental car', 'rent a car'],
+      'public-transport': ['public transport', 'public transportation', 'bus', 'metro', 'subway', 'train'],
+      'walking': ['walk', 'walking', 'on foot', 'by foot']
+    }
+    
+    const foundTransportation: string[] = []
+    Object.entries(transportationKeywords).forEach(([transport, keywords]) => {
+      if (keywords.some(keyword => lowerTranscript.includes(keyword))) {
+        foundTransportation.push(transport)
+      }
+    })
+    
+    if (foundTransportation.length > 0) {
+      setValue('transportation', foundTransportation)
+    }
+    
+    // Set the full transcript as special requests
+    setValue('specialRequests', transcript)
+    
+    // Jump to review step only if we're currently on step 1 (voice was used from the beginning)
+    if (currentStep === 1) {
+      setCurrentStep(3)
+    }
+  }
+
+  const handleVoiceClick = () => {
+    if (isListening) {
+      stopListening()
+    } else {
+      startListening()
+    }
+  }
+
+  const handleNext = async (e?: React.MouseEvent) => {
+    // Prevent any form submission
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
     // Validate current step fields
     let fieldsToValidate: (keyof TravelFormData)[] = []
     
@@ -126,7 +358,7 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     
     const isStepValid = await trigger(fieldsToValidate)
     
-    if (isStepValid) {
+    if (isStepValid && currentStep < 3) {
       setCurrentStep(prev => Math.min(prev + 1, 3))
     }
   }
@@ -135,11 +367,21 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     setCurrentStep(prev => Math.max(prev - 1, 1))
   }
 
-  const onFormSubmit = handleSubmit(async (data) => {
-    await onSubmit(data)
+  const onFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Form submission is handled by the Generate Trip button click
+    // This prevents any automatic form submission
+    return false
+  }
+  
+  const handleGenerateTrip = handleSubmit(async (data) => {
+    // Only submit if we're on the review step
+    if (currentStep === 3) {
+      await onSubmit(data)
+    }
   })
 
-  const progress = (currentStep / 3) * 100
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50">
@@ -165,6 +407,70 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
         >
           Let our AI create the perfect itinerary for your next adventure
         </motion.p>
+        
+        {/* Voice Input Option */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="mt-6"
+        >
+          <div className="flex items-center justify-center gap-4">
+            <div className="h-px bg-gray-300 flex-1 max-w-[100px]" />
+            <span className="text-sm text-gray-500">or</span>
+            <div className="h-px bg-gray-300 flex-1 max-w-[100px]" />
+          </div>
+          <div className="mt-4">
+            <div className="relative inline-block">
+              <VoiceControlButton
+                isListening={isListening}
+                isSupported={isSupported}
+                error={voiceError}
+                onClick={handleVoiceClick}
+                disabled={isGenerating}
+                size="lg"
+                className="mx-auto relative z-10"
+              />
+            </div>
+            
+            {/* Status text with audio visualizer */}
+            <div className="mt-4 flex flex-col items-center gap-2">
+              {isListening ? (
+                <>
+                  <AudioVisualizer
+                    isActive={isListening}
+                    barCount={7}
+                    minHeight={4}
+                    maxHeight={24}
+                    color="rgb(59, 130, 246)"
+                  />
+                  <p className="text-sm text-gray-700 font-medium animate-pulse">
+                    Listening... Tell me about your trip
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Speak clearly about your destination, dates, and preferences
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Describe your trip with voice
+                </p>
+              )}
+            </div>
+            
+            {voiceTranscript && !isListening && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 p-4 bg-blue-50 rounded-lg max-w-md mx-auto"
+              >
+                <p className="text-sm text-gray-700">
+                  <strong>Captured:</strong> "{voiceTranscript}"
+                </p>
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
       </div>
 
       {/* Progress Bar */}
@@ -221,7 +527,17 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       {/* Form Steps */}
       <Card className="shadow-xl border-gray-200 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-8">
-          <form onSubmit={onFormSubmit}>
+          <form onSubmit={onFormSubmit} onKeyDown={(e) => {
+            // Prevent form submission on Enter key for all elements except the Generate Trip button
+            if (e.key === 'Enter') {
+              const target = e.target as HTMLElement
+              const isGenerateTripButton = target.textContent?.includes('Generate Trip')
+              
+              if (!isGenerateTripButton) {
+                e.preventDefault()
+              }
+            }
+          }}>
             <AnimatePresence mode="wait">
               {/* Step 1: Basics */}
               {currentStep === 1 && (
@@ -629,14 +945,26 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
                     </div>
                   </div>
 
+                  {/* Voice Input Indicator */}
+                  {voiceTranscript && (
+                    <Alert className="bg-orange-50 border-orange-200">
+                      <Mic className="w-4 h-4" />
+                      <AlertDescription>
+                        <strong>Voice Input Captured:</strong> Your trip details were captured from voice. Please review and edit any information below if needed.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   {/* Special Requests */}
                   <div className="space-y-3">
                     <div>
                       <Label htmlFor="specialRequests" className="text-base font-semibold text-gray-900">
-                        Anything else we should know?
+                        {voiceTranscript ? "Your Trip Description" : "Anything else we should know?"}
                       </Label>
                       <p className="text-sm text-gray-600 mt-1">
-                        Help us personalize your itinerary with any special requests or preferences
+                        {voiceTranscript 
+                          ? "This is what we captured from your voice input. You can edit it if needed."
+                          : "Help us personalize your itinerary with any special requests or preferences"}
                       </p>
                     </div>
                     <Controller
@@ -697,7 +1025,8 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
                 </Button>
               ) : (
                 <Button
-                  type="submit"
+                  type="button"
+                  onClick={handleGenerateTrip}
                   disabled={isGenerating || !isValid}
                   className="gap-2 bg-gradient-to-r from-[#ff6b35] to-[#ff8759] hover:from-[#ff5525] hover:to-[#ff7649] text-white font-medium px-8 shadow-lg hover:shadow-xl transition-all duration-300"
                 >
@@ -721,9 +1050,14 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
       {/* Skip Optional Fields Notice */}
       {currentStep === 2 && (
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Tip: You can skip optional fields and we'll provide general recommendations
-        </p>
+        <>
+          <p className="text-center text-sm text-gray-500 mt-4">
+            Tip: You can skip optional fields and we'll provide general recommendations
+          </p>
+          <p className="text-center text-sm text-blue-600 mt-2 font-medium">
+            Click "Next" to review your trip details before generating your itinerary
+          </p>
+        </>
       )}
       </div>
     </div>

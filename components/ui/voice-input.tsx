@@ -290,7 +290,6 @@ export const VoiceControlButton: React.FC<VoiceControlButtonProps> = ({
   }
 
   const buttonVariant = error ? 'destructive' : isListening ? 'default' : 'outline'
-  const Icon = error ? AlertCircle : isListening ? (isListening ? Square : Mic) : Mic
 
   // Generate accessible button text
   const getAccessibleText = () => {
@@ -321,18 +320,23 @@ export const VoiceControlButton: React.FC<VoiceControlButtonProps> = ({
             aria-describedby={statusId}
             className={cn(
               "transition-all duration-200",
-              isListening && "animate-pulse",
               "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
               className
             )}
           >
-            {isListening ? (
-              <div className="flex items-center gap-1">
-                <Loader2 className="h-4 w-4 animate-spin" />
+            {error ? (
+              <AlertCircle className="h-4 w-4" />
+            ) : isListening ? (
+              <div className="flex items-center gap-2">
+                <Square className="h-4 w-4" />
+                {size !== 'icon' && <span className="text-sm">Stop</span>}
                 <span className="sr-only">Listening...</span>
               </div>
             ) : (
-              <Icon className="h-4 w-4" />
+              <div className="flex items-center gap-2">
+                <Mic className="h-4 w-4" />
+                {size !== 'icon' && <span className="text-sm">Speak</span>}
+              </div>
             )}
             <span id={statusId} className="sr-only" aria-live="polite">
               {getStatusText()}
