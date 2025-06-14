@@ -143,15 +143,24 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     
     // Extract destination (look for city names or "to" patterns)
     const destinationMatch = lowerTranscript.match(/(?:to|visit|going to|travel to|trip to|want to go to)\s+([a-z\s,]+?)(?:from|on|for|with|in|\.|$)/)
-    if (destinationMatch) {
+    if (destinationMatch && destinationMatch[1]) {
       // Capitalize first letter of each word (filter out empty strings)
-      const destination = destinationMatch[1]
-        .trim()
-        .split(/\s+/)
-        .filter(word => word.length > 0)
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
-      setValue('destination', destination)
+      const rawDestination = destinationMatch[1].trim()
+      if (rawDestination) {
+        const destination = rawDestination
+          .split(/\s+/)
+          .filter(word => word && word.length > 0)
+          .map(word => {
+            if (!word || typeof word !== 'string' || word.length === 0) return ''
+            return word.charAt(0).toUpperCase() + word.slice(1)
+          })
+          .filter(word => word.length > 0)
+          .join(' ')
+        
+        if (destination) {
+          setValue('destination', destination)
+        }
+      }
     }
     
     // Extract dates - handle various date formats
