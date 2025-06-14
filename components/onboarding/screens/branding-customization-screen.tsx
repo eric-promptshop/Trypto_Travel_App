@@ -7,17 +7,50 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useOnboarding } from "@/contexts/onboarding-context"
-import { ChevronLeft, ChevronRight, UploadCloud } from "lucide-react"
+import { ChevronLeft, ChevronRight, UploadCloud, Monitor, Smartphone } from "lucide-react"
+import { BrandingPreview } from "@/components/onboarding/preview/branding-preview"
+import { MobilePreview } from "@/components/onboarding/preview/mobile-preview"
+import { FontLoader } from "@/components/onboarding/font-loader"
 
 const fontOptions = [
   { value: "Inter", label: "Modern (Inter)" },
   { value: "Georgia", label: "Classic (Georgia)" },
   { value: "Open Sans", label: "Friendly (Open Sans)" },
   { value: "Roboto", label: "Professional (Roboto)" },
+  { value: "Playfair Display", label: "Elegant (Playfair)" },
+  { value: "Montserrat", label: "Clean (Montserrat)" },
 ]
 
 const colorSwatches = ["#1f5582", "#ff6b35", "#065f46", "#7c3aed", "#db2777", "#ca8a04"]
+
+const presetThemes = [
+  { 
+    name: "Ocean Blue", 
+    primary: "#1f5582", 
+    secondary: "#ff6b35",
+    description: "Professional and trustworthy"
+  },
+  { 
+    name: "Forest Green", 
+    primary: "#065f46", 
+    secondary: "#f59e0b",
+    description: "Natural and adventurous"
+  },
+  { 
+    name: "Royal Purple", 
+    primary: "#7c3aed", 
+    secondary: "#ec4899",
+    description: "Luxurious and unique"
+  },
+  { 
+    name: "Sunset Orange", 
+    primary: "#ea580c", 
+    secondary: "#0891b2",
+    description: "Warm and energetic"
+  },
+]
 
 export function BrandingCustomizationScreen() {
   const { onboardingData, updateOnboardingData, navigateToNextStep, navigateToPrevStep } = useOnboarding()
@@ -27,19 +60,32 @@ export function BrandingCustomizationScreen() {
   const [primaryColor, setPrimaryColor] = useState(onboardingData.branding?.primaryColor || "#1f5582")
   const [secondaryColor, setSecondaryColor] = useState(onboardingData.branding?.secondaryColor || "#ff6b35")
   const [font, setFont] = useState(onboardingData.branding?.font || "Inter")
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleLogoUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      setLogoFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setLogoUrl(reader.result as string)
-      }
-      reader.readAsDataURL(file)
+      processLogoFile(file)
     }
+  }
+
+  const processLogoFile = (file: File) => {
+    if (file.size > 2 * 1024 * 1024) {
+      alert("File size must be less than 2MB")
+      return
+    }
+    
+    setIsUploadingLogo(true)
+    setLogoFile(file)
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setLogoUrl(reader.result as string)
+      setIsUploadingLogo(false)
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleContinue = () => {
@@ -57,6 +103,7 @@ export function BrandingCustomizationScreen() {
 
   return (
     <div className="bg-white p-6 md:p-8 rounded-lg shadow-md">
+      <FontLoader fonts={[font, 'Inter']} />
       <h2 className="text-2xl font-semibold text-primary-blue mb-6">Branding Customization</h2>
       <div className="grid md:grid-cols-2 gap-8">
         {/* Left Side: Customization Controls */}
@@ -67,30 +114,49 @@ export function BrandingCustomizationScreen() {
                 Logo Upload
               </Label>
               <div
-                className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md cursor-pointer hover:border-accent-orange"
+                className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md cursor-pointer transition-all ${
+                  isDragging 
+                    ? "border-accent-orange bg-orange-50" 
+                    : "border-slate-300 hover:border-accent-orange"
+                }`}
                 onClick={() => fileInputRef.current?.click()}
                 onDrop={(e) => {
                   e.preventDefault()
+                  setIsDragging(false)
                   if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                    setLogoFile(e.dataTransfer.files[0])
-                    const reader = new FileReader()
-                    reader.onloadend = () => setLogoUrl(reader.result as string)
-                    reader.readAsDataURL(e.dataTransfer.files[0])
+                    processLogoFile(e.dataTransfer.files[0])
                   }
                 }}
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setIsDragging(true)
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault()
+                  setIsDragging(false)
+                }}
               >
                 <div className="space-y-1 text-center">
-                  {logoUrl ? (
-                    <Image
-                      src={logoUrl || "/placeholder.svg"}
-                      alt="Uploaded logo"
-                      width={150}
-                      height={75}
-                      className="mx-auto object-contain max-h-[75px]"
-                    />
+                  {isUploadingLogo ? (
+                    <div className="flex flex-col items-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-blue"></div>
+                      <p className="text-sm text-slate-600 mt-2">Processing logo...</p>
+                    </div>
+                  ) : logoUrl ? (
+                    <div className="relative group">
+                      <Image
+                        src={logoUrl || "/placeholder.svg"}
+                        alt="Uploaded logo"
+                        width={150}
+                        height={75}
+                        className="mx-auto object-contain max-h-[75px]"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <p className="text-white text-sm">Click to replace</p>
+                      </div>
+                    </div>
                   ) : (
-                    <UploadCloud className="mx-auto h-12 w-12 text-slate-400" />
+                    <UploadCloud className={`mx-auto h-12 w-12 ${isDragging ? 'text-accent-orange' : 'text-slate-400'}`} />
                   )}
                   <div className="flex text-sm text-slate-600">
                     <span className="relative rounded-md font-medium text-primary-blue hover:text-accent-orange focus-within:outline-none">
@@ -117,7 +183,41 @@ export function BrandingCustomizationScreen() {
 
           <Card>
             <CardContent className="p-6">
-              <Label className="block text-sm font-medium text-slate-700 mb-2">Colors</Label>
+              <Label className="block text-sm font-medium text-slate-700 mb-2">Preset Themes</Label>
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {presetThemes.map((theme) => (
+                  <button
+                    key={theme.name}
+                    onClick={() => {
+                      setPrimaryColor(theme.primary)
+                      setSecondaryColor(theme.secondary)
+                    }}
+                    className="text-left p-3 border rounded-lg hover:shadow-md transition-shadow"
+                    style={{ 
+                      borderColor: primaryColor === theme.primary ? theme.primary : '#e2e8f0'
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <div 
+                        className="w-6 h-6 rounded"
+                        style={{ backgroundColor: theme.primary }}
+                      />
+                      <div 
+                        className="w-6 h-6 rounded"
+                        style={{ backgroundColor: theme.secondary }}
+                      />
+                    </div>
+                    <p className="text-sm font-medium">{theme.name}</p>
+                    <p className="text-xs text-slate-500">{theme.description}</p>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <Label className="block text-sm font-medium text-slate-700 mb-2">Custom Colors</Label>
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="primaryColor" className="text-xs text-slate-600">
@@ -179,7 +279,7 @@ export function BrandingCustomizationScreen() {
               <Label htmlFor="fontSelection" className="block text-sm font-medium text-slate-700 mb-1">
                 Font Selection
               </Label>
-              <Select value={font} onValueChange={(value) => setFont(value as "Inter" | "Georgia" | "Open Sans" | "Roboto")}>
+              <Select value={font} onValueChange={setFont}>
                 <SelectTrigger id="fontSelection">
                   <SelectValue placeholder="Select font" />
                 </SelectTrigger>
@@ -196,50 +296,44 @@ export function BrandingCustomizationScreen() {
         </div>
 
         {/* Right Side: Live Preview */}
-        <div className="bg-slate-100 p-6 rounded-lg border border-slate-200">
-          <h3 className="text-lg font-medium text-primary-blue mb-4 text-center">Live Preview</h3>
-          <div
-            className="aspect-[9/16] max-h-[600px] mx-auto w-full max-w-[300px] bg-white rounded-xl shadow-xl overflow-hidden border-4 border-slate-800"
-            style={{ fontFamily: font }}
-          >
-            {/* Mock Header */}
-            <div className="p-3 flex items-center justify-between" style={{ backgroundColor: primaryColor }}>
-              {logoUrl ? (
-                <Image
-                  src={logoUrl || "/placeholder.svg"}
-                  alt="Preview logo"
-                  width={80}
-                  height={40}
-                  className="object-contain max-h-[30px]"
+        <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
+          <h3 className="text-lg font-medium text-primary-blue mb-4">Live Preview</h3>
+          
+          <Tabs defaultValue="desktop" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="desktop" className="flex items-center gap-2">
+                <Monitor className="h-4 w-4" />
+                Desktop
+              </TabsTrigger>
+              <TabsTrigger value="mobile" className="flex items-center gap-2">
+                <Smartphone className="h-4 w-4" />
+                Mobile
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="desktop" className="mt-0">
+              <div className="overflow-auto max-h-[600px] rounded-lg border border-slate-200">
+                <BrandingPreview
+                  logoUrl={logoUrl}
+                  primaryColor={primaryColor}
+                  secondaryColor={secondaryColor}
+                  font={font}
+                  scale={0.75}
                 />
-              ) : (
-                <div className="w-16 h-6 bg-slate-300 rounded opacity-50"></div>
-              )}
-              <div className="w-6 h-6 rounded-full" style={{ backgroundColor: secondaryColor || primaryColor }}></div>
-            </div>
-            {/* Mock Content */}
-            <div className="p-4">
-              <h4 className="text-lg font-semibold mb-2" style={{ color: primaryColor }}>
-                Your Amazing Trip
-              </h4>
-              <p className="text-xs text-slate-700 mb-3">
-                Explore the wonders of the world with our custom-tailored itineraries. This is a preview of how your
-                trip builder might look.
-              </p>
-              <Button
-                size="sm"
-                style={{ backgroundColor: secondaryColor || primaryColor, color: "white" }}
-                className="w-full"
-              >
-                Get Started
-              </Button>
-              <div className="mt-4 space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-10 bg-slate-200 rounded animate-pulse"></div>
-                ))}
               </div>
-            </div>
-          </div>
+            </TabsContent>
+            
+            <TabsContent value="mobile" className="mt-0">
+              <div className="flex justify-center">
+                <MobilePreview
+                  logoUrl={logoUrl}
+                  primaryColor={primaryColor}
+                  secondaryColor={secondaryColor}
+                  font={font}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
