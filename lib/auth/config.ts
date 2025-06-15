@@ -25,17 +25,17 @@ export const authOptions: NextAuthOptions = {
             id: 'demo-traveler-001',
             email: 'demo@example.com',
             name: 'Demo Traveler',
-            role: 'USER',
+            role: 'TRAVELER',
             tenantId: 'default'
           };
         }
 
         if (credentials.email === 'demo-operator@example.com' && credentials.password === 'demo123') {
           return {
-            id: 'demo-operator-001',
+            id: 'demo-agent-001',
             email: 'demo-operator@example.com',
             name: 'Demo Tour Operator',
-            role: 'TOUR_OPERATOR',
+            role: 'AGENT',
             tenantId: 'default'
           };
         }
