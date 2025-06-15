@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Menu, User, Settings, LogOut, X, Map, BookOpen, Building2 } from 'lucide-react'
+import { Menu, User, Settings, LogOut, X, Map, BookOpen, Building2, Plane, Briefcase } from 'lucide-react'
 import { useAnalytics } from '@/lib/analytics/analytics-service'
 import { TripNavLogo } from '@/components/ui/TripNavLogo'
 import { cn } from '@/lib/utils'
@@ -132,6 +132,21 @@ export function MainHeader() {
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator className="bg-brand-blue-200/30" />
+                      {session.user?.role === 'TOUR_OPERATOR' ? (
+                        <DropdownMenuItem asChild className="hover:bg-brand-orange-50">
+                          <Link href="/tour-operator" className="flex items-center text-brand-blue-700">
+                            <Briefcase className="mr-2 h-4 w-4" />
+                            <span>My Tours</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem asChild className="hover:bg-brand-orange-50">
+                          <Link href="/trips" className="flex items-center text-brand-blue-700">
+                            <Plane className="mr-2 h-4 w-4" />
+                            <span>My Trips</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem asChild className="hover:bg-brand-orange-50">
                         <Link href="/profile" className="flex items-center text-brand-blue-700">
                           <User className="mr-2 h-4 w-4" />
@@ -220,6 +235,25 @@ export function MainHeader() {
                         transition={{ duration: 0.2, delay: 0.1 }}
                       >
                         <hr className="my-4 border-brand-blue-200/30" />
+                        {session.user?.role === 'TOUR_OPERATOR' ? (
+                          <Link
+                            href="/tour-operator"
+                            className="flex items-center space-x-2 rounded-md px-3 py-3 text-base font-medium text-brand-blue-700 hover:bg-brand-orange-50 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <Briefcase className="h-5 w-5" />
+                            <span>My Tours</span>
+                          </Link>
+                        ) : (
+                          <Link
+                            href="/trips"
+                            className="flex items-center space-x-2 rounded-md px-3 py-3 text-base font-medium text-brand-blue-700 hover:bg-brand-orange-50 transition-colors duration-200"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <Plane className="h-5 w-5" />
+                            <span>My Trips</span>
+                          </Link>
+                        )}
                         <Link
                           href="/profile"
                           className="flex items-center space-x-2 rounded-md px-3 py-3 text-base font-medium text-brand-blue-700 hover:bg-brand-orange-50 transition-colors duration-200"

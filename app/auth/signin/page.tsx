@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { TripNavLogo } from '@/components/ui/TripNavLogo'
-import { Loader2, AlertCircle, Mail, Lock, ArrowLeft } from 'lucide-react'
+import { Loader2, AlertCircle, Mail, Lock, ArrowLeft, Plane, Briefcase } from 'lucide-react'
 import Link from 'next/link'
 
 export default function SignInPage() {
@@ -31,10 +31,10 @@ export default function SignInPage() {
       } else if (session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN') {
         router.push('/admin')
       } else {
-        router.push(callbackUrl)
+        router.push('/trips')
       }
     }
-  }, [session, status, router, callbackUrl])
+  }, [session, status, router])
   
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -68,25 +68,52 @@ export default function SignInPage() {
     }
   }
 
-  const handleDemoLogin = async () => {
+  const handleDemoTravelerLogin = async () => {
     setIsLoading(true)
     setError('')
 
     try {
-      // Use demo credentials
+      // Use demo traveler credentials
       const result = await signIn('credentials', {
         email: 'demo@example.com',
         password: 'demo123',
         redirect: false,
-        callbackUrl,
+        callbackUrl: '/trips',
       })
 
       if (result?.error) {
-        setError('Demo login failed. Please ensure the demo user exists in the database.')
+        setError('Demo traveler login failed. Please ensure the demo user exists in the database.')
       } else if (result?.ok) {
         // Successful demo login - directly redirect to trips page
-        console.log('Demo login successful, redirecting to /trips')
+        console.log('Demo traveler login successful, redirecting to /trips')
         router.push('/trips')
+      }
+    } catch (error) {
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDemoOperatorLogin = async () => {
+    setIsLoading(true)
+    setError('')
+
+    try {
+      // Use demo tour operator credentials
+      const result = await signIn('credentials', {
+        email: 'demo-operator@example.com',
+        password: 'demo123',
+        redirect: false,
+        callbackUrl: '/tour-operator',
+      })
+
+      if (result?.error) {
+        setError('Demo tour operator login failed. Please ensure the demo user exists in the database.')
+      } else if (result?.ok) {
+        // Successful demo login - directly redirect to tour operator dashboard
+        console.log('Demo tour operator login successful, redirecting to /tour-operator')
+        router.push('/tour-operator')
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.')
@@ -179,19 +206,33 @@ export default function SignInPage() {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or</span>
+                  <span className="bg-background px-2 text-muted-foreground">Or try a demo</span>
                 </div>
               </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleDemoLogin}
-                disabled={isLoading}
-              >
-                Continue with Demo Account
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full group border-brand-blue-200 hover:bg-brand-blue-50 hover:border-brand-blue-300 transition-all"
+                  onClick={handleDemoTravelerLogin}
+                  disabled={isLoading}
+                >
+                  <Plane className="mr-2 h-4 w-4 text-brand-blue-600 group-hover:text-brand-blue-700" />
+                  <span className="text-brand-blue-700">Demo as Traveler</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full group border-brand-orange-200 hover:bg-brand-orange-50 hover:border-brand-orange-300 transition-all"
+                  onClick={handleDemoOperatorLogin}
+                  disabled={isLoading}
+                >
+                  <Briefcase className="mr-2 h-4 w-4 text-brand-orange-600 group-hover:text-brand-orange-700" />
+                  <span className="text-brand-orange-700">Demo as Tour Operator</span>
+                </Button>
+              </div>
 
               <div className="text-center text-sm text-gray-600">
                 <Link href="/" className="hover:text-brand-blue-600 transition-colors">

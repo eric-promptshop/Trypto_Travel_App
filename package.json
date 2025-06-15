@@ -29,6 +29,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:seed-admin": "ts-node scripts/seed-admin-data.ts",
+    "db:seed-demo": "node scripts/seed-demo-users.js",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "env:staging": "echo 'Switching to staging...' && sed -i '' 's/NEXT_PUBLIC_ENVIRONMENT=.*/NEXT_PUBLIC_ENVIRONMENT=staging/' .env.local",

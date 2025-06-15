@@ -75,12 +75,21 @@ export default function AuthErrorPage() {
             </Alert>
 
             {error === 'CredentialsSignin' && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">
-                  <strong>Demo Account:</strong><br />
-                  Email: demo@example.com<br />
-                  Password: demo123
-                </p>
+              <div className="mt-4 space-y-3">
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-gray-600">
+                    <strong>Demo Traveler Account:</strong><br />
+                    Email: demo@example.com<br />
+                    Password: demo123
+                  </p>
+                </div>
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <p className="text-sm text-gray-600">
+                    <strong>Demo Tour Operator Account:</strong><br />
+                    Email: demo-operator@example.com<br />
+                    Password: demo123
+                  </p>
+                </div>
               </div>
             )}
           </CardContent>

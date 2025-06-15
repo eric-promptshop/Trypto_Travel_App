@@ -83,14 +83,11 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Ensure we always redirect to /trips after successful sign-in
-      if (url.includes('/auth/signin') || url === baseUrl) {
-        return `${baseUrl}/trips`;
-      }
       // Allow relative callback URLs
       if (url.startsWith('/')) return `${baseUrl}${url}`;
       // Allow callback URLs on the same origin
       if (new URL(url).origin === baseUrl) return url;
+      // Default redirect to trips page
       return `${baseUrl}/trips`;
     }
   },
