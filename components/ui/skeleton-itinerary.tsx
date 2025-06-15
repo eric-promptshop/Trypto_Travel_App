@@ -53,76 +53,12 @@ export function SkeletonItinerary() {
         </div>
       </div>
 
-      {/* Skeleton Days */}
-      <div className="space-y-6">
-        {[1, 2, 3].map((day) => (
-          <motion.div
-            key={day}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: day * 0.2 }}
-          >
-            <Card className="overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <Skeleton className="h-6 w-24" />
-                    <Skeleton className="h-4 w-48" />
-                  </div>
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                {/* Morning Activity */}
-                <div className="flex gap-4">
-                  <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-full" />
-                    <div className="flex gap-4 mt-2">
-                      <Skeleton className="h-3 w-20" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Afternoon Activity */}
-                <div className="flex gap-4">
-                  <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-5 w-2/3" />
-                    <Skeleton className="h-4 w-full" />
-                    <div className="flex gap-4 mt-2">
-                      <Skeleton className="h-3 w-20" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Evening Activity */}
-                <div className="flex gap-4">
-                  <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-5 w-1/2" />
-                    <Skeleton className="h-4 w-full" />
-                    <div className="flex gap-4 mt-2">
-                      <Skeleton className="h-3 w-20" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Loading Tips */}
+      {/* Did You Know Banner */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200"
+        transition={{ delay: 0.5 }}
+        className="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200"
       >
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0">
