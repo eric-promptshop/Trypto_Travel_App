@@ -100,6 +100,11 @@ export const useVoiceInput = ({
   const [error, setError] = React.useState<string | null>(null)
   const [transcript, setTranscript] = React.useState('')
   const recognitionRef = React.useRef<SpeechRecognition | null>(null)
+  const silenceTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const restartTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const accumulatedTranscriptRef = React.useRef<string>('')
+  const lastTranscriptTimeRef = React.useRef<number>(Date.now())
+  const isListeningRef = React.useRef<boolean>(false)
 
   // Check browser support
   React.useEffect(() => {
@@ -122,6 +127,7 @@ export const useVoiceInput = ({
 
     recognition.onstart = () => {
       setIsListening(true)
+      isListeningRef.current = true
       setError(null)
     }
 
@@ -143,13 +149,58 @@ export const useVoiceInput = ({
         }
       }
 
-      const currentTranscript = finalTranscript || interimTranscript
-      setTranscript(currentTranscript)
-      onTranscript?.(currentTranscript, !!finalTranscript)
+      // Update last transcript time
+      lastTranscriptTimeRef.current = Date.now()
+      
+      // Clear any existing silence timeout
+      if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current)
+        silenceTimeoutRef.current = null
+      }
+
+      if (finalTranscript) {
+        // Accumulate final transcripts
+        if (accumulatedTranscriptRef.current) {
+          accumulatedTranscriptRef.current += ' ' + finalTranscript
+        } else {
+          accumulatedTranscriptRef.current = finalTranscript
+        }
+        
+        // Set a timeout to deliver the final accumulated transcript after 2 seconds of silence
+        if (continuous) {
+          silenceTimeoutRef.current = setTimeout(() => {
+            if (accumulatedTranscriptRef.current) {
+              onTranscript?.(accumulatedTranscriptRef.current.trim(), true)
+              accumulatedTranscriptRef.current = ''
+            }
+          }, 2000) // 2 seconds of silence before finalizing
+        }
+      }
+
+      const currentTranscript = accumulatedTranscriptRef.current + (interimTranscript ? ' ' + interimTranscript : '')
+      setTranscript(currentTranscript.trim())
+      onTranscript?.(currentTranscript.trim(), false)
     }
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      // Handle 'no-speech' error differently in continuous mode
+      if (event.error === 'no-speech' && continuous) {
+        // In continuous mode, we want to keep listening
+        // The browser will stop recognition, so we need to restart it
+        if (recognitionRef.current && isListeningRef.current) {
+          restartTimeoutRef.current = setTimeout(() => {
+            try {
+              recognitionRef.current?.start()
+            } catch (e) {
+              // Already started, ignore
+            }
+          }, 100)
+        }
+        return // Don't show error for no-speech in continuous mode
+      }
+      
       setIsListening(false)
+      isListeningRef.current = false
       let errorMessage = 'Speech recognition error occurred'
       
       switch (event.error) {
@@ -181,10 +232,51 @@ export const useVoiceInput = ({
     }
 
     recognition.onend = () => {
-      setIsListening(false)
+      // In continuous mode, restart recognition if we're still supposed to be listening
+      if (continuous && isListeningRef.current && recognitionRef.current) {
+        // Check if we should finalize any accumulated transcript
+        if (silenceTimeoutRef.current) {
+          clearTimeout(silenceTimeoutRef.current)
+        }
+        
+        if (accumulatedTranscriptRef.current) {
+          onTranscript?.(accumulatedTranscriptRef.current.trim(), true)
+          accumulatedTranscriptRef.current = ''
+        }
+        
+        // Restart recognition after a short delay
+        restartTimeoutRef.current = setTimeout(() => {
+          if (isListeningRef.current && recognitionRef.current) {
+            try {
+              recognitionRef.current.start()
+            } catch (e) {
+              console.warn('Failed to restart recognition:', e)
+              setIsListening(false)
+              isListeningRef.current = false
+            }
+          }
+        }, 100)
+      } else {
+        setIsListening(false)
+        isListeningRef.current = false
+        
+        // Finalize any remaining transcript
+        if (accumulatedTranscriptRef.current) {
+          onTranscript?.(accumulatedTranscriptRef.current.trim(), true)
+          accumulatedTranscriptRef.current = ''
+        }
+      }
     }
 
     return () => {
+      // Clear any pending timeouts
+      if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current)
+      }
+      if (restartTimeoutRef.current) {
+        clearTimeout(restartTimeoutRef.current)
+      }
+      
       if (recognition) {
         recognition.onstart = null
         recognition.onresult = null
@@ -199,6 +291,18 @@ export const useVoiceInput = ({
     
     setError(null)
     setTranscript('')
+    accumulatedTranscriptRef.current = ''
+    lastTranscriptTimeRef.current = Date.now()
+    
+    // Clear any pending timeouts
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current)
+      silenceTimeoutRef.current = null
+    }
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current)
+      restartTimeoutRef.current = null
+    }
     
     try {
       recognitionRef.current.start()
@@ -210,15 +314,47 @@ export const useVoiceInput = ({
   const stopListening = React.useCallback(() => {
     if (!recognitionRef.current) return
     
+    // Update listening state immediately
+    isListeningRef.current = false
+    
+    // Clear any pending timeouts
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current)
+      silenceTimeoutRef.current = null
+    }
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current)
+      restartTimeoutRef.current = null
+    }
+    
+    // Finalize any accumulated transcript before stopping
+    if (accumulatedTranscriptRef.current) {
+      onTranscript?.(accumulatedTranscriptRef.current.trim(), true)
+      accumulatedTranscriptRef.current = ''
+    }
+    
     try {
       recognitionRef.current.stop()
     } catch (error) {
       console.warn('Error stopping speech recognition:', error)
     }
-  }, [])
+  }, [onTranscript])
 
   const abortListening = React.useCallback(() => {
     if (!recognitionRef.current) return
+    
+    // Clear any pending timeouts
+    if (silenceTimeoutRef.current) {
+      clearTimeout(silenceTimeoutRef.current)
+      silenceTimeoutRef.current = null
+    }
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current)
+      restartTimeoutRef.current = null
+    }
+    
+    // Clear accumulated transcript without finalizing
+    accumulatedTranscriptRef.current = ''
     
     try {
       recognitionRef.current.abort()

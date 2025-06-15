@@ -138,6 +138,7 @@
     "react-day-picker": "8.10.1",
     "react-dom": "^19",
     "react-hook-form": "^7.54.1",
+    "react-hot-toast": "^2.5.2",
     "react-leaflet": "^5.0.0",
     "react-map-gl": "^8.0.4",
     "react-resizable-panels": "^2.1.7",

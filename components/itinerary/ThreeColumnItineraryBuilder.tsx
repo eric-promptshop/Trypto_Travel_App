@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense, lazy } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { format, differenceInDays } from 'date-fns'
@@ -23,16 +23,19 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { AIAssistantChat } from './AIAssistantChat'
+import { useItineraryUI } from './ItineraryUIContext'
+import { Skeleton } from '@/components/ui/skeleton-components'
 
-// Dynamic import for map component to avoid SSR issues
+// Dynamic imports
 const ItineraryMap = dynamic(
   () => import('./ItineraryMap').then(mod => ({ default: mod.ItineraryMap })),
   { 
     ssr: false,
-    loading: () => <div className="h-full w-full bg-gray-100 animate-pulse flex items-center justify-center">Loading map...</div>
+    loading: () => <Skeleton type="map" />
   }
 )
+
+const AIAssistantChat = lazy(() => import('./AIAssistantChat').then(mod => ({ default: mod.AIAssistantChat })))
 
 // Types
 interface Destination {
@@ -88,9 +91,10 @@ export function ThreeColumnItineraryBuilder({
 }: ThreeColumnItineraryBuilderProps) {
   const [destinations, setDestinations] = useState<Destination[]>([])
   const [selectedDestination, setSelectedDestination] = useState<string>('')
-  const [selectedDay, setSelectedDay] = useState<string>('')
   const [showAIAssistant, setShowAIAssistant] = useState(false)
   const [activeTab, setActiveTab] = useState('itinerary')
+  
+  const { selectedDay, setSelectedDay, selectedLocationId, setSelectedLocationId, highlightedLocationId, setHighlightedLocationId } = useItineraryUI()
   
   // Initialize from initialItinerary
   useEffect(() => {
@@ -101,8 +105,9 @@ export function ThreeColumnItineraryBuilder({
         setDestinations(parsedDestinations)
         if (parsedDestinations.length > 0) {
           setSelectedDestination(parsedDestinations[0].id)
-          if (parsedDestinations[0].days.length > 0) {
-            setSelectedDay(parsedDestinations[0].days[0].id)
+          if (parsedDestinations[0].days.length > 0 && selectedDay === 1) {
+            // Only set selectedDay if it hasn't been set from URL
+            setSelectedDay(1)
           }
         }
       }
@@ -250,7 +255,7 @@ export function ThreeColumnItineraryBuilder({
   
   // Get current destination and day
   const currentDestination = destinations.find(d => d.id === selectedDestination)
-  const currentDay = currentDestination?.days.find(d => d.id === selectedDay)
+  const currentDay = currentDestination?.days.find(d => d.dayNumber === selectedDay)
   
   // Get map center based on current day's activities
   const getMapCenter = (): [number, number] => {
@@ -377,18 +382,24 @@ export function ThreeColumnItineraryBuilder({
                   
                   <div className="space-y-1">
                     {destination.days.map((day) => (
-                      <Button
+                      <motion.div
                         key={day.id}
-                        variant={selectedDay === day.id ? "default" : "ghost"}
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => {
-                          setSelectedDestination(destination.id)
-                          setSelectedDay(day.id)
-                        }}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2, delay: day.dayNumber * 0.05 }}
                       >
-                        Day {day.dayNumber}
-                      </Button>
+                        <Button
+                          variant={selectedDay === day.dayNumber ? "default" : "ghost"}
+                          size="sm"
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setSelectedDestination(destination.id)
+                            setSelectedDay(day.dayNumber)
+                          }}
+                        >
+                          Day {day.dayNumber}
+                        </Button>
+                      </motion.div>
                     ))}
                     <Button
                       variant="outline"
@@ -410,14 +421,22 @@ export function ThreeColumnItineraryBuilder({
         <div className="flex-1 flex flex-col">
           {/* Day Details */}
           <div className="bg-white border-b p-6">
-            {currentDay && (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <h2 className="text-2xl font-bold">
-                        Day {currentDay.dayNumber} - {currentDay.title}
-                      </h2>
+            <AnimatePresence mode="wait">
+              {currentDay && (
+                <motion.div
+                  key={currentDay.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2">
+                          <h2 className="text-2xl font-bold">
+                            Day {currentDay.dayNumber} - {currentDay.title}
+                          </h2>
                       <div className="flex items-center gap-3 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <MapPin className="h-4 w-4" />
@@ -462,9 +481,19 @@ export function ThreeColumnItineraryBuilder({
                   {/* Activities Timeline */}
                   <div className="mt-6 space-y-3">
                     {currentDay.activities.map((activity, index) => (
-                      <div key={activity.id} className="flex gap-3">
+                      <motion.div 
+                        key={activity.id} 
+                        className="flex gap-3 cursor-pointer"
+                        onMouseEnter={() => setHighlightedLocationId(activity.id)}
+                        onMouseLeave={() => setHighlightedLocationId(null)}
+                        onClick={() => setSelectedLocationId(activity.id)}
+                        whileHover={{ scale: 1.02 }}
+                      >
                         <div className="flex flex-col items-center">
-                          <div className="w-2 h-2 rounded-full bg-blue-500" />
+                          <div className={cn(
+                            "w-2 h-2 rounded-full transition-colors",
+                            highlightedLocationId === activity.id ? "bg-orange-500" : "bg-blue-500"
+                          )} />
                           {index < currentDay.activities.length - 1 && (
                             <div className="w-0.5 h-16 bg-gray-200" />
                           )}
@@ -485,13 +514,15 @@ export function ThreeColumnItineraryBuilder({
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 </CardContent>
-              </Card>
-            )}
-          </div>
+                    </Card>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           
           {/* Interactive Map */}
           <div className="flex-1 relative">
@@ -510,36 +541,48 @@ export function ThreeColumnItineraryBuilder({
             <div className="p-4 space-y-4">
               <h3 className="font-semibold text-gray-900">Visual Highlights</h3>
               
-              {destinations.map((destination) => 
-                destination.days.map((day) => (
-                  <div
-                    key={day.id}
-                    className={cn(
-                      "space-y-3 p-3 rounded-lg transition-colors cursor-pointer",
-                      selectedDay === day.id ? "bg-blue-50" : "hover:bg-gray-50"
-                    )}
-                    onClick={() => {
-                      setSelectedDestination(destination.id)
-                      setSelectedDay(day.id)
-                    }}
-                  >
-                    {day.images.map((image) => (
-                      <div key={image.id} className="relative aspect-video rounded-lg overflow-hidden">
-                        <img
-                          src={image.url}
-                          alt={image.alt}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                        <div className="absolute bottom-2 left-2 text-white">
-                          <p className="text-sm font-medium">Day {day.dayNumber}</p>
-                          <p className="text-xs opacity-90">{day.title}</p>
+              <Suspense fallback={<Skeleton type="gallery" />}>
+                {destinations.map((destination) => 
+                  destination.days.map((day) => (
+                    <motion.div
+                      key={day.id}
+                      className={cn(
+                        "space-y-3 p-3 rounded-lg transition-colors cursor-pointer",
+                        selectedDay === day.dayNumber ? "bg-blue-50" : "hover:bg-gray-50"
+                      )}
+                      onClick={() => {
+                        setSelectedDestination(destination.id)
+                        setSelectedDay(day.dayNumber)
+                      }}
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      {day.images.map((image, idx) => (
+                        <div 
+                          key={image.id} 
+                          className={cn(
+                            "relative aspect-video rounded-lg overflow-hidden transition-all",
+                            highlightedLocationId === day.activities[idx]?.id && "ring-2 ring-orange-500"
+                          )}
+                          onMouseEnter={() => day.activities[idx] && setHighlightedLocationId(day.activities[idx].id)}
+                          onMouseLeave={() => setHighlightedLocationId(null)}
+                        >
+                          <img
+                            src={image.url}
+                            alt={image.alt}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                          <div className="absolute bottom-2 left-2 text-white">
+                            <p className="text-sm font-medium">Day {day.dayNumber}</p>
+                            <p className="text-xs opacity-90">{day.title}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ))
-              )}
+                      ))}
+                    </motion.div>
+                  ))
+                )}
+              </Suspense>
             </div>
           </ScrollArea>
         </div>

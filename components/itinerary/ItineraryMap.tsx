@@ -4,6 +4,7 @@ import React, { useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { useItineraryUI } from './ItineraryUIContext'
 
 // Fix Leaflet default icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -48,30 +49,33 @@ interface ItineraryMapProps {
 }
 
 export function ItineraryMap({ activities, center }: ItineraryMapProps) {
-  const createNumberedIcon = (number: number) => {
+  const { highlightedLocationId, setHighlightedLocationId, selectedLocationId, setSelectedLocationId } = useItineraryUI()
+  
+  const createNumberedIcon = (number: number, isHighlighted: boolean = false, isSelected: boolean = false) => {
     return L.divIcon({
       className: 'custom-div-icon',
       html: `
         <div style="
-          background-color: #3B82F6;
+          background-color: ${isSelected ? '#F97316' : isHighlighted ? '#FB923C' : '#3B82F6'};
           color: white;
-          width: 32px;
-          height: 32px;
+          width: ${isHighlighted || isSelected ? '36px' : '32px'};
+          height: ${isHighlighted || isSelected ? '36px' : '32px'};
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           font-weight: bold;
-          font-size: 14px;
-          border: 2px solid white;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          font-size: ${isHighlighted || isSelected ? '16px' : '14px'};
+          border: ${isHighlighted || isSelected ? '3px' : '2px'} solid white;
+          box-shadow: 0 ${isHighlighted || isSelected ? '4px 8px' : '2px 4px'} rgba(0,0,0,0.3);
+          transition: all 0.2s ease;
         ">
           ${number}
         </div>
       `,
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-      popupAnchor: [0, -16]
+      iconSize: isHighlighted || isSelected ? [36, 36] : [32, 32],
+      iconAnchor: isHighlighted || isSelected ? [18, 18] : [16, 16],
+      popupAnchor: [0, isHighlighted || isSelected ? -18 : -16]
     })
   }
   
@@ -88,21 +92,31 @@ export function ItineraryMap({ activities, center }: ItineraryMapProps) {
       />
       <MapCenterController center={center} />
       
-      {activities.map((activity, index) => (
-        <Marker
-          key={activity.id}
-          position={[activity.location.lat, activity.location.lng]}
-          icon={createNumberedIcon(index + 1)}
-        >
-          <Popup>
-            <div className="p-2">
-              <h4 className="font-semibold">{activity.name}</h4>
-              {activity.time && <p className="text-sm text-gray-600">{activity.time}</p>}
-              {activity.description && <p className="text-sm mt-1">{activity.description}</p>}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {activities.map((activity, index) => {
+        const isHighlighted = highlightedLocationId === activity.id
+        const isSelected = selectedLocationId === activity.id
+        
+        return (
+          <Marker
+            key={activity.id}
+            position={[activity.location.lat, activity.location.lng]}
+            icon={createNumberedIcon(index + 1, isHighlighted, isSelected)}
+            eventHandlers={{
+              mouseover: () => setHighlightedLocationId(activity.id),
+              mouseout: () => setHighlightedLocationId(null),
+              click: () => setSelectedLocationId(activity.id)
+            }}
+          >
+            <Popup>
+              <div className="p-2">
+                <h4 className="font-semibold">{activity.name}</h4>
+                {activity.time && <p className="text-sm text-gray-600">{activity.time}</p>}
+                {activity.description && <p className="text-sm mt-1">{activity.description}</p>}
+              </div>
+            </Popup>
+          </Marker>
+        )
+      })}
     </MapContainer>
   )
 }

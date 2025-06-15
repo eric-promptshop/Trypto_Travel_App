@@ -96,6 +96,7 @@ const ACCOMMODATIONS = [
 export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelFormWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [voiceTranscript, setVoiceTranscript] = useState<string>("")
+  const [interimTranscript, setInterimTranscript] = useState<string>("")
   
   const {
     control,
@@ -125,10 +126,16 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     startListening,
     stopListening
   } = useVoiceInput({
+    continuous: true,  // Keep listening through pauses
+    interimResults: true,  // Show real-time transcription
     onTranscript: (transcript, isFinal) => {
       if (isFinal && transcript) {
         setVoiceTranscript(transcript)
+        setInterimTranscript('')
         processVoiceInput(transcript)
+      } else {
+        // Show interim results for user feedback
+        setInterimTranscript(transcript)
       }
     },
     onError: (error) => {
@@ -470,6 +477,20 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
               )}
             </div>
             
+            {/* Show interim transcript while speaking */}
+            {interimTranscript && isListening && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 p-4 bg-gray-50 rounded-lg max-w-md mx-auto"
+              >
+                <p className="text-sm text-gray-600">
+                  <span className="italic">{interimTranscript}</span>
+                </p>
+              </motion.div>
+            )}
+            
+            {/* Show final transcript after speaking */}
             {voiceTranscript && !isListening && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
