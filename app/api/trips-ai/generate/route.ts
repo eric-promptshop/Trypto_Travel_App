@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import prisma from '@/lib/prisma'
 import { generateEnhancedItinerary } from '@/lib/ai/enhanced-itinerary-generator-optimized'
+import { generateUltraFastItinerary } from '@/lib/ai/ultra-fast-generator'
 // import { LeadSyncService } from '@/lib/crm/services/lead-sync-service' // Temporarily disabled due to CrmFactory import issues
 
 // Initialize OpenAI client
@@ -320,8 +321,8 @@ export async function POST(request: NextRequest) {
       // Continue with empty content - AI will generate generic itinerary
     }
 
-    // Generate enhanced itinerary with AI and tour operator integration
-    console.log('🤖 Starting enhanced AI generator with tour operator integration...')
+    // Use ultra-fast generator for sub-10 second performance
+    console.log('⚡ Starting ultra-fast AI generator...')
     console.log('Trip data being sent:', {
       destination: tripData.destination,
       dates: tripData.dates,
@@ -332,15 +333,23 @@ export async function POST(request: NextRequest) {
     
     let enhancedResult
     try {
-      enhancedResult = await generateEnhancedItinerary(tripData)
-      console.log('✅ Enhanced result received:', {
+      // Try ultra-fast generator first (target: <10s)
+      enhancedResult = await generateUltraFastItinerary(tripData)
+      console.log('✅ Ultra-fast result received:', {
         hasDestination: !!enhancedResult.destination,
         dayCount: enhancedResult.days?.length || 0,
-        hasTourOffers: !!(enhancedResult.tourOperatorOffers?.length)
+        hasTourOffers: !!(enhancedResult.tourOperatorOffers?.length),
+        generationTime: Date.now() - startTime
       })
     } catch (genError) {
-      console.error('❌ Enhanced generation failed:', genError)
-      throw genError
+      console.error('⚠️ Ultra-fast generation failed, falling back to optimized generator:', genError)
+      try {
+        // Fallback to optimized generator
+        enhancedResult = await generateEnhancedItinerary(tripData)
+      } catch (fallbackError) {
+        console.error('❌ All generators failed:', fallbackError)
+        throw fallbackError
+      }
     }
     
     // Transform to match expected format
