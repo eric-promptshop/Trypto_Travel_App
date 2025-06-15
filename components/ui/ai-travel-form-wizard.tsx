@@ -145,29 +145,41 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
   // Process voice transcript to extract trip details
   const processVoiceInput = (transcript: string) => {
+    // Validate transcript
+    if (!transcript || typeof transcript !== 'string') {
+      console.warn('Invalid transcript provided to processVoiceInput')
+      return
+    }
+    
     // Parse the transcript to extract trip details
     const lowerTranscript = transcript.toLowerCase()
     
     // Extract destination (look for city names or "to" patterns)
-    const destinationMatch = lowerTranscript.match(/(?:to|visit|going to|travel to|trip to|want to go to)\s+([a-z\s,]+?)(?:from|on|for|with|in|\.|$)/)
-    if (destinationMatch && destinationMatch[1]) {
-      // Capitalize first letter of each word (filter out empty strings)
-      const rawDestination = destinationMatch[1].trim()
-      if (rawDestination) {
-        const destination = rawDestination
-          .split(/\s+/)
-          .filter(word => word && word.length > 0)
-          .map(word => {
-            if (!word || typeof word !== 'string' || word.length === 0) return ''
-            return word.charAt(0).toUpperCase() + word.slice(1)
-          })
-          .filter(word => word.length > 0)
-          .join(' ')
-        
-        if (destination) {
-          setValue('destination', destination)
+    try {
+      const destinationMatch = lowerTranscript.match(/(?:to|visit|going to|travel to|trip to|want to go to)\s+([a-z\s,]+?)(?:from|on|for|with|in|\.|$)/)
+      if (destinationMatch && destinationMatch[1]) {
+        // Capitalize first letter of each word (filter out empty strings)
+        const rawDestination = destinationMatch[1].trim()
+        if (rawDestination && typeof rawDestination === 'string') {
+          const words = rawDestination.split(/\s+/)
+          const capitalizedWords = []
+          
+          for (const word of words) {
+            if (word && typeof word === 'string' && word.length > 0) {
+              // Safe charAt access
+              const capitalizedWord = word.charAt(0).toUpperCase() + word.slice(1)
+              capitalizedWords.push(capitalizedWord)
+            }
+          }
+          
+          if (capitalizedWords.length > 0) {
+            const destination = capitalizedWords.join(' ')
+            setValue('destination', destination)
+          }
         }
       }
+    } catch (error) {
+      console.error('Error processing destination from voice input:', error)
     }
     
     // Extract dates - handle various date formats
