@@ -106,15 +106,40 @@ export function ThreeColumnItineraryBuilder({
   useEffect(() => {
     const initializeItinerary = async () => {
       if (initialItinerary) {
-        // Parse initial itinerary
-        const parsedDestinations = await parseItinerary(initialItinerary)
-        setDestinations(parsedDestinations)
-        if (parsedDestinations.length > 0) {
-          setSelectedDestination(parsedDestinations[0].id)
-          if (parsedDestinations[0].days.length > 0 && selectedDay === 1) {
-            // Only set selectedDay if it hasn't been set from URL
-            setSelectedDay(1)
+        console.log('Initializing itinerary builder with data:', initialItinerary)
+        try {
+          // Parse initial itinerary
+          const parsedDestinations = await parseItinerary(initialItinerary)
+          console.log('Parsed destinations:', parsedDestinations)
+          setDestinations(parsedDestinations)
+          if (parsedDestinations.length > 0) {
+            setSelectedDestination(parsedDestinations[0].id)
+            if (parsedDestinations[0].days.length > 0 && selectedDay === 1) {
+              // Only set selectedDay if it hasn't been set from URL
+              setSelectedDay(1)
+            }
           }
+          
+          // Fetch images after initial render to prevent blocking
+          setTimeout(async () => {
+            for (const destination of parsedDestinations) {
+              for (const day of destination.days) {
+                const images = await fetchDayImages(day.title, destination.name)
+                setDestinations(prev => prev.map(d => 
+                  d.id === destination.id 
+                    ? {
+                        ...d,
+                        days: d.days.map(dy => 
+                          dy.id === day.id ? { ...dy, images } : dy
+                        )
+                      }
+                    : d
+                ))
+              }
+            }
+          }, 100)
+        } catch (error) {
+          console.error('Error initializing itinerary:', error)
         }
       }
     }
@@ -127,7 +152,15 @@ export function ThreeColumnItineraryBuilder({
     try {
       // Use the images API endpoint to fetch from Unsplash
       const searchQuery = `${destinationName} ${dayTitle.split(' ').slice(-1)[0]}` // e.g., "Paris Montmartre"
-      const response = await fetch(`/api/images?query=${encodeURIComponent(searchQuery)}&count=3`)
+      
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+      
+      const response = await fetch(`/api/images?query=${encodeURIComponent(searchQuery)}&count=3`, {
+        signal: controller.signal
+      })
+      
+      clearTimeout(timeoutId)
       
       if (!response.ok) {
         console.error('Failed to fetch images')
@@ -142,8 +175,12 @@ export function ThreeColumnItineraryBuilder({
         alt: img.alt || searchQuery,
         location: destinationName
       }))
-    } catch (error) {
-      console.error('Error fetching images:', error)
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.warn('Image fetch timed out')
+      } else {
+        console.error('Error fetching images:', error)
+      }
       return []
     }
   }
@@ -254,8 +291,8 @@ export function ThreeColumnItineraryBuilder({
         return timeA - timeB
       })
       
-      // Fetch images for this day
-      parsedDay.images = await fetchDayImages(parsedDay.title, tripLocation)
+      // Skip fetching images during initial parse to prevent hanging
+      parsedDay.images = []
       
       destination.days.push(parsedDay)
     }

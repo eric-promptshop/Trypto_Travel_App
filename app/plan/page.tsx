@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AIRequestForm } from '@/components/ai-request-form'
-import { ConnectedItineraryViewer } from '@/components/itinerary/ConnectedItineraryViewer'
+import { ThreeColumnItineraryBuilder } from '@/components/itinerary/ThreeColumnItineraryBuilder'
 import { motion } from 'framer-motion'
 import { useAnalytics } from '@/lib/analytics/analytics-service'
 import { SkeletonItinerary } from '@/components/ui/skeleton-itinerary'
+import { toast } from 'sonner'
 
 interface FormData {
   destinations?: string[]
@@ -34,9 +35,31 @@ export default function PlanTripPage() {
   const { track } = useAnalytics()
   const [currentView, setCurrentView] = useState<'form' | 'itinerary' | 'generating'>('form')
   const [formData, setFormData] = useState<FormData>({})
+  const [generatedItinerary, setGeneratedItinerary] = useState<any>(null)
 
-  const handleFormComplete = (data: FormData) => {
+  const handleFormComplete = async (data: FormData & { generatedItinerary?: any }) => {
+    console.log('Form completed with data:', data)
     setFormData(data)
+    
+    // Use the generated itinerary from the form data
+    if (data.generatedItinerary) {
+      console.log('Using generated itinerary from form data:', data.generatedItinerary)
+      setGeneratedItinerary(data.generatedItinerary)
+    } else {
+      // Fallback: Check localStorage
+      const storedItinerary = localStorage.getItem('lastGeneratedItinerary')
+      if (storedItinerary) {
+        try {
+          const parsed = JSON.parse(storedItinerary)
+          console.log('Found stored itinerary:', parsed)
+          setGeneratedItinerary(parsed)
+          localStorage.removeItem('lastGeneratedItinerary') // Clean up
+        } catch (e) {
+          console.error('Failed to parse stored itinerary:', e)
+        }
+      }
+    }
+    
     setCurrentView('itinerary')
     track('trip_planning_form_complete', data)
   }
@@ -72,10 +95,14 @@ export default function PlanTripPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <ConnectedItineraryViewer
-            tripId={formData.tripId || null}
-            formData={formData}
-            onEdit={() => setCurrentView('form')}
+          <ThreeColumnItineraryBuilder
+            tripId={formData.tripId || `temp-${Date.now()}`}
+            initialItinerary={generatedItinerary}
+            onBack={() => setCurrentView('form')}
+            onSave={(itinerary) => {
+              console.log('Saving itinerary:', itinerary)
+              toast.success('Itinerary saved successfully!')
+            }}
           />
         </motion.div>
       )}

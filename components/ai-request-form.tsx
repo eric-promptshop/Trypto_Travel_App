@@ -28,6 +28,7 @@ interface FormData {
   specialRequirements?: string
   completeness?: number
   tripId?: string
+  generatedItinerary?: any
 }
 
 interface AIRequestFormProps {
@@ -104,19 +105,48 @@ export function AIRequestForm({ onComplete, onGenerating }: AIRequestFormProps) 
       
       toast.info('Generating your AI-powered itinerary...')
       
-      // Call the AI generation endpoint
-      const response = await fetch('/api/trips-ai/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(tripFormData), // Send tripFormData directly, not wrapped
-      })
+      // Call the AI generation endpoint with timeout
+      console.log('Calling AI generation endpoint with data:', tripFormData)
       
-      result = await response.json()
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
       
-      if (!response.ok || result.error) {
+      try {
+        const response = await fetch('/api/trips-ai/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(tripFormData), // Send tripFormData directly, not wrapped
+          signal: controller.signal
+        })
+        
+        clearTimeout(timeoutId)
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('API error response:', errorText)
+          throw new Error(`API returned ${response.status}: ${errorText}`)
+        }
+        
+        result = await response.json()
+        console.log('API response received:', result)
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId)
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Request timed out after 30 seconds')
+        }
+        throw fetchError
+      }
+      
+      if (result.error) {
         throw new Error(result.error || 'Failed to generate itinerary')
+      }
+      
+      // Store the generated itinerary in localStorage for the plan page
+      if (result.itinerary) {
+        console.log('Storing generated itinerary for plan page')
+        localStorage.setItem('lastGeneratedItinerary', JSON.stringify(result.itinerary))
       }
       
       let newTrip = null
@@ -157,11 +187,14 @@ export function AIRequestForm({ onComplete, onGenerating }: AIRequestFormProps) 
           interests: data.interests || [], // Now directly using the interests array
           specialRequirements: data.specialRequests || '',
           completeness: 100,
-          tripId: newTrip?.id // Optional trip ID (only if saved)
+          tripId: newTrip?.id, // Optional trip ID (only if saved)
+          generatedItinerary: result.itinerary
         }
         
         onComplete(formData)
     } catch (error: any) {
+      console.error('Error during itinerary generation:', error)
+      setIsGenerating(false)
       
       // Still try to complete with the generated data if we have it
       if (result && result.itinerary) {
@@ -186,13 +219,16 @@ export function AIRequestForm({ onComplete, onGenerating }: AIRequestFormProps) 
           interests: data.interests || [],
           specialRequirements: data.specialRequests || '',
           completeness: 100,
-          tripId: undefined // No trip ID since we couldn't save
+          tripId: undefined, // No trip ID since we couldn't save
+          generatedItinerary: result.itinerary
         }
         onComplete(formData)
         return
       }
       
       toast.error(error.message || 'Failed to generate itinerary. Please try again.')
+      setIsGenerating(false)
+    } finally {
       setIsGenerating(false)
     }
   }

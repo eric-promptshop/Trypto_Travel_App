@@ -72,22 +72,39 @@ interface EnhancedItineraryDay {
 }
 
 export async function generateEnhancedItinerary(tripData: any) {
+  console.log('🌍 Starting enhanced itinerary generation for:', tripData.destination);
+  const genStart = Date.now();
+  
   try {
     // 1. Fetch tour operator offerings for the destination
-    const tourOperatorContent = await prisma.content.findMany({
-      where: {
-        OR: [
-          { location: { contains: tripData.destination, mode: 'insensitive' } },
-          { city: { contains: tripData.destination, mode: 'insensitive' } },
-          { country: { contains: tripData.destination, mode: 'insensitive' } }
-        ],
-        type: { in: ['tour', 'activity', 'experience'] },
-        active: true
-      },
-      include: {
-        // If you have a relation to tour operators, include it here
-      }
-    });
+    console.log('🔍 Fetching tour operator content...');
+    let tourOperatorContent = [];
+    
+    try {
+      // Add timeout to database query
+      const dbPromise = prisma.content.findMany({
+        where: {
+          OR: [
+            { location: { contains: tripData.destination, mode: 'insensitive' } },
+            { city: { contains: tripData.destination, mode: 'insensitive' } },
+            { country: { contains: tripData.destination, mode: 'insensitive' } }
+          ],
+          type: { in: ['tour', 'activity', 'experience'] },
+          active: true
+        },
+        take: 20 // Limit to prevent too much data
+      });
+      
+      const dbTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 5000)
+      );
+      
+      tourOperatorContent = await Promise.race([dbPromise, dbTimeout]) as any[];
+      console.log(`✅ Found ${tourOperatorContent.length} tour offerings`);
+    } catch (dbError) {
+      console.warn('⚠️ Failed to fetch tour content, continuing without tours:', dbError);
+      // Continue without tour data
+    }
 
     // 2. Parse tour operator offerings
     const tourOfferings: TourOperatorOffering[] = tourOperatorContent.map(content => {
@@ -122,8 +139,22 @@ export async function generateEnhancedItinerary(tripData: any) {
     // 3. Create enhanced prompt with tour operator context
     const enhancedPrompt = createEnhancedPrompt(tripData, tourOfferings);
 
-    // 4. Generate itinerary with OpenAI
-    const completion = await openai.chat.completions.create({
+    // 4. Generate itinerary with OpenAI (with timeout)
+    console.log('🤖 Calling OpenAI API for enhanced itinerary generation...');
+    const apiStart = Date.now();
+    
+    // Validate OpenAI key exists
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key is not configured');
+    }
+    
+    // Create a timeout promise
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('OpenAI API timeout after 20 seconds')), 20000)
+    );
+    
+    // Create the API call promise
+    const apiPromise = openai.chat.completions.create({
       model: process.env.MODEL || 'gpt-4o-mini',
       max_tokens: parseInt(process.env.MAX_TOKENS || '4000'),
       temperature: parseFloat(process.env.TEMPERATURE || '0.7'),
@@ -141,6 +172,10 @@ Respond with valid JSON only.`
         }
       ]
     });
+    
+    // Race between API call and timeout
+    const completion = await Promise.race([apiPromise, timeoutPromise]) as any;
+    console.log(`✅ OpenAI API responded in ${Date.now() - apiStart}ms`);
 
     // 5. Parse and enhance the response
     const aiResponse = completion.choices[0]?.message?.content || '';
@@ -149,15 +184,80 @@ Respond with valid JSON only.`
     // 6. Fetch images for each day using Unsplash API
     const enhancedDays = await enhanceDaysWithImages(itinerary.days, tripData.destination);
 
-    return {
+    const result = {
       ...itinerary,
       days: enhancedDays,
       tourOperatorOffers: tourOfferings.slice(0, 10) // Include top 10 relevant tours
     };
+    
+    console.log(`✅ Enhanced itinerary generation completed in ${Date.now() - genStart}ms`);
+    return result;
 
   } catch (error) {
-    console.error('Enhanced itinerary generation failed:', error);
-    throw error;
+    console.error(`❌ Enhanced itinerary generation failed after ${Date.now() - genStart}ms:`, error);
+    console.error('Error details:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // Return a basic fallback itinerary
+    const startDate = new Date(tripData.dates?.from || tripData.startDate);
+    const endDate = new Date(tripData.dates?.to || tripData.endDate);
+    const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    return {
+      destination: tripData.destination,
+      duration,
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+      travelers: tripData.travelers || 2,
+      totalBudget: tripData.budget?.[1] || 5000,
+      days: Array.from({ length: duration }, (_, i) => {
+        const dayDate = new Date(startDate);
+        dayDate.setDate(dayDate.getDate() + i);
+        
+        return {
+          day: i + 1,
+          date: dayDate.toISOString().split('T')[0],
+          title: `Day ${i + 1} in ${tripData.destination}`,
+          description: `Explore the best of ${tripData.destination}`,
+          activities: [
+            {
+              time: "09:00",
+              title: "Morning Exploration",
+              description: "Discover local attractions",
+              duration: "3 hours",
+              location: tripData.destination,
+              price: 50,
+              type: "sightseeing"
+            },
+            {
+              time: "14:00",
+              title: "Afternoon Adventure",
+              description: "Experience local culture",
+              duration: "3 hours",
+              location: tripData.destination,
+              price: 75,
+              type: "activity"
+            }
+          ],
+          accommodation: {
+            name: "Recommended Hotel",
+            type: "hotel",
+            price: 150,
+            location: tripData.destination
+          },
+          meals: [
+            { type: "breakfast", venue: "Hotel Restaurant", cuisine: "Continental", price: 20 },
+            { type: "lunch", venue: "Local Restaurant", cuisine: "Local", price: 30 },
+            { type: "dinner", venue: "Fine Dining", cuisine: "International", price: 50 }
+          ],
+          totalCost: 350,
+          highlights: [`Explore ${tripData.destination}`, "Local experiences"]
+        };
+      }),
+      highlights: ["City exploration", "Cultural experiences", "Local cuisine"],
+      tips: ["Book accommodations in advance", "Check weather before traveling"],
+      estimatedTotalCost: duration * 350 * (tripData.travelers || 2),
+      tourOperatorOffers: []
+    };
   }
 }
 
@@ -301,32 +401,12 @@ function parseEnhancedItinerary(aiResponse: string, tourOfferings: TourOperatorO
 }
 
 async function enhanceDaysWithImages(days: EnhancedItineraryDay[], destination: string): Promise<EnhancedItineraryDay[]> {
-  try {
-    // Fetch images for each day
-    const enhancedDays = await Promise.all(days.map(async (day, index) => {
-      try {
-        // Create search query based on day highlights or title
-        const searchQuery = day.highlights?.[0] || `${destination} ${day.title}`;
-        
-        const response = await fetch(`/api/images?query=${encodeURIComponent(searchQuery)}&count=3`);
-        if (response.ok) {
-          const data = await response.json();
-          return {
-            ...day,
-            images: data.images?.map((img: any) => img.url) || []
-          };
-        }
-      } catch (error) {
-        console.error(`Failed to fetch images for day ${day.day}:`, error);
-      }
-      return day;
-    }));
-
-    return enhancedDays;
-  } catch (error) {
-    console.error('Failed to enhance days with images:', error);
-    return days;
-  }
+  // Skip image fetching on server-side for now - this should be done client-side
+  // Images will be fetched by the UI component after the itinerary is loaded
+  return days.map(day => ({
+    ...day,
+    images: [] // Empty array, will be populated client-side
+  }));
 }
 
 // Helper function to find tours by interests

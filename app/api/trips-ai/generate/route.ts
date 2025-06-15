@@ -63,6 +63,7 @@ interface GeneratedItinerary {
   highlights: string[]
   tips: string[]
   estimatedTotalCost: number
+  tourOperatorOffers?: any[] // Optional tour offers
 }
 
 async function generateItineraryWithAI(
@@ -269,10 +270,11 @@ function createFallbackItinerary(
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
+  console.log('🚀 API route /api/trips-ai/generate called at', new Date().toISOString())
   
   try {
     const body = await request.json()
-    console.log('Received body:', body)
+    console.log('📥 Received body:', JSON.stringify(body, null, 2))
     
     // Handle both wrapped and unwrapped formats
     const tripData = (body.tripData || body) as TripFormData
@@ -319,8 +321,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate enhanced itinerary with AI and tour operator integration
-    console.log('Using enhanced AI generator with tour operator integration...')
-    const enhancedResult = await generateEnhancedItinerary(tripData)
+    console.log('🤖 Starting enhanced AI generator with tour operator integration...')
+    console.log('Trip data being sent:', {
+      destination: tripData.destination,
+      dates: tripData.dates,
+      travelers: tripData.travelers,
+      budget: tripData.budget,
+      interests: tripData.interests
+    })
+    
+    let enhancedResult
+    try {
+      enhancedResult = await generateEnhancedItinerary(tripData)
+      console.log('✅ Enhanced result received:', {
+        hasDestination: !!enhancedResult.destination,
+        dayCount: enhancedResult.days?.length || 0,
+        hasTourOffers: !!(enhancedResult.tourOperatorOffers?.length)
+      })
+    } catch (genError) {
+      console.error('❌ Enhanced generation failed:', genError)
+      throw genError
+    }
     
     // Transform to match expected format
     const itinerary: GeneratedItinerary = {
@@ -402,21 +423,34 @@ export async function POST(request: NextRequest) {
     // })
 
     const generationTime = Date.now() - startTime
+    console.log(`✅ API route completed in ${generationTime}ms`)
 
-    return NextResponse.json({
+    const response = {
       success: true,
       itinerary,
       leadId: lead?.id || null,
       itineraryId: savedItinerary?.id || null,
       generationTime,
       performanceTarget: generationTime < 3000
+    }
+    
+    console.log('📤 Sending response:', {
+      success: response.success,
+      hasItinerary: !!response.itinerary,
+      dayCount: response.itinerary?.days?.length || 0
     })
+    
+    return NextResponse.json(response)
 
   } catch (error) {
-    console.error('Itinerary generation error:', error)
+    const errorTime = Date.now() - startTime
+    console.error(`❌ API route failed after ${errorTime}ms:`, error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to generate itinerary'
+      error: error instanceof Error ? error.message : 'Failed to generate itinerary',
+      errorTime
     }, { status: 500 })
   }
 }
