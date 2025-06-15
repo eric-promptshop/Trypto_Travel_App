@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
+import { demoTravelerTrips } from '@/lib/demo/demo-trips'
 
 // Types for trip management
 export interface Trip {
@@ -83,6 +84,31 @@ export function useTrips(filters: TripFilters = {}) {
   const fetchTrips = useCallback(async (requestFilters?: TripFilters) => {
     if (!session?.user) return
 
+    // Handle demo user
+    if (session.user.email === 'demo@example.com') {
+      setLoading(true)
+      // Simulate API delay
+      setTimeout(() => {
+        const filteredTrips = demoTravelerTrips.filter(trip => {
+          if (requestFilters?.status && trip.status !== requestFilters.status) return false
+          if (requestFilters?.location && !trip.location.toLowerCase().includes(requestFilters.location.toLowerCase())) return false
+          return true
+        })
+        
+        setTrips(filteredTrips)
+        setMeta({
+          page: 1,
+          limit: 12,
+          total: filteredTrips.length,
+          totalPages: 1,
+          hasNext: false,
+          hasPrev: false
+        })
+        setLoading(false)
+      }, 500)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -120,6 +146,30 @@ export function useTrips(filters: TripFilters = {}) {
     if (!session?.user) {
       setError('Authentication required')
       return null
+    }
+
+    // Handle demo user - create a temporary trip
+    if (session.user.email === 'demo@example.com') {
+      const newTrip: Trip = {
+        id: `demo-trip-${Date.now()}`,
+        title: tripData.title,
+        description: tripData.description,
+        startDate: tripData.startDate,
+        endDate: tripData.endDate,
+        location: tripData.location,
+        participants: tripData.participants,
+        status: 'draft',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        userId: 'demo-traveler-001',
+        travelers: 2,
+        totalPrice: 0,
+        currency: 'USD'
+      }
+      
+      // Add to existing trips
+      setTrips(prev => [newTrip, ...prev])
+      return newTrip
     }
 
     setLoading(true)

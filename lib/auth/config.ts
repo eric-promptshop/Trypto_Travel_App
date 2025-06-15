@@ -19,6 +19,27 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Handle demo accounts without database
+        if (credentials.email === 'demo@example.com' && credentials.password === 'demo123') {
+          return {
+            id: 'demo-traveler-001',
+            email: 'demo@example.com',
+            name: 'Demo Traveler',
+            role: 'USER',
+            tenantId: 'default'
+          };
+        }
+
+        if (credentials.email === 'demo-operator@example.com' && credentials.password === 'demo123') {
+          return {
+            id: 'demo-operator-001',
+            email: 'demo-operator@example.com',
+            name: 'Demo Tour Operator',
+            role: 'TOUR_OPERATOR',
+            tenantId: 'default'
+          };
+        }
+
         try {
           // Find user by email
           const user = await prisma.user.findUnique({
