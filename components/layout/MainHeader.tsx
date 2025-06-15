@@ -132,7 +132,7 @@ export function MainHeader() {
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator className="bg-brand-blue-200/30" />
-                      {session.user?.role === 'AGENT' ? (
+                      {session.user?.role === 'TOUR_OPERATOR' ? (
                         <DropdownMenuItem asChild className="hover:bg-brand-orange-50">
                           <Link href="/tour-operator" className="flex items-center text-brand-blue-700">
                             <Briefcase className="mr-2 h-4 w-4" />

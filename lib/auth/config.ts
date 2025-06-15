@@ -35,7 +35,7 @@ export const authOptions: NextAuthOptions = {
             id: 'demo-agent-001',
             email: 'demo-operator@example.com',
             name: 'Demo Tour Operator',
-            role: 'AGENT',
+            role: 'TOUR_OPERATOR',
             tenantId: 'default'
           };
         }

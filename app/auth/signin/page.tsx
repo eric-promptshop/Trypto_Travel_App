@@ -31,10 +31,10 @@ export default function SignInPage() {
       } else if (session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN') {
         router.push('/admin')
       } else {
-        router.push('/trips')
+        router.push(requestedCallbackUrl || '/trips')
       }
     }
-  }, [session, status, router])
+  }, [session, status, router, requestedCallbackUrl])
   
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -57,9 +57,20 @@ export default function SignInPage() {
       if (result?.error) {
         setError('Invalid email or password. Please try again.')
       } else if (result?.ok) {
-        // Successful login - directly redirect to trips page
-        console.log('Login successful, redirecting to /trips')
-        router.push('/trips')
+        // Successful login - fetch session to get user role
+        const response = await fetch('/api/auth/session')
+        const sessionData = await response.json()
+        
+        if (sessionData?.user?.role === 'TOUR_OPERATOR') {
+          console.log('Tour operator login successful, redirecting to /tour-operator')
+          router.push('/tour-operator')
+        } else if (sessionData?.user?.role === 'ADMIN' || sessionData?.user?.role === 'SUPER_ADMIN') {
+          console.log('Admin login successful, redirecting to /admin')
+          router.push('/admin')
+        } else {
+          console.log('Login successful, redirecting to', callbackUrl)
+          router.push(callbackUrl)
+        }
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.')
