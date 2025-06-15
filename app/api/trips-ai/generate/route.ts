@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import prisma from '@/lib/prisma'
-import { generateEnhancedItinerary } from '@/lib/ai/enhanced-itinerary-generator'
+import { generateEnhancedItinerary } from '@/lib/ai/enhanced-itinerary-generator-optimized'
 // import { LeadSyncService } from '@/lib/crm/services/lead-sync-service' // Temporarily disabled due to CrmFactory import issues
 
 // Initialize OpenAI client
@@ -367,51 +367,53 @@ export async function POST(request: NextRequest) {
       tourOperatorOffers: enhancedResult.tourOperatorOffers // Include tour offers
     }
     
-    // Try to save to database, but don't fail if database is down
+    // Try to save to database in parallel, but don't fail if database is down
     let lead = null
     let savedItinerary = null
     
     try {
-      // Create lead in database with proper tenantId
-      lead = await prisma.lead.create({
-        data: {
-          email: tripData.email || `anonymous_${Date.now()}@example.com`,
-          name: tripData.name || null,
-          phone: tripData.phone || null,
-          destination: tripData.destination,
-          startDate: new Date(tripData.dates.from),
-          endDate: new Date(tripData.dates.to),
-          travelers: tripData.travelers,
-          budgetMin: tripData.budget[0],
-          budgetMax: tripData.budget[1],
-          interests: JSON.stringify(tripData.interests),
-          tripData: JSON.stringify(tripData),
-          itinerary: JSON.stringify(itinerary),
-          score: calculateLeadScore(tripData, itinerary),
-          status: 'new',
-          tenantId: 'default' // Use default tenant for now
-        }
-      })
+      // Prepare data
+      const leadData = {
+        email: tripData.email || `anonymous_${Date.now()}@example.com`,
+        name: tripData.name || null,
+        phone: tripData.phone || null,
+        destination: tripData.destination,
+        startDate: new Date(tripData.dates.from),
+        endDate: new Date(tripData.dates.to),
+        travelers: tripData.travelers,
+        budgetMin: tripData.budget[0],
+        budgetMax: tripData.budget[1],
+        interests: JSON.stringify(tripData.interests),
+        tripData: JSON.stringify(tripData),
+        itinerary: JSON.stringify(itinerary),
+        score: calculateLeadScore(tripData, itinerary),
+        status: 'new',
+        tenantId: 'default' // Use default tenant for now
+      }
 
-      // Store full itinerary
-      savedItinerary = await prisma.itinerary.create({
-        data: {
-          title: `${itinerary.duration}-Day ${itinerary.destination} Adventure`,
-          description: `A personalized ${itinerary.duration}-day itinerary for ${itinerary.destination}`,
-          destination: itinerary.destination,
-          startDate: new Date(itinerary.startDate),
-          endDate: new Date(itinerary.endDate),
-          travelers: itinerary.travelers,
-          totalPrice: itinerary.estimatedTotalCost,
-          days: JSON.stringify(itinerary.days),
-          metadata: JSON.stringify({
-            interests: tripData.interests,
-            generatedAt: new Date(),
-            generationTime: Date.now() - startTime
-          }),
-          leadId: lead.id
-        }
-      })
+      // Create lead first (needed for itinerary)
+      lead = await prisma.lead.create({ data: leadData })
+
+      // Store itinerary with leadId
+      const itineraryData = {
+        title: `${itinerary.duration}-Day ${itinerary.destination} Adventure`,
+        description: `A personalized ${itinerary.duration}-day itinerary for ${itinerary.destination}`,
+        destination: itinerary.destination,
+        startDate: new Date(itinerary.startDate),
+        endDate: new Date(itinerary.endDate),
+        travelers: itinerary.travelers,
+        totalPrice: itinerary.estimatedTotalCost,
+        days: JSON.stringify(itinerary.days),
+        metadata: JSON.stringify({
+          interests: tripData.interests,
+          generatedAt: new Date(),
+          generationTime: Date.now() - startTime
+        }),
+        leadId: lead.id,
+        tenantId: 'default'
+      }
+
+      savedItinerary = await prisma.itinerary.create({ data: itineraryData })
     } catch (dbError) {
       console.warn('Failed to save to database, but continuing with generated itinerary:', dbError)
       // Continue without database saves - user still gets their itinerary
