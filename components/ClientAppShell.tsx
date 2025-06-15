@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { SessionProvider } from 'next-auth/react'
 import { Toaster } from '@/components/ui/sonner'
+import { Toaster as HotToaster } from 'react-hot-toast'
 import { TripProvider } from '@/contexts/TripContext'
 import { TemplateProvider } from '@/contexts/TemplateContext'
 import { AssetManagerProvider } from '@/contexts/AssetManagerContext'
@@ -112,6 +113,7 @@ export default function ClientAppShell({ children }: { children: React.ReactNode
                       <FloatingActionContainer />
                     </div>
                     <Toaster />
+                    <HotToaster position="top-center" />
                   </ThumbZoneWrapper>
                 </ErrorBoundary>
               </AssetManagerProvider>

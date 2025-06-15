@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -30,20 +30,22 @@ import {
   Camera,
   Home,
   Palmtree,
-  HelpCircle,
-  Mic
+  HelpCircle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useVoiceInput } from "@/components/ui/voice-input"
+import { VoiceInputButton } from "@/components/voice/VoiceInputButton"
+import { VoicePreviewModal } from "@/components/voice/VoicePreviewModal"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { LocationSearch } from "./location-search"
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range"
 import { format } from "date-fns"
+import { toast } from 'react-hot-toast'
+import type { ParsedFields } from '@/lib/voice-parser'
 
 // Form schema with Zod
 const travelFormSchema = z.object({
@@ -104,6 +106,10 @@ const ACCOMMODATIONS = [
 
 export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelFormWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
+  const [voiceTranscript, setVoiceTranscript] = useState("")
+  const [showVoicePreview, setShowVoicePreview] = useState(false)
+  const [isAddingMore, setIsAddingMore] = useState(false)
+  const previousFormStateRef = useRef<TravelFormData | null>(null)
   
   const {
     control,
@@ -111,7 +117,8 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     watch,
     formState: { errors, isValid },
     trigger,
-    setValue
+    setValue,
+    getValues
   } = useForm<TravelFormData>({
     resolver: zodResolver(travelFormSchema),
     mode: "onChange",
@@ -125,178 +132,58 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
   const watchedFields = watch()
 
-  // Voice input for form population
-  const {
-    isListening,
-    isSupported: isVoiceSupported,
-    error: voiceError,
-    transcript,
-    startListening,
-    stopListening
-  } = useVoiceInput({
-    language: 'en-US',
-    continuous: false,
-    onTranscript: async (transcript, isFinal) => {
-      if (isFinal && transcript.trim()) {
-        // Process the transcript to extract travel information
-        await processVoiceInput(transcript)
-      }
-    },
-    onError: (error) => {
-      console.error('Voice input error:', error)
-    }
-  })
-
-  const handleVoiceToggle = () => {
-    if (isListening) {
-      stopListening()
+  const handleVoiceTranscriptComplete = (transcript: string) => {
+    if (isAddingMore) {
+      setVoiceTranscript(prev => `${prev} ${transcript}`)
     } else {
-      startListening()
+      setVoiceTranscript(transcript)
     }
+    setShowVoicePreview(true)
+    setIsAddingMore(false)
   }
 
-  // Process voice input and extract travel information
-  const processVoiceInput = async (voiceText: string) => {
-    try {
-      // Simple keyword extraction for demo
-      const lowerText = voiceText.toLowerCase()
-      
-      // Extract destination - look for "to" or "visit" patterns
-      const destinationMatch = lowerText.match(/(?:to|visit|going to|travel to|trip to)\s+([a-z\s]+?)(?:\s+for|\s+in|\s+next|\s+with|\s+from|$)/i)
-      if (destinationMatch) {
-        const destination = destinationMatch[1].trim()
-          .split(' ')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ')
-        setValue('destination', destination)
-      } else {
-        // Fallback to known destinations
-        const destinations = ['paris', 'tokyo', 'london', 'new york', 'rome', 'barcelona', 'dubai', 'bali', 'bangkok', 'singapore', 'peru', 'brazil']
-        const foundDestination = destinations.find(dest => lowerText.includes(dest))
-        if (foundDestination) {
-          setValue('destination', foundDestination.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
-        }
+  const handleVoiceConfirm = (fields: ParsedFields) => {
+    // Save current state for undo
+    previousFormStateRef.current = getValues()
+    
+    // Apply parsed fields
+    Object.entries(fields).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        setValue(key as any, value)
       }
-      
-      // Extract number of travelers
-      const travelersMatch = lowerText.match(/(\d+)\s*(people|person|travelers?|adults?|family members?)/i)
-      if (travelersMatch) {
-        setValue('travelers', parseInt(travelersMatch[1]))
-      } else if (lowerText.includes('family')) {
-        setValue('travelers', 4)
-      } else if (lowerText.includes('couple') || lowerText.includes('partner')) {
-        setValue('travelers', 2)
-      } else if (lowerText.includes('solo') || lowerText.includes('alone')) {
-        setValue('travelers', 1)
-      }
-      
-      // Extract duration
-      const daysMatch = lowerText.match(/(\d+)\s*(days?|nights?)/i)
-      if (daysMatch) {
-        const days = parseInt(daysMatch[1])
-        const startDate = new Date()
-        startDate.setDate(startDate.getDate() + 7) // Start a week from now
-        const endDate = new Date(startDate)
-        endDate.setDate(endDate.getDate() + days)
-        setValue('startDate', startDate)
-        setValue('endDate', endDate)
-      }
-      
-      // Extract dates
-      const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
-      const monthMatch = monthNames.find(month => lowerText.includes(month))
-      
-      if (lowerText.includes('next week')) {
-        const startDate = new Date()
-        startDate.setDate(startDate.getDate() + 7)
-        setValue('startDate', startDate)
-      } else if (lowerText.includes('next month')) {
-        const startDate = new Date()
-        startDate.setMonth(startDate.getMonth() + 1)
-        setValue('startDate', startDate)
-      } else if (lowerText.includes('this weekend')) {
-        const startDate = new Date()
-        const dayOfWeek = startDate.getDay()
-        const daysUntilSaturday = (6 - dayOfWeek + 7) % 7 || 7
-        startDate.setDate(startDate.getDate() + daysUntilSaturday)
-        setValue('startDate', startDate)
-      } else if (monthMatch) {
-        const monthIndex = monthNames.indexOf(monthMatch)
-        const startDate = new Date()
-        if (monthIndex < startDate.getMonth()) {
-          startDate.setFullYear(startDate.getFullYear() + 1)
-        }
-        startDate.setMonth(monthIndex)
-        startDate.setDate(1)
-        setValue('startDate', startDate)
-      }
-      
-      // Extract budget
-      const budgetMatch = lowerText.match(/\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s*(?:dollars?|usd|budget)?/i)
-      if (budgetMatch) {
-        setValue('budget', budgetMatch[1].replace(/,/g, ''))
-      }
-      
-      // Extract interests
-      const interestKeywords = {
-        culture: ['culture', 'museum', 'history', 'art', 'heritage'],
-        adventure: ['adventure', 'hiking', 'outdoor', 'active', 'sports'],
-        food: ['food', 'restaurant', 'cuisine', 'dining', 'eat'],
-        relaxation: ['relax', 'spa', 'beach', 'resort', 'peaceful'],
-        nature: ['nature', 'park', 'wildlife', 'scenic', 'landscape'],
-        shopping: ['shopping', 'market', 'boutique', 'mall'],
-        nightlife: ['nightlife', 'bar', 'club', 'party', 'evening'],
-        photography: ['photo', 'instagram', 'scenic', 'picture']
-      }
-      
-      const detectedInterests: string[] = []
-      Object.entries(interestKeywords).forEach(([interest, keywords]) => {
-        if (keywords.some(keyword => lowerText.includes(keyword))) {
-          detectedInterests.push(interest)
-        }
-      })
-      
-      if (detectedInterests.length > 0) {
-        setValue('interests', detectedInterests)
-      }
-      
-      // Extract accommodation preference
-      if (lowerText.includes('hotel')) {
-        setValue('accommodation', 'hotel')
-      } else if (lowerText.includes('airbnb') || lowerText.includes('apartment')) {
-        setValue('accommodation', 'airbnb')
-      } else if (lowerText.includes('hostel')) {
-        setValue('accommodation', 'hostel')
-      } else if (lowerText.includes('resort')) {
-        setValue('accommodation', 'resort')
-      }
-      
-      // Add the entire transcript to special requests
-      setValue('specialRequests', voiceText)
-      
-      // Set default dates if not extracted from voice input
-      const currentStartDate = watch('startDate')
-      const currentEndDate = watch('endDate')
-      
-      if (!currentStartDate) {
-        const defaultStartDate = new Date()
-        defaultStartDate.setDate(defaultStartDate.getDate() + 7) // Start a week from now
-        setValue('startDate', defaultStartDate)
-      }
-      
-      if (!currentEndDate) {
-        const startDate = watch('startDate') || new Date()
-        const defaultEndDate = new Date(startDate)
-        defaultEndDate.setDate(defaultEndDate.getDate() + 7) // Default 7-day trip
-        setValue('endDate', defaultEndDate)
-      }
-      
-      // Always jump to step 3 (Review) after processing voice input
-      setCurrentStep(3)
-      
-    } catch (error) {
-      console.error('Error processing voice input:', error)
-    }
+    })
+    
+    // Go to step 3
+    setCurrentStep(3)
+    setShowVoicePreview(false)
+    
+    // Show success toast with undo
+    const toastId = toast.success(
+      <div className="flex items-center gap-2">
+        <span>Trip details added!</span>
+        <button
+          onClick={() => {
+            if (previousFormStateRef.current) {
+              Object.entries(previousFormStateRef.current).forEach(([key, value]) => {
+                setValue(key as any, value)
+              })
+              setCurrentStep(1)
+              toast.dismiss(toastId)
+              toast.success('Changes undone')
+            }
+          }}
+          className="ml-2 underline font-medium"
+        >
+          Undo
+        </button>
+      </div>,
+      { duration: 5000 }
+    )
+  }
+
+  const handleAddMoreDetails = () => {
+    setIsAddingMore(true)
+    setShowVoicePreview(false)
   }
 
 
@@ -405,44 +292,18 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       {/* Voice Input Option */}
       <div className="flex items-center justify-center gap-2 mb-6 text-sm">
         <span className="text-gray-600">or</span>
-        <Button
-          type="button"
-          variant={isListening ? "default" : "outline"}
-          size="sm"
-          onClick={handleVoiceToggle}
-          className={cn(
-            "gap-2",
-            isListening && "bg-blue-600 hover:bg-blue-700"
-          )}
-        >
-          {isListening ? (
-            <>
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-              <span>Listening...</span>
-            </>
-          ) : (
-            <>
-              <Mic className="h-4 w-4" />
-              <span>Describe your trip</span>
-            </>
-          )}
-        </Button>
+        <VoiceInputButton 
+          onTranscriptComplete={handleVoiceTranscriptComplete}
+        />
       </div>
       
-      {/* Voice Transcript Display */}
-      {isListening && transcript && (
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg max-w-2xl mx-auto">
-          <p className="text-sm text-gray-600 text-center">{transcript}</p>
-        </div>
-      )}
-      
-      {/* Voice Error Display */}
-      {voiceError && (
-        <Alert variant="destructive" className="mb-4 max-w-md mx-auto">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="text-sm">{voiceError}</AlertDescription>
-        </Alert>
-      )}
+      <VoicePreviewModal
+        isOpen={showVoicePreview}
+        transcript={voiceTranscript}
+        onConfirm={handleVoiceConfirm}
+        onAddMore={handleAddMoreDetails}
+        onClose={() => setShowVoicePreview(false)}
+      />
 
       {/* Form Steps */}
       <Card className="shadow-xl border-gray-200 bg-white/95 backdrop-blur-sm">
