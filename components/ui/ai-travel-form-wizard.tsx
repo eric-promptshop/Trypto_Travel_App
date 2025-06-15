@@ -30,8 +30,7 @@ import {
   Camera,
   Home,
   Palmtree,
-  HelpCircle,
-  Mic
+  HelpCircle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -39,9 +38,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useVoiceInput } from "@/components/ui/voice-input"
+import { VoiceFlowButton } from "@/components/ui/voice-flow-button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Progress } from "@/components/ui/progress"
 import { LocationSearch } from "./location-search"
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range"
 import { format } from "date-fns"
@@ -279,10 +278,28 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       // Add the entire transcript to special requests
       setValue('specialRequests', voiceText)
       
-      // Move to the next step if we got basic information
-      if (destinationMatch || daysMatch) {
-        setCurrentStep(2)
+      // Set default dates if not extracted from voice input
+      const currentStartDate = watch('startDate')
+      const currentEndDate = watch('endDate')
+      
+      if (!currentStartDate) {
+        const defaultStartDate = new Date()
+        defaultStartDate.setDate(defaultStartDate.getDate() + 7) // Start a week from now
+        setValue('startDate', defaultStartDate)
       }
+      
+      if (!currentEndDate) {
+        const startDate = watch('startDate') || new Date()
+        const defaultEndDate = new Date(startDate)
+        defaultEndDate.setDate(defaultEndDate.getDate() + 7) // Default 7-day trip
+        setValue('endDate', defaultEndDate)
+      }
+      
+      // Always jump to step 3 (Review) after processing voice input
+      setCurrentStep(3)
+      
+      // Stop recording
+      setIsRecording(false)
       
     } catch (error) {
       console.error('Error processing voice input:', error)
@@ -314,8 +331,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
   const onFormSubmit = handleSubmit(async (data) => {
     await onSubmit(data)
   })
-
-  const progress = (currentStep / 3) * 100
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50">
@@ -396,72 +411,29 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
       {/* Voice Input Section */}
       <div className="mb-8">
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Prefer to speak? Use voice input
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Tell us about your trip in your own words. For example: "I want to visit Paris for 5 days next month with my family. We love museums and good food."
-                </p>
-              </div>
-              <div className="ml-6">
-                <Button
-                  type="button"
-                  size="lg"
-                  variant={isListening ? "default" : "outline"}
-                  onClick={handleVoiceToggle}
-                  disabled={!isVoiceSupported}
-                  className={cn(
-                    "relative",
-                    isListening && "bg-blue-600 hover:bg-blue-700"
-                  )}
-                >
-                  {isListening ? (
-                    <>
-                      <div className="absolute inset-0 rounded-md bg-blue-400 animate-ping opacity-25" />
-                      <Mic className="h-5 w-5 mr-2 animate-pulse" />
-                      <span>Listening...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="h-5 w-5 mr-2" />
-                      <span>Start Speaking</span>
-                    </>
-                  )}
-                </Button>
-              </div>
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 overflow-hidden">
+          <CardContent className="p-8">
+            <div className="text-center mb-4">
+              <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+                Describe Your Dream Trip
+              </h3>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Simply tell us about your ideal vacation in your own words. For example: "I want to visit Paris for 5 days next month with my family. We love museums and good food."
+              </p>
             </div>
             
-            {/* Voice Transcript Display */}
-            {isListening && (
-              <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex gap-1">
-                    <span className="inline-block w-1 h-4 bg-blue-600 animate-pulse rounded-full"></span>
-                    <span className="inline-block w-1 h-4 bg-blue-600 animate-pulse delay-75 rounded-full"></span>
-                    <span className="inline-block w-1 h-4 bg-blue-600 animate-pulse delay-150 rounded-full"></span>
-                  </div>
-                  <span className="text-sm font-medium text-blue-600">Listening to your travel plans...</span>
-                </div>
-                {transcript ? (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500 mb-1">What we heard:</p>
-                    <p className="text-sm text-gray-800 font-medium">{transcript}</p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-700">
-                    Speak naturally about your destination, dates, number of travelers, budget, and any preferences...
-                  </p>
-                )}
-              </div>
-            )}
+            <VoiceFlowButton
+              onStart={handleVoiceToggle}
+              onStop={handleVoiceToggle}
+              isListening={isListening}
+              transcript={transcript}
+              glowColor="#2563eb"
+              className="my-4"
+            />
             
             {/* Error Display */}
             {voiceError && (
-              <Alert variant="destructive" className="mt-4">
+              <Alert variant="destructive" className="mt-4 max-w-md mx-auto">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{voiceError}</AlertDescription>
               </Alert>
