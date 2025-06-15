@@ -37,7 +37,7 @@ export function MainHeader() {
 
   const handleSignIn = () => {
     track('user_sign_in_attempt')
-    signIn()
+    signIn('credentials', { callbackUrl: '/trips' })
   }
 
   const handleSignOut = () => {

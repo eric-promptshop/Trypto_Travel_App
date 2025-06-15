@@ -56,10 +56,10 @@ export default function SignInPage() {
 
       if (result?.error) {
         setError('Invalid email or password. Please try again.')
-      } else {
-        // We'll get the session after successful login
-        // The useEffect will handle the role-based redirect
-        router.refresh()
+      } else if (result?.ok) {
+        // Successful login - directly redirect to trips page
+        console.log('Login successful, redirecting to /trips')
+        router.push('/trips')
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.')
@@ -83,10 +83,10 @@ export default function SignInPage() {
 
       if (result?.error) {
         setError('Demo login failed. Please ensure the demo user exists in the database.')
-      } else {
-        // We'll get the session after successful login
-        // The useEffect will handle the role-based redirect
-        router.refresh()
+      } else if (result?.ok) {
+        // Successful demo login - directly redirect to trips page
+        console.log('Demo login successful, redirecting to /trips')
+        router.push('/trips')
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.')

@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { useAnalytics } from '@/lib/analytics/analytics-service'
 import { SkeletonItinerary } from '@/components/ui/skeleton-itinerary'
 import { toast } from 'sonner'
+import { ItineraryUIProvider } from '@/components/itinerary/ItineraryUIContext'
 
 interface FormData {
   destinations?: string[]
@@ -65,47 +66,49 @@ export default function PlanTripPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      {currentView === 'form' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <AIRequestForm 
-            onComplete={handleFormComplete} 
-            onGenerating={() => setCurrentView('generating')}
-          />
-        </motion.div>
-      )}
+    <ItineraryUIProvider>
+      <div className="min-h-screen">
+        {currentView === 'form' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <AIRequestForm 
+              onComplete={handleFormComplete} 
+              onGenerating={() => setCurrentView('generating')}
+            />
+          </motion.div>
+        )}
 
-      {currentView === 'generating' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <SkeletonItinerary />
-        </motion.div>
-      )}
+        {currentView === 'generating' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <SkeletonItinerary />
+          </motion.div>
+        )}
 
-      {currentView === 'itinerary' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <ThreeColumnItineraryBuilder
-            tripId={formData.tripId || `temp-${Date.now()}`}
-            initialItinerary={generatedItinerary}
-            onBack={() => setCurrentView('form')}
-            onSave={(itinerary) => {
-              console.log('Saving itinerary:', itinerary)
-              toast.success('Itinerary saved successfully!')
-            }}
-          />
-        </motion.div>
-      )}
-    </div>
+        {currentView === 'itinerary' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <ThreeColumnItineraryBuilder
+              tripId={formData.tripId || `temp-${Date.now()}`}
+              initialItinerary={generatedItinerary}
+              onBack={() => setCurrentView('form')}
+              onSave={(itinerary) => {
+                console.log('Saving itinerary:', itinerary)
+                toast.success('Itinerary saved successfully!')
+              }}
+            />
+          </motion.div>
+        )}
+      </div>
+    </ItineraryUIProvider>
   )
 }
