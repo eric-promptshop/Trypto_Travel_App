@@ -20,13 +20,25 @@ import {
   AlertCircle,
   Plane,
   Car,
-  Train
+  Train,
+  Building,
+  Mountain,
+  Utensils,
+  Trees,
+  ShoppingBag,
+  Music,
+  Camera,
+  Home,
+  Palmtree,
+  HelpCircle,
+  Mic
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useVoiceInput } from "@/components/ui/voice-input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
@@ -93,6 +105,7 @@ const ACCOMMODATIONS = [
 
 export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelFormWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
+  const [isRecording, setIsRecording] = useState(false)
   
   const {
     control,
@@ -114,29 +127,168 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
   const watchedFields = watch()
 
-  // Voice input handler
-  const handleVoiceInput = async () => {
-    // Placeholder: Simulate voice-to-text processing
-    const simulatedTranscription = {
-      destination: "Tokyo",
-      startDate: new Date(),
-      endDate: new Date(new Date().getTime() + 5 * 24 * 60 * 60 * 1000),
-      travelers: 2,
-      budget: "2000",
-      accommodation: "hotel",
-      interests: ["food", "culture"],
-      transportation: ["public-transport"],
-      specialRequests: "I love ramen and want to visit temples."
+  // Voice input for form population
+  const {
+    isListening,
+    isSupported: isVoiceSupported,
+    error: voiceError,
+    transcript,
+    startListening,
+    stopListening
+  } = useVoiceInput({
+    language: 'en-US',
+    continuous: false,
+    onTranscript: async (transcript, isFinal) => {
+      if (isFinal && transcript.trim()) {
+        // Process the transcript to extract travel information
+        await processVoiceInput(transcript)
+      }
+    },
+    onError: (error) => {
+      console.error('Voice input error:', error)
+      setIsRecording(false)
     }
+  })
 
-    // Apply to form
-    Object.entries(simulatedTranscription).forEach(([key, value]) => {
-      setValue(key as keyof TravelFormData, value)
-    })
-
-    // Skip to Review step
-    setCurrentStep(3)
+  const handleVoiceToggle = () => {
+    if (isListening) {
+      stopListening()
+      setIsRecording(false)
+    } else {
+      startListening()
+      setIsRecording(true)
+    }
   }
+
+  // Process voice input and extract travel information
+  const processVoiceInput = async (voiceText: string) => {
+    try {
+      // Simple keyword extraction for demo
+      const lowerText = voiceText.toLowerCase()
+      
+      // Extract destination - look for "to" or "visit" patterns
+      const destinationMatch = lowerText.match(/(?:to|visit|going to|travel to|trip to)\s+([a-z\s]+?)(?:\s+for|\s+in|\s+next|\s+with|\s+from|$)/i)
+      if (destinationMatch) {
+        const destination = destinationMatch[1].trim()
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ')
+        setValue('destination', destination)
+      } else {
+        // Fallback to known destinations
+        const destinations = ['paris', 'tokyo', 'london', 'new york', 'rome', 'barcelona', 'dubai', 'bali', 'bangkok', 'singapore', 'peru', 'brazil']
+        const foundDestination = destinations.find(dest => lowerText.includes(dest))
+        if (foundDestination) {
+          setValue('destination', foundDestination.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
+        }
+      }
+      
+      // Extract number of travelers
+      const travelersMatch = lowerText.match(/(\d+)\s*(people|person|travelers?|adults?|family members?)/i)
+      if (travelersMatch) {
+        setValue('travelers', parseInt(travelersMatch[1]))
+      } else if (lowerText.includes('family')) {
+        setValue('travelers', 4)
+      } else if (lowerText.includes('couple') || lowerText.includes('partner')) {
+        setValue('travelers', 2)
+      } else if (lowerText.includes('solo') || lowerText.includes('alone')) {
+        setValue('travelers', 1)
+      }
+      
+      // Extract duration
+      const daysMatch = lowerText.match(/(\d+)\s*(days?|nights?)/i)
+      if (daysMatch) {
+        const days = parseInt(daysMatch[1])
+        const startDate = new Date()
+        startDate.setDate(startDate.getDate() + 7) // Start a week from now
+        const endDate = new Date(startDate)
+        endDate.setDate(endDate.getDate() + days)
+        setValue('startDate', startDate)
+        setValue('endDate', endDate)
+      }
+      
+      // Extract dates
+      const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+      const monthMatch = monthNames.find(month => lowerText.includes(month))
+      
+      if (lowerText.includes('next week')) {
+        const startDate = new Date()
+        startDate.setDate(startDate.getDate() + 7)
+        setValue('startDate', startDate)
+      } else if (lowerText.includes('next month')) {
+        const startDate = new Date()
+        startDate.setMonth(startDate.getMonth() + 1)
+        setValue('startDate', startDate)
+      } else if (lowerText.includes('this weekend')) {
+        const startDate = new Date()
+        const dayOfWeek = startDate.getDay()
+        const daysUntilSaturday = (6 - dayOfWeek + 7) % 7 || 7
+        startDate.setDate(startDate.getDate() + daysUntilSaturday)
+        setValue('startDate', startDate)
+      } else if (monthMatch) {
+        const monthIndex = monthNames.indexOf(monthMatch)
+        const startDate = new Date()
+        if (monthIndex < startDate.getMonth()) {
+          startDate.setFullYear(startDate.getFullYear() + 1)
+        }
+        startDate.setMonth(monthIndex)
+        startDate.setDate(1)
+        setValue('startDate', startDate)
+      }
+      
+      // Extract budget
+      const budgetMatch = lowerText.match(/\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s*(?:dollars?|usd|budget)?/i)
+      if (budgetMatch) {
+        setValue('budget', budgetMatch[1].replace(/,/g, ''))
+      }
+      
+      // Extract interests
+      const interestKeywords = {
+        culture: ['culture', 'museum', 'history', 'art', 'heritage'],
+        adventure: ['adventure', 'hiking', 'outdoor', 'active', 'sports'],
+        food: ['food', 'restaurant', 'cuisine', 'dining', 'eat'],
+        relaxation: ['relax', 'spa', 'beach', 'resort', 'peaceful'],
+        nature: ['nature', 'park', 'wildlife', 'scenic', 'landscape'],
+        shopping: ['shopping', 'market', 'boutique', 'mall'],
+        nightlife: ['nightlife', 'bar', 'club', 'party', 'evening'],
+        photography: ['photo', 'instagram', 'scenic', 'picture']
+      }
+      
+      const detectedInterests: string[] = []
+      Object.entries(interestKeywords).forEach(([interest, keywords]) => {
+        if (keywords.some(keyword => lowerText.includes(keyword))) {
+          detectedInterests.push(interest)
+        }
+      })
+      
+      if (detectedInterests.length > 0) {
+        setValue('interests', detectedInterests)
+      }
+      
+      // Extract accommodation preference
+      if (lowerText.includes('hotel')) {
+        setValue('accommodation', 'hotel')
+      } else if (lowerText.includes('airbnb') || lowerText.includes('apartment')) {
+        setValue('accommodation', 'airbnb')
+      } else if (lowerText.includes('hostel')) {
+        setValue('accommodation', 'hostel')
+      } else if (lowerText.includes('resort')) {
+        setValue('accommodation', 'resort')
+      }
+      
+      // Add the entire transcript to special requests
+      setValue('specialRequests', voiceText)
+      
+      // Move to the next step if we got basic information
+      if (destinationMatch || daysMatch) {
+        setCurrentStep(2)
+      }
+      
+    } catch (error) {
+      console.error('Error processing voice input:', error)
+    }
+  }
+
 
   const handleNext = async () => {
     // Validate current step fields
@@ -243,15 +395,79 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       </div>
 
       {/* Voice Input Section */}
-      <div className="mb-6 flex justify-center">
-        <Button
-          variant="secondary"
-          className="gap-2 border border-dashed"
-          onClick={handleVoiceInput}
-        >
-          🎙️ Talk Instead
-          <span className="text-sm text-gray-500">(Use voice to fill out the form)</span>
-        </Button>
+      <div className="mb-8">
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Prefer to speak? Use voice input
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Tell us about your trip in your own words. For example: "I want to visit Paris for 5 days next month with my family. We love museums and good food."
+                </p>
+              </div>
+              <div className="ml-6">
+                <Button
+                  type="button"
+                  size="lg"
+                  variant={isListening ? "default" : "outline"}
+                  onClick={handleVoiceToggle}
+                  disabled={!isVoiceSupported}
+                  className={cn(
+                    "relative",
+                    isListening && "bg-blue-600 hover:bg-blue-700"
+                  )}
+                >
+                  {isListening ? (
+                    <>
+                      <div className="absolute inset-0 rounded-md bg-blue-400 animate-ping opacity-25" />
+                      <Mic className="h-5 w-5 mr-2 animate-pulse" />
+                      <span>Listening...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="h-5 w-5 mr-2" />
+                      <span>Start Speaking</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            {/* Voice Transcript Display */}
+            {isListening && (
+              <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex gap-1">
+                    <span className="inline-block w-1 h-4 bg-blue-600 animate-pulse rounded-full"></span>
+                    <span className="inline-block w-1 h-4 bg-blue-600 animate-pulse delay-75 rounded-full"></span>
+                    <span className="inline-block w-1 h-4 bg-blue-600 animate-pulse delay-150 rounded-full"></span>
+                  </div>
+                  <span className="text-sm font-medium text-blue-600">Listening to your travel plans...</span>
+                </div>
+                {transcript ? (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500 mb-1">What we heard:</p>
+                    <p className="text-sm text-gray-800 font-medium">{transcript}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-700">
+                    Speak naturally about your destination, dates, number of travelers, budget, and any preferences...
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {/* Error Display */}
+            {voiceError && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{voiceError}</AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Form Steps */}
@@ -765,17 +981,3 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     </div>
   )
 }
-
-// Import missing icons
-import { 
-  Building, 
-  Mountain, 
-  Utensils, 
-  Trees, 
-  ShoppingBag, 
-  Music, 
-  Camera,
-  Home,
-  Palmtree,
-  HelpCircle
-} from "lucide-react"
