@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import prisma from '@/lib/prisma'
+import { generateEnhancedItinerary } from '@/lib/ai/enhanced-itinerary-generator'
 // import { LeadSyncService } from '@/lib/crm/services/lead-sync-service' // Temporarily disabled due to CrmFactory import issues
 
 // Initialize OpenAI client
@@ -317,8 +318,33 @@ export async function POST(request: NextRequest) {
       // Continue with empty content - AI will generate generic itinerary
     }
 
-    // Generate itinerary with AI
-    const itinerary = await generateItineraryWithAI(tripData, parsedContent)
+    // Generate enhanced itinerary with AI and tour operator integration
+    console.log('Using enhanced AI generator with tour operator integration...')
+    const enhancedResult = await generateEnhancedItinerary(tripData)
+    
+    // Transform to match expected format
+    const itinerary: GeneratedItinerary = {
+      destination: enhancedResult.destination,
+      duration: enhancedResult.duration,
+      startDate: enhancedResult.startDate,
+      endDate: enhancedResult.endDate,
+      travelers: enhancedResult.travelers,
+      totalBudget: enhancedResult.totalBudget,
+      days: enhancedResult.days.map((day: any) => ({
+        day: day.day,
+        date: day.date,
+        title: day.title,
+        description: day.description,
+        activities: day.activities,
+        accommodation: day.accommodation,
+        meals: day.meals,
+        totalCost: day.totalCost
+      })),
+      highlights: enhancedResult.highlights || [],
+      tips: enhancedResult.tips || [],
+      estimatedTotalCost: enhancedResult.estimatedTotalCost || enhancedResult.totalBudget,
+      tourOperatorOffers: enhancedResult.tourOperatorOffers // Include tour offers
+    }
     
     // Try to save to database, but don't fail if database is down
     let lead = null

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -66,6 +67,11 @@ interface Activity {
     address?: string
   }
   description?: string
+  provider?: string
+  isRecommendedTour?: boolean
+  price?: number
+  bookingUrl?: string
+  rating?: number
 }
 
 interface DayImage {
@@ -196,7 +202,12 @@ export function ThreeColumnItineraryBuilder({
             lng: activity.coordinates?.lng || activity.location?.lng || 2.3522 + (Math.random() - 0.5) * 0.1,
             address: activity.address || activity.location?.address
           },
-          description: activity.description || activity.details
+          description: activity.description || activity.details,
+          provider: activity.provider,
+          isRecommendedTour: activity.isRecommendedTour,
+          price: activity.price,
+          bookingUrl: activity.bookingUrl,
+          rating: activity.rating
         })
       })
       
@@ -500,8 +511,18 @@ export function ThreeColumnItineraryBuilder({
                         </div>
                         <div className="flex-1 pb-6">
                           <div className="flex items-start justify-between">
-                            <div>
-                              <h4 className="font-medium">{activity.name}</h4>
+                            <div className="flex-1">
+                              <div className="flex items-start gap-2">
+                                <h4 className="font-medium">{activity.name}</h4>
+                                {activity.isRecommendedTour && (
+                                  <Badge className="bg-blue-100 text-blue-700 text-xs">
+                                    Recommended Tour
+                                  </Badge>
+                                )}
+                              </div>
+                              {activity.provider && (
+                                <p className="text-xs text-gray-500 mt-0.5">by {activity.provider}</p>
+                              )}
                               {activity.time && (
                                 <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
                                   <Clock className="h-3 w-3" />
@@ -510,6 +531,27 @@ export function ThreeColumnItineraryBuilder({
                               )}
                               {activity.description && (
                                 <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
+                              )}
+                              {activity.price && (
+                                <div className="flex items-center gap-4 mt-2">
+                                  <span className="text-sm font-medium">${activity.price} pp</span>
+                                  {activity.rating && (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-yellow-500">★</span>
+                                      <span className="text-sm">{activity.rating}</span>
+                                    </div>
+                                  )}
+                                  {activity.bookingUrl && (
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      className="h-7 text-xs"
+                                      onClick={() => window.open(activity.bookingUrl, '_blank')}
+                                    >
+                                      Book Tour
+                                    </Button>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
