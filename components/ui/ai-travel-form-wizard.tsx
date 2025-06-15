@@ -183,58 +183,161 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     }
     
     // Extract dates - handle various date formats
+    console.log('Processing dates from transcript:', lowerTranscript)
+    
     const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
     const monthsShort = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
     const currentYear = new Date().getFullYear()
     const currentMonth = new Date().getMonth()
     
-    // Handle date ranges like "10 to 19 July" or "from May 12 to May 18"
-    const dateRangePattern1 = /(\d{1,2})(?:st|nd|rd|th)?\s*(?:to|through|-)\s*(\d{1,2})(?:st|nd|rd|th)?\s*(?:of\s+)?(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i
-    const dateRangePattern2 = /from\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*(\d{1,2})(?:st|nd|rd|th)?\s*to\s*(?:(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*)?(\d{1,2})(?:st|nd|rd|th)?/i
+    // Additional patterns for common date expressions
+    const datePatterns = [
+      // "10 to 19 July" or "10th to 19th July" with optional year
+      /(\d{1,2})(?:st|nd|rd|th)?\s*(?:to|through|-)\s*(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\s*(?:of\s+)?(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?:\s*(\d{4}))?/i,
+      // "from May 12 to May 18" or "from May 12th to May 18th"
+      /from\s+(?:the\s+)?(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*(\d{1,2})(?:st|nd|rd|th)?\s*to\s*(?:the\s+)?(?:(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*)?(\d{1,2})(?:st|nd|rd|th)?/i,
+      // "May 12 to 18" or "May 12th to 18th"
+      /(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*(\d{1,2})(?:st|nd|rd|th)?\s*(?:to|through|-)\s*(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?/i,
+      // "12 May to 18 May" or "12th May to 18th May" 
+      /(\d{1,2})(?:st|nd|rd|th)?\s*(?:of\s+)?(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*(?:to|through|-)\s*(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\s*(?:of\s+)?(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)?/i,
+      // "next week/month" patterns
+      /next\s+(week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i,
+      // "in X days/weeks" patterns
+      /in\s+(\d+)\s+(days?|weeks?|months?)/i,
+      // "from the 12th to the 18th of May"
+      /from\s+(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\s*(?:to|through|-)\s*(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\s*of\s*(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i
+    ]
     
-    let rangeMatch = lowerTranscript.match(dateRangePattern1)
-    let isPattern2 = false
+    // Try to match date patterns
+    let dateFound = false
     
-    if (!rangeMatch) {
-      rangeMatch = lowerTranscript.match(dateRangePattern2)
-      isPattern2 = true
+    for (let i = 0; i < datePatterns.length && !dateFound; i++) {
+      const match = lowerTranscript.match(datePatterns[i])
+      if (match) {
+        console.log(`Date pattern ${i} matched:`, match[0])
+        
+        try {
+          let startDay, endDay, startMonthStr, endMonthStr
+          
+          switch (i) {
+            case 0: // "10 to 19 July" with optional year
+              startDay = parseInt(match[1])
+              endDay = parseInt(match[2])
+              startMonthStr = match[3].toLowerCase()
+              endMonthStr = startMonthStr
+              if (match[4]) { // Year provided
+                const year = parseInt(match[4])
+                const startDate = new Date(year, monthNames.indexOf(startMonthStr), startDay)
+                const endDate = new Date(year, monthNames.indexOf(endMonthStr), endDay)
+                console.log('Setting dates with year:', startDate, endDate)
+                setValue('startDate', startDate)
+                setValue('endDate', endDate)
+                dateFound = true
+                continue
+              }
+              break
+              
+            case 1: // "from May 12 to May 18"
+              startMonthStr = match[1].toLowerCase()
+              startDay = parseInt(match[2])
+              endMonthStr = match[3] ? match[3].toLowerCase() : startMonthStr
+              endDay = parseInt(match[4])
+              break
+              
+            case 2: // "May 12 to 18"
+              startMonthStr = match[1].toLowerCase()
+              startDay = parseInt(match[2])
+              endDay = parseInt(match[3])
+              endMonthStr = startMonthStr
+              break
+              
+            case 3: // "12 May to 18 May"
+              startDay = parseInt(match[1])
+              startMonthStr = match[2].toLowerCase()
+              endDay = parseInt(match[3])
+              endMonthStr = match[4] ? match[4].toLowerCase() : startMonthStr
+              break
+              
+            case 4: // "next week/month" patterns
+              const nextPeriod = match[1].toLowerCase()
+              const today = new Date()
+              if (nextPeriod === 'week') {
+                const nextWeek = new Date(today)
+                nextWeek.setDate(today.getDate() + 7)
+                setValue('startDate', nextWeek)
+                const endWeek = new Date(nextWeek)
+                endWeek.setDate(nextWeek.getDate() + 6)
+                setValue('endDate', endWeek)
+                dateFound = true
+                continue
+              } else if (nextPeriod === 'month') {
+                const nextMonth = new Date(today)
+                nextMonth.setMonth(today.getMonth() + 1)
+                setValue('startDate', nextMonth)
+                const endMonth = new Date(nextMonth)
+                endMonth.setDate(nextMonth.getDate() + 6)
+                setValue('endDate', endMonth)
+                dateFound = true
+                continue
+              }
+              break
+              
+            case 5: // "in X days/weeks" patterns
+              const amount = parseInt(match[1])
+              const unit = match[2].toLowerCase()
+              const futureDate = new Date()
+              if (unit.includes('day')) {
+                futureDate.setDate(futureDate.getDate() + amount)
+              } else if (unit.includes('week')) {
+                futureDate.setDate(futureDate.getDate() + (amount * 7))
+              } else if (unit.includes('month')) {
+                futureDate.setMonth(futureDate.getMonth() + amount)
+              }
+              setValue('startDate', futureDate)
+              const endDate = new Date(futureDate)
+              endDate.setDate(futureDate.getDate() + 6) // Default 7 day trip
+              setValue('endDate', endDate)
+              dateFound = true
+              continue
+              
+            case 6: // "from the 12th to the 18th of May"
+              startDay = parseInt(match[1])
+              endDay = parseInt(match[2])
+              startMonthStr = match[3].toLowerCase()
+              endMonthStr = startMonthStr
+              break
+          }
+          
+          // Find month indices
+          let startMonthIndex = monthNames.indexOf(startMonthStr)
+          if (startMonthIndex === -1) {
+            startMonthIndex = monthsShort.indexOf(startMonthStr.substring(0, 3))
+          }
+          
+          let endMonthIndex = monthNames.indexOf(endMonthStr)
+          if (endMonthIndex === -1) {
+            endMonthIndex = monthsShort.indexOf(endMonthStr.substring(0, 3))
+          }
+          
+          if (startMonthIndex !== -1 && endMonthIndex !== -1 && startDay && endDay) {
+            const startYear = startMonthIndex < currentMonth ? currentYear + 1 : currentYear
+            const endYear = endMonthIndex < currentMonth ? currentYear + 1 : currentYear
+            
+            const startDate = new Date(startYear, startMonthIndex, startDay)
+            const endDate = new Date(endYear, endMonthIndex, endDay)
+            
+            console.log('Setting dates:', startDate, endDate)
+            setValue('startDate', startDate)
+            setValue('endDate', endDate)
+            dateFound = true
+          }
+        } catch (error) {
+          console.error('Error parsing date pattern:', error)
+        }
+      }
     }
     
-    if (rangeMatch) {
-      let startDay, endDay, startMonthStr, endMonthStr
-      
-      if (isPattern2) {
-        // Pattern: "from May 12 to May 18"
-        startMonthStr = rangeMatch[1].toLowerCase()
-        startDay = parseInt(rangeMatch[2])
-        endMonthStr = rangeMatch[3] ? rangeMatch[3].toLowerCase() : startMonthStr
-        endDay = parseInt(rangeMatch[4])
-      } else {
-        // Pattern: "10 to 19 July"
-        startDay = parseInt(rangeMatch[1])
-        endDay = parseInt(rangeMatch[2])
-        startMonthStr = rangeMatch[3].toLowerCase()
-        endMonthStr = startMonthStr
-      }
-      
-      // Find month indices
-      let startMonthIndex = monthNames.indexOf(startMonthStr)
-      if (startMonthIndex === -1) {
-        startMonthIndex = monthsShort.indexOf(startMonthStr.substring(0, 3))
-      }
-      
-      let endMonthIndex = monthNames.indexOf(endMonthStr)
-      if (endMonthIndex === -1) {
-        endMonthIndex = monthsShort.indexOf(endMonthStr.substring(0, 3))
-      }
-      
-      if (startMonthIndex !== -1 && endMonthIndex !== -1) {
-        const startYear = startMonthIndex < currentMonth ? currentYear + 1 : currentYear
-        const endYear = endMonthIndex < currentMonth ? currentYear + 1 : currentYear
-        setValue('startDate', new Date(startYear, startMonthIndex, startDay))
-        setValue('endDate', new Date(endYear, endMonthIndex, endDay))
-      }
-    } else {
+    if (!dateFound) {
       // Look for single date patterns
       monthNames.forEach((month, index) => {
         const datePattern = new RegExp(`(\\d{1,2})(?:st|nd|rd|th)?\\s*(?:of\\s+)?${month}`, 'i')
