@@ -30,7 +30,8 @@ import {
   Camera,
   Home,
   Palmtree,
-  HelpCircle
+  HelpCircle,
+  Mic
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -38,7 +39,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useVoiceInput } from "@/components/ui/voice-input"
-import { VoiceFlowButton } from "@/components/ui/voice-flow-button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { LocationSearch } from "./location-search"
@@ -104,7 +104,6 @@ const ACCOMMODATIONS = [
 
 export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelFormWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
-  const [isRecording, setIsRecording] = useState(false)
   
   const {
     control,
@@ -145,17 +144,14 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     },
     onError: (error) => {
       console.error('Voice input error:', error)
-      setIsRecording(false)
     }
   })
 
   const handleVoiceToggle = () => {
     if (isListening) {
       stopListening()
-      setIsRecording(false)
     } else {
       startListening()
-      setIsRecording(true)
     }
   }
 
@@ -298,9 +294,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       // Always jump to step 3 (Review) after processing voice input
       setCurrentStep(3)
       
-      // Stop recording
-      setIsRecording(false)
-      
     } catch (error) {
       console.error('Error processing voice input:', error)
     }
@@ -409,38 +402,47 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
         </div>
       </div>
 
-      {/* Voice Input Section */}
-      <div className="mb-8">
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 overflow-hidden">
-          <CardContent className="p-8">
-            <div className="text-center mb-4">
-              <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-                Describe Your Dream Trip
-              </h3>
-              <p className="text-gray-600 max-w-2xl mx-auto">
-                Simply tell us about your ideal vacation in your own words. For example: "I want to visit Paris for 5 days next month with my family. We love museums and good food."
-              </p>
-            </div>
-            
-            <VoiceFlowButton
-              onStart={handleVoiceToggle}
-              onStop={handleVoiceToggle}
-              isListening={isListening}
-              transcript={transcript}
-              glowColor="#2563eb"
-              className="my-4"
-            />
-            
-            {/* Error Display */}
-            {voiceError && (
-              <Alert variant="destructive" className="mt-4 max-w-md mx-auto">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{voiceError}</AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
+      {/* Voice Input Option */}
+      <div className="flex items-center justify-center gap-2 mb-6 text-sm">
+        <span className="text-gray-600">or</span>
+        <Button
+          type="button"
+          variant={isListening ? "default" : "outline"}
+          size="sm"
+          onClick={handleVoiceToggle}
+          className={cn(
+            "gap-2",
+            isListening && "bg-blue-600 hover:bg-blue-700"
+          )}
+        >
+          {isListening ? (
+            <>
+              <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+              <span>Listening...</span>
+            </>
+          ) : (
+            <>
+              <Mic className="h-4 w-4" />
+              <span>Describe your trip</span>
+            </>
+          )}
+        </Button>
       </div>
+      
+      {/* Voice Transcript Display */}
+      {isListening && transcript && (
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg max-w-2xl mx-auto">
+          <p className="text-sm text-gray-600 text-center">{transcript}</p>
+        </div>
+      )}
+      
+      {/* Voice Error Display */}
+      {voiceError && (
+        <Alert variant="destructive" className="mb-4 max-w-md mx-auto">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-sm">{voiceError}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Form Steps */}
       <Card className="shadow-xl border-gray-200 bg-white/95 backdrop-blur-sm">
