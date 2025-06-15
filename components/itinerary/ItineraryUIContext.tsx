@@ -18,7 +18,7 @@ interface ItineraryUIContextType {
 const ItineraryUIContext = createContext<ItineraryUIContextType | undefined>(undefined)
 
 export function ItineraryUIProvider({ children }: { children: ReactNode }) {
-  const [viewMode, setViewMode] = useState<ViewMode>('viewer')
+  const [viewMode, setViewMode] = useState<ViewMode>('builder')
   const [selectedDay, setSelectedDay] = useState(1)
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null)
   const [highlightedLocationId, setHighlightedLocationId] = useState<string | null>(null)
