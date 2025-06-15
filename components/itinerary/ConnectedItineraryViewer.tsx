@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { ModernItineraryViewer, type Itinerary as UIItinerary } from './ModernItineraryViewer'
+import { EnhancedItineraryViewer } from './EnhancedItineraryViewer'
+import { type Itinerary as UIItinerary } from './ModernItineraryViewer'
 import { useItinerary, type Itinerary as APIItinerary } from '@/hooks/use-itinerary'
 import { useTrip } from '@/hooks/use-trips'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -367,11 +368,19 @@ export function ConnectedItineraryViewer({
       )}
       
       {uiItinerary && (
-        <ModernItineraryViewer
+        <EnhancedItineraryViewer
+          tripId={tripId || 'temp-' + Date.now()}
           itinerary={uiItinerary}
           onEdit={handleEdit}
           onShare={handleShare}
           onDownload={handleDownload}
+          onSave={async (updates) => {
+            // Handle save functionality
+            console.log('Saving itinerary updates:', updates)
+            if (tripId && refreshItinerary) {
+              await refreshItinerary()
+            }
+          }}
         />
       )}
     </div>
