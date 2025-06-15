@@ -7,13 +7,21 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session || (session.user?.role !== 'TOUR_OPERATOR' && session.user?.role !== 'ADMIN')) {
+    if (!session || (session.user?.role !== 'TOUR_OPERATOR' && session.user?.role !== 'AGENT' && session.user?.role !== 'ADMIN')) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
     
     const tenantId = session.user?.tenantId || 'default'
     
+    console.log('Tour API - Session:', {
+      email: session.user?.email,
+      role: session.user?.role,
+      tenantId: tenantId
+    })
+    
     // Fetch tours from content table for this tenant
+    console.log('Fetching tours with tenantId:', tenantId)
+    
     const tours = await prisma.content.findMany({
       where: {
         tenantId,
@@ -23,6 +31,8 @@ export async function GET(request: NextRequest) {
         createdAt: 'desc'
       }
     })
+    
+    console.log('Tours found:', tours.length)
     
     // Transform content to tour format
     const formattedTours = tours.map(content => ({

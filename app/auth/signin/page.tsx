@@ -26,7 +26,7 @@ export default function SignInPage() {
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
       // Redirect based on user role
-      if (session.user.role === 'TOUR_OPERATOR') {
+      if (session.user.role === 'TOUR_OPERATOR' || session.user.role === 'AGENT') {
         router.push('/tour-operator')
       } else if (session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN') {
         router.push('/admin')
@@ -61,7 +61,7 @@ export default function SignInPage() {
         const response = await fetch('/api/auth/session')
         const sessionData = await response.json()
         
-        if (sessionData?.user?.role === 'TOUR_OPERATOR') {
+        if (sessionData?.user?.role === 'TOUR_OPERATOR' || sessionData?.user?.role === 'AGENT') {
           console.log('Tour operator login successful, redirecting to /tour-operator')
           router.push('/tour-operator')
         } else if (sessionData?.user?.role === 'ADMIN' || sessionData?.user?.role === 'SUPER_ADMIN') {

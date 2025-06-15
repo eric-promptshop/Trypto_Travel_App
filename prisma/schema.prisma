@@ -154,6 +154,7 @@ model Content {
   metadata    String?  // JSON as string
   tenantId    String   @default("default")
   active      Boolean  @default(true)
+  featured    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

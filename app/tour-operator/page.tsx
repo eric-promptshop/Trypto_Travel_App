@@ -11,8 +11,8 @@ export default async function TourOperatorPage() {
     redirect('/api/auth/signin?callbackUrl=/tour-operator')
   }
   
-  // Check if user has tour operator role
-  if (session.user?.role !== 'TOUR_OPERATOR' && session.user?.role !== 'ADMIN' && session.user?.role !== 'SUPER_ADMIN') {
+  // Check if user has tour operator role (AGENT in this database)
+  if (session.user?.role !== 'TOUR_OPERATOR' && session.user?.role !== 'AGENT' && session.user?.role !== 'ADMIN' && session.user?.role !== 'SUPER_ADMIN') {
     redirect('/')
   }
   

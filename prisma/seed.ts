@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { hash } from 'bcryptjs'
+import { seedTourOperatorDemoData } from '../scripts/seed-tour-operator-demo-data'
 
 const prisma = new PrismaClient()
 
@@ -161,6 +162,15 @@ async function main() {
   })
 
   console.log('Sample trip created:', sampleTrip.title)
+
+  // Seed tour operator demo data
+  console.log('\nSeeding tour operator demo data...')
+  try {
+    await seedTourOperatorDemoData()
+  } catch (error) {
+    console.error('Error seeding tour operator data:', error)
+    // Continue even if tour operator seeding fails
+  }
 }
 
 main()
