@@ -1,12 +1,13 @@
 import OpenAI from 'openai';
 import { findTemplate } from './templates/destination-templates';
+import { getCachedItinerary, cacheItinerary } from '@/lib/cache/redis-cache';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Ultra-lightweight cache
+// Ultra-lightweight in-memory cache (L1 cache)
 const miniCache = new Map<string, any>();
 
 export async function generateUltraFastItinerary(tripData: any) {
@@ -18,28 +19,44 @@ export async function generateUltraFastItinerary(tripData: any) {
     const template = findTemplate(tripData.destination);
     if (template) {
       console.log('✅ Template found! Customizing for user preferences...');
-      return await customizeTemplate(template, tripData, startTime);
+      const customized = await customizeTemplate(template, tripData, startTime);
+      // Cache in Redis for next time
+      await cacheItinerary(tripData, customized, { ttl: 7200 }); // 2 hour TTL for templates
+      return customized;
     }
 
-    // Step 2: Check mini-cache
-    const cacheKey = `${tripData.destination}_${tripData.days?.length || 5}`;
+    // Step 2: Check Redis cache (L2 cache)
+    const redisCache = await getCachedItinerary(tripData);
+    if (redisCache) {
+      console.log('✅ Redis cache hit! Returning in', Date.now() - startTime, 'ms');
+      // Also store in L1 cache
+      const cacheKey = `${tripData.destination}_${calculateDuration(tripData)}`;
+      miniCache.set(cacheKey, redisCache);
+      return redisCache;
+    }
+
+    // Step 3: Check in-memory cache (L1 cache)
+    const cacheKey = `${tripData.destination}_${calculateDuration(tripData)}`;
     const cached = miniCache.get(cacheKey);
     if (cached) {
-      console.log('✅ Cache hit! Returning in', Date.now() - startTime, 'ms');
+      console.log('✅ L1 cache hit! Returning in', Date.now() - startTime, 'ms');
       return customizeBasicItinerary(cached, tripData);
     }
 
-    // Step 3: Generate minimal itinerary with GPT-3.5-turbo
+    // Step 4: Generate minimal itinerary with GPT-3.5-turbo
     const duration = calculateDuration(tripData);
     const itinerary = await generateMinimalItinerary(tripData, duration);
     
-    // Cache for next time
+    // Cache in both L1 and L2
     miniCache.set(cacheKey, itinerary);
     if (miniCache.size > 50) {
-      // Keep cache small
+      // Keep L1 cache small
       const firstKey = miniCache.keys().next().value;
       miniCache.delete(firstKey);
     }
+    
+    // Cache in Redis
+    await cacheItinerary(tripData, itinerary, { ttl: 3600 }); // 1 hour TTL for AI-generated
 
     console.log('✅ Generated in', Date.now() - startTime, 'ms');
     return itinerary;

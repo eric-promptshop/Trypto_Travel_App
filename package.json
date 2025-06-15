@@ -107,6 +107,7 @@
     "@types/natural": "^5.1.5",
     "@types/pdf-parse": "^1.1.0",
     "@types/react-map-gl": "^6.1.7",
+    "@upstash/redis": "^1.35.0",
     "ai": "^4.3.16",
     "autoprefixer": "^10.4.20",
     "axios": "^1.9.0",

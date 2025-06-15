@@ -1,12 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCacheStats, clearCache } from '@/lib/ai/enhanced-itinerary-generator-optimized'
+import { getCacheStats as getInMemoryStats, clearCache as clearInMemory } from '@/lib/ai/enhanced-itinerary-generator-optimized'
+import { getCacheStats as getRedisStats, clearAllCache, invalidateCache } from '@/lib/cache/redis-cache'
+import { getPerformanceStats } from '@/lib/ai/ultra-fast-generator'
 
 export async function GET(request: NextRequest) {
   try {
-    const stats = getCacheStats()
+    // Get stats from all cache layers
+    const [inMemoryStats, redisStats, ultraFastStats] = await Promise.all([
+      getInMemoryStats(),
+      getRedisStats(),
+      getPerformanceStats()
+    ])
+    
     return NextResponse.json({
       success: true,
-      cache: stats,
+      caches: {
+        inMemory: inMemoryStats,
+        redis: redisStats,
+        ultraFast: ultraFastStats
+      },
       timestamp: new Date().toISOString()
     })
   } catch (error) {
@@ -19,10 +31,40 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    clearCache()
+    // Check for specific cache target
+    const { searchParams } = new URL(request.url)
+    const target = searchParams.get('target')
+    const pattern = searchParams.get('pattern')
+    
+    if (pattern) {
+      // Invalidate by pattern
+      const count = await invalidateCache(pattern)
+      return NextResponse.json({
+        success: true,
+        message: `Invalidated ${count} cache entries matching pattern: ${pattern}`,
+        timestamp: new Date().toISOString()
+      })
+    }
+    
+    // Clear specific cache or all
+    switch (target) {
+      case 'redis':
+        await clearAllCache()
+        break
+      case 'memory':
+        clearInMemory()
+        break
+      default:
+        // Clear all caches
+        await Promise.all([
+          clearAllCache(),
+          clearInMemory()
+        ])
+    }
+    
     return NextResponse.json({
       success: true,
-      message: 'Cache cleared successfully',
+      message: `Cache${target ? ` (${target})` : 's'} cleared successfully`,
       timestamp: new Date().toISOString()
     })
   } catch (error) {
