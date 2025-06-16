@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 import {
@@ -54,14 +54,64 @@ function getCategoryIcon(category: string) {
   return categoryIcons[category as keyof typeof categoryIcons] || MapPin
 }
 
-// Day images (you can replace with actual images based on activities)
-const dayImages = [
-  'https://images.unsplash.com/photo-1449034446853-66c86144b0ad?w=800&h=400&fit=crop', // Golden Gate
-  'https://images.unsplash.com/photo-1565620731264-94816b8b5d20?w=800&h=400&fit=crop', // Alcatraz
-  'https://images.unsplash.com/photo-1495904786722-d238cc0334f2?w=800&h=400&fit=crop', // Fisherman's Wharf
-  'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800&h=400&fit=crop', // City view
-  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop', // Nature
-]
+// Hook to fetch location images
+function useLocationImages(days: DayPlan[], itinerary: { pois: POI[], destination: string }) {
+  const [dayImages, setDayImages] = useState<Map<string, string>>(new Map())
+  const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+    const fetchImages = async () => {
+      const imageMap = new Map<string, string>()
+      
+      // Fetch images for each day based on activities or destination
+      const promises = days.map(async (day, index) => {
+        const activities = day.slots
+          .map(slot => itinerary.pois.find(p => p.id === slot.poiId))
+          .filter(Boolean) as POI[]
+        
+        // Get the most prominent activity for the day
+        const keyActivity = activities.find(a => 
+          a.category === 'attraction' || a.rating && a.rating >= 4.5
+        ) || activities[0]
+        
+        // Build search query
+        let searchQuery = itinerary.destination
+        if (keyActivity) {
+          searchQuery = `${keyActivity.name} ${itinerary.destination}`
+        }
+        
+        try {
+          const response = await fetch(
+            `/api/images/location?location=${encodeURIComponent(searchQuery)}&width=800&height=400`
+          )
+          const data = await response.json()
+          
+          if (data.url) {
+            imageMap.set(day.id, data.url)
+          }
+        } catch (error) {
+          console.error(`Error fetching image for day ${day.dayNumber}:`, error)
+          // Use a fallback image
+          imageMap.set(
+            day.id, 
+            `https://source.unsplash.com/800x400/?${encodeURIComponent(searchQuery)},travel`
+          )
+        }
+        
+        // Add a small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, index * 200))
+      })
+      
+      await Promise.all(promises)
+      setDayImages(imageMap)
+      setLoading(false)
+    }
+    
+    fetchImages()
+  }, [days, itinerary])
+  
+  return { dayImages, loading }
+}
 
 export function MobileDayCards({ 
   days, 
@@ -70,6 +120,7 @@ export function MobileDayCards({
   onEditDay 
 }: MobileDayCardsProps) {
   const [expandedDay, setExpandedDay] = useState<string | null>(null)
+  const { dayImages, loading: imagesLoading } = useLocationImages(days, itinerary)
 
   const toggleDay = (dayId: string) => {
     setExpandedDay(expandedDay === dayId ? null : dayId)
@@ -125,7 +176,8 @@ export function MobileDayCards({
       {days.map((day, index) => {
         const isExpanded = expandedDay === day.id
         const activities = getDayActivities(day)
-        const dayImage = dayImages[index % dayImages.length]
+        const dayImage = dayImages.get(day.id) || 
+          `https://source.unsplash.com/800x400/?${encodeURIComponent(itinerary.destination)},travel,day${day.dayNumber}`
         
         return (
           <motion.div
@@ -136,14 +188,19 @@ export function MobileDayCards({
           >
             <Card className="overflow-hidden border-0 shadow-sm">
               {/* Day Header with Hero Image */}
-              <div className="relative h-48 overflow-hidden">
-                <Image
-                  src={dayImage}
-                  alt={`Day ${day.dayNumber}`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 400px"
-                />
+              <div className="relative h-48 overflow-hidden bg-gray-200">
+                {imagesLoading ? (
+                  <div className="absolute inset-0 animate-pulse bg-gray-300" />
+                ) : (
+                  <Image
+                    src={dayImage}
+                    alt={`Day ${day.dayNumber} - ${getDayHighlight(day)}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 400px"
+                    priority={index === 0}
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
                 
                 {/* Day Info Overlay */}

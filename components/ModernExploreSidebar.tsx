@@ -26,6 +26,7 @@ import { usePlanStore, POI } from '@/store/planStore'
 import Image from 'next/image'
 import { useDebounce } from '@/hooks/useDebounce'
 import { PlaceFiltersComponent, PlaceFilters } from './PlaceFilters'
+import { PlaceCardWithImage } from './PlaceCardWithImage'
 
 // Calculate distance between two points in kilometers
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -111,7 +112,9 @@ export function ModernExploreSidebar() {
     selectedPoiId,
     highlightedPoiId,
     mapCenter,
-    setSearchPois
+    setSearchPois,
+    getSelectedDay,
+    addPoiToDay
   } = usePlanStore()
   
   // Load places when category or search changes
@@ -349,17 +352,34 @@ export function ModernExploreSidebar() {
             </div>
           ) : filteredPois.length > 0 ? (
             // Place cards
-            filteredPois.map((poi) => (
-              <PlaceCard
-                key={poi.id}
-                poi={poi}
-                isSelected={selectedPoiId === poi.id}
-                isHighlighted={highlightedPoiId === poi.id}
-                onMouseEnter={() => highlightPoi(poi.id)}
-                onMouseLeave={() => highlightPoi(null)}
-                onClick={() => selectPoi(poi.id)}
-              />
-            ))
+            filteredPois.map((poi) => {
+              const categoryConfig = CATEGORIES.find(c => c.id === poi.category)
+              return (
+                <PlaceCardWithImage
+                  key={poi.id}
+                  poi={poi}
+                  isSelected={selectedPoiId === poi.id}
+                  isHighlighted={highlightedPoiId === poi.id}
+                  onMouseEnter={() => highlightPoi(poi.id)}
+                  onMouseLeave={() => highlightPoi(null)}
+                  onClick={() => selectPoi(poi.id)}
+                  onAdd={() => {
+                    const selectedDay = getSelectedDay()
+                    if (selectedDay) {
+                      addPoiToDay(selectedDay.id, poi.id)
+                      toast.success(`Added ${poi.name} to ${selectedDay.dayNumber ? `Day ${selectedDay.dayNumber}` : 'itinerary'}`)
+                    } else {
+                      toast.error('Please select a day first')
+                    }
+                  }}
+                  categoryConfig={categoryConfig ? {
+                    icon: categoryConfig.icon,
+                    label: categoryConfig.label,
+                    color: categoryConfig.color
+                  } : undefined}
+                />
+              )
+            })
           ) : pois.length > 0 && filteredPois.length === 0 ? (
             // No results after filtering
             <div className="text-center py-8 text-gray-500">
