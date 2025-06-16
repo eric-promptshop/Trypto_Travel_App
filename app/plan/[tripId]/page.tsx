@@ -27,6 +27,7 @@ import { usePlanStore } from '@/store/planStore'
 import { format, differenceInDays } from 'date-fns'
 import { ModernExploreSidebar } from '@/components/ModernExploreSidebar'
 import { ModernTimeline } from '@/components/itinerary/ModernTimeline'
+import { MobileDayCards } from '@/components/itinerary/MobileDayCards'
 import { MapCanvas } from '@/components/MapCanvas'
 
 // Dynamically import map to avoid SSR issues
@@ -129,64 +130,25 @@ function TripHeader({
   if (isMobile) {
     return (
       <header className="fixed top-0 left-0 right-0 z-40 bg-white shadow-sm">
-        <div className="flex flex-col">
-          {/* Mobile Header - Simplified */}
-          <div className="flex items-center justify-between px-4 py-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onBack}
-              className="h-8 w-8"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            
-            <div className="flex-1 text-center">
-              <h1 className="font-semibold text-base">{destination}</h1>
-              <p className="text-xs text-gray-600">
-                {new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - 
-                {new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </p>
-            </div>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-            >
-              <Share className="h-5 w-5" />
-            </Button>
-          </div>
+        <div className="flex items-center justify-between px-4 py-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            className="h-8 w-8"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           
-          {/* Date Navigation */}
-          <div className="flex items-center justify-between px-4 py-2 border-t bg-gray-50">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateDate('prev')}
-              className="h-7 w-7"
-              disabled={currentDate <= startDate}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            
-            <div className="text-center">
-              <p className="text-sm font-medium">
-                {currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-              </p>
-              <p className="text-xs text-gray-600">Day {Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1}</p>
-            </div>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigateDate('next')}
-              className="h-7 w-7"
-              disabled={currentDate >= endDate}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          <h1 className="font-semibold text-base">Itinerary</h1>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+          >
+            <Share className="h-5 w-5" />
+          </Button>
         </div>
       </header>
     )
@@ -420,7 +382,7 @@ export default function ModernTripPlannerPage() {
       {/* Main content */}
       {isMobile ? (
         // Mobile Layout
-        <div className="absolute inset-0" style={{ top: '120px', bottom: '64px' }}>
+        <div className="absolute inset-0" style={{ top: '56px', bottom: '64px' }}>
           <AnimatePresence mode="wait">
             {mobileView === 'map' && (
               <motion.div
@@ -434,92 +396,57 @@ export default function ModernTripPlannerPage() {
               </motion.div>
             )}
             
-            {mobileView === 'timeline' && selectedDay && (
+            {mobileView === 'timeline' && (
               <motion.div
                 key="timeline"
                 initial={{ x: 20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: -20, opacity: 0 }}
-                className="absolute inset-0 bg-white overflow-auto"
+                className="absolute inset-0 bg-gray-50 overflow-auto"
               >
                 <div className="flex flex-col h-full">
-                {/* Header */}
-                <div className="p-4 border-b">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h1 className="text-xl font-semibold">{itinerary.destination}</h1>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{`${new Date(itinerary.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(itinerary.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`} ({differenceInDays(new Date(itinerary.endDate), new Date(itinerary.startDate)) + 1} days)</span>
-                        <span className="text-gray-400">•</span>
-                        <MapPin className="h-4 w-4" />
-                        <span>{itinerary.destination}</span>
-                      </div>
+                  {/* List/Map Toggle */}
+                  <div className="px-4 pt-4 pb-2">
+                    <div className="flex bg-gray-100 rounded-lg p-1">
+                      <button
+                        className="flex-1 py-2 px-4 rounded-md bg-white shadow-sm text-sm font-medium text-gray-900"
+                      >
+                        List
+                      </button>
+                      <button
+                        onClick={() => setMobileView('map')}
+                        className="flex-1 py-2 px-4 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900"
+                      >
+                        Map
+                      </button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
                   </div>
-                </div>
-                
-                {/* Day selector */}
-                <div className="px-4 py-3 border-b">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">{selectedDay && format(new Date(selectedDay.date), 'EEE, d MMM')}</h2>
-                    <span className="text-sm text-gray-500">{selectedDay?.slots?.length || 0}</span>
-                  </div>
-                </div>
-                
-                {/* Timeline */}
-                <div className="flex-1 overflow-hidden">
-                  <ModernTimeline
-                    activities={selectedDay?.slots?.map(slot => {
-                      const poi = itinerary?.pois?.find(p => p.id === slot.poiId)
-                      return {
-                        id: slot.id,
-                        name: poi?.name || 'Activity',
-                        time: slot.startTime,
-                        duration: slot.duration,
-                        location: {
-                          lat: poi?.location?.lat || 0,
-                          lng: poi?.location?.lng || 0,
-                          address: poi?.location?.address
-                        },
-                        description: poi?.description,
-                        category: poi?.category === 'restaurant' ? 'dining' : 'activity',
-                        price: poi?.price
-                      }
-                    }) || []}
-                    onReorder={(activities) => {
-                      // Handle reordering
-                      console.log('Reordered activities:', activities)
-                    }}
-                    onEdit={(activity) => {
-                      console.log('Edit activity:', activity)
-                    }}
-                    onDelete={(activityId) => {
-                      removePoiFromDay(selectedDay.id, activityId)
-                    }}
-                    onAdd={() => {
-                      console.log('Add new activity')
-                    }}
+                  
+                  <div className="flex-1 overflow-auto px-4 pb-4">
+                    {/* Trip Header */}
+                    <div className="mb-6 mt-4">
+                      <h1 className="text-2xl font-bold text-gray-900">{itinerary.destination}</h1>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {differenceInDays(new Date(itinerary.endDate), new Date(itinerary.startDate)) + 1} Days, 
+                        {differenceInDays(new Date(itinerary.endDate), new Date(itinerary.startDate))} Nights
+                      </p>
+                    </div>
+                  
+                  {/* Day Cards */}
+                  <MobileDayCards
+                    days={itinerary.days}
+                    itinerary={itinerary}
                     onActivityClick={(activityId) => {
                       selectPoi(activityId)
+                      setMobileView('map')
                     }}
-                    onActivityHover={(activityId) => {
-                      highlightPoi(activityId)
+                    onEditDay={(dayId) => {
+                      selectDay(dayId)
+                      setMobileView('explore')
                     }}
-                    selectedActivityId={selectedPoiId}
-                    highlightedActivityId={highlightedPoiId}
-                    startHour={6}
-                    endHour={23}
                   />
+                  </div>
                 </div>
-              </div>
               </motion.div>
             )}
             
