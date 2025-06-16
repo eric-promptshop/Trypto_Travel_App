@@ -1,7 +1,16 @@
 import { POI } from '@/store/planStore'
 import { withCache } from './search-cache'
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+// Get Mapbox token - works both client and server side
+function getMapboxToken(): string | undefined {
+  if (typeof window !== 'undefined') {
+    // Client-side
+    return process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+  } else {
+    // Server-side - need to access it differently
+    return process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+  }
+}
 
 export interface SearchOptions {
   query: string
@@ -128,11 +137,16 @@ function featureToPOI(feature: MapboxFeature): POI {
 }
 
 export async function searchPlaces(options: SearchOptions): Promise<POI[]> {
+  const MAPBOX_TOKEN = getMapboxToken();
+  
   console.log('[SearchPlaces] Called with options:', options);
   console.log('[SearchPlaces] Mapbox token available:', !!MAPBOX_TOKEN);
+  console.log('[SearchPlaces] Token length:', MAPBOX_TOKEN?.length || 0);
+  console.log('[SearchPlaces] Token prefix:', MAPBOX_TOKEN?.substring(0, 10) || 'undefined');
   
   if (!MAPBOX_TOKEN) {
-    console.error('Mapbox token not configured')
+    console.error('[SearchPlaces] ERROR: Mapbox token not configured')
+    console.error('[SearchPlaces] Environment:', typeof window !== 'undefined' ? 'client' : 'server')
     return []
   }
   

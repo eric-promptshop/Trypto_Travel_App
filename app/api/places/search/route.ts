@@ -3,6 +3,8 @@ import { searchPlaces, searchByCategory } from '@/lib/services/places-search-ser
 
 export async function GET(request: NextRequest) {
   console.log('[API /places/search] Request received')
+  console.log('[API /places/search] Headers:', Object.fromEntries(request.headers.entries()))
+  console.log('[API /places/search] URL:', request.url)
   
   try {
     const searchParams = request.nextUrl.searchParams
@@ -13,6 +15,10 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit')
     
     console.log('[API /places/search] Params:', { query, category, lat, lng, limit })
+    console.log('[API /places/search] Mapbox token check:', {
+      exists: !!process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
+      length: process.env.NEXT_PUBLIC_MAPBOX_TOKEN?.length || 0
+    })
     
     // Build proximity from lat/lng if provided
     const proximity = lat && lng ? [parseFloat(lng), parseFloat(lat)] as [number, number] : undefined

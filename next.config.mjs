@@ -23,6 +23,19 @@ const nextConfig = {
       'localhost',
       'maps.googleapis.com',
       'res.cloudinary.com',
+      'source.unsplash.com',
+      'images.unsplash.com',
+      'api.mapbox.com',
+    ],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.mapbox.com',
+      }
     ],
   },
   
