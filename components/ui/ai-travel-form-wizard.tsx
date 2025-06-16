@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useState, useCallback } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -38,14 +38,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { VoiceInputButton } from "@/components/voice/VoiceInputButton"
-import { VoicePreviewModal } from "@/components/voice/VoicePreviewModal"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { LocationSearch } from "./location-search"
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range"
 import { format } from "date-fns"
 import { toast } from 'react-hot-toast'
-import type { ParsedFields } from '@/lib/voice-parser'
 
 // Form schema with Zod
 const travelFormSchema = z.object({
@@ -106,10 +104,6 @@ const ACCOMMODATIONS = [
 
 export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelFormWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
-  const [voiceTranscript, setVoiceTranscript] = useState("")
-  const [showVoicePreview, setShowVoicePreview] = useState(false)
-  const [isAddingMore, setIsAddingMore] = useState(false)
-  const previousFormStateRef = useRef<TravelFormData | null>(null)
   
   const {
     control,
@@ -117,8 +111,7 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     watch,
     formState: { errors, isValid },
     trigger,
-    setValue,
-    getValues
+    setValue
   } = useForm<TravelFormData>({
     resolver: zodResolver(travelFormSchema),
     mode: "onChange",
@@ -132,59 +125,10 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
   const watchedFields = watch()
 
-  const handleVoiceTranscriptComplete = (transcript: string) => {
-    if (isAddingMore) {
-      setVoiceTranscript(prev => `${prev} ${transcript}`)
-    } else {
-      setVoiceTranscript(transcript)
-    }
-    setShowVoicePreview(true)
-    setIsAddingMore(false)
-  }
-
-  const handleVoiceConfirm = (fields: ParsedFields) => {
-    // Save current state for undo
-    previousFormStateRef.current = getValues()
-    
-    // Apply parsed fields
-    Object.entries(fields).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        setValue(key as any, value)
-      }
-    })
-    
-    // Go to step 3
+  const navigateToReview = useCallback(() => {
     setCurrentStep(3)
-    setShowVoicePreview(false)
-    
-    // Show success toast with undo
-    const toastId = toast.success(
-      <div className="flex items-center gap-2">
-        <span>Trip details added!</span>
-        <button
-          onClick={() => {
-            if (previousFormStateRef.current) {
-              Object.entries(previousFormStateRef.current).forEach(([key, value]) => {
-                setValue(key as any, value)
-              })
-              setCurrentStep(1)
-              toast.dismiss(toastId)
-              toast.success('Changes undone')
-            }
-          }}
-          className="ml-2 underline font-medium"
-        >
-          Undo
-        </button>
-      </div>,
-      { duration: 5000 }
-    )
-  }
-
-  const handleAddMoreDetails = () => {
-    setIsAddingMore(true)
-    setShowVoicePreview(false)
-  }
+    toast.success('Trip details added from voice input!', { duration: 3000 })
+  }, [])
 
 
   const handleNext = async () => {
@@ -293,17 +237,10 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       <div className="flex items-center justify-center gap-2 mb-6 text-sm">
         <span className="text-gray-600">or</span>
         <VoiceInputButton 
-          onTranscriptComplete={handleVoiceTranscriptComplete}
+          setValue={setValue}
+          navigateToReview={navigateToReview}
         />
       </div>
-      
-      <VoicePreviewModal
-        isOpen={showVoicePreview}
-        transcript={voiceTranscript}
-        onConfirm={handleVoiceConfirm}
-        onAddMore={handleAddMoreDetails}
-        onClose={() => setShowVoicePreview(false)}
-      />
 
       {/* Form Steps */}
       <Card className="shadow-xl border-gray-200 bg-white/95 backdrop-blur-sm">
