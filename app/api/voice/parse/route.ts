@@ -14,21 +14,42 @@ Extract the following information from the user's speech:
 - travelers: Number of people traveling (as a number)
 - budget: Their budget amount (just the number, no currency symbols or commas)
 - accommodation: Type of accommodation (hotel, airbnb, hostel, resort)
-- interests: List of interests or activities
+- interests: Array of interests mentioned (e.g., ["culture", "food", "adventure", "relaxation", "nature", "shopping", "nightlife", "photography"])
 - transportation: Preferred transportation methods
 - specialRequests: Any special occasions or requirements
 
+IMPORTANT DATE PARSING RULES:
+- Today's date is ${new Date().toISOString().split('T')[0]}
+- Current year is ${new Date().getFullYear()}
+- If no year mentioned, use ${new Date().getFullYear()}
+- "from X to Y" means startDate is X and endDate is Y
+- "July 10th to July 19th" → startDate: "${new Date().getFullYear()}-07-10", endDate: "${new Date().getFullYear()}-07-19"
+- "10 to 19 July" → startDate: "${new Date().getFullYear()}-07-10", endDate: "${new Date().getFullYear()}-07-19"
+- "next week" → calculate from today's date
+- "in 2 weeks" → start date is 14 days from today
+- Common speech recognition errors: "10:00 to 19 July" likely means "10th to 19 July"
+
+INTERESTS EXTRACTION:
+Map user phrases to these exact interest values: culture, adventure, food, relaxation, nature, shopping, nightlife, photography
+Examples:
+- "we like museums and art" → ["culture"]
+- "interested in food and wine" → ["food"]
+- "want to see nature and go hiking" → ["nature", "adventure"]
+- "love shopping and nightlife" → ["shopping", "nightlife"]
+- "into photography" → ["photography"]
+- "relaxing beach vacation" → ["relaxation"]
+- "historical sites" → ["culture"]
+- "local cuisine" → ["food"]
+- "outdoor activities" → ["adventure"]
+- "beaches" → ["relaxation"]
+
 Return ONLY a JSON object with these fields. If a field is not mentioned, omit it from the response.
-For dates, use the current year (${new Date().getFullYear()}) if no year is specified.
-Today's date is ${new Date().toISOString().split('T')[0]}.
 
 Examples:
-- "with my wife" means 2 travelers
-- "family of 4" means 4 travelers
-- "just me" or "solo" means 1 traveler
-- "10:00 to 19 July" means July 10 to July 19 (the 10:00 is a misheard date, not a time)
-- "$10,000 in total" means budget is 10000
-- "really nice hotel" means accommodation is hotel`;
+- "with my wife" → travelers: 2
+- "family of 4" → travelers: 4
+- "$10,000 in total budget" → budget: "10000"
+- "we like museums and good food" → interests: ["culture", "food"]`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,7 +76,7 @@ export async function POST(request: NextRequest) {
     });
 
     const responseText = completion.choices[0].message.content;
-    console.log('[Voice Parse API] AI response:', responseText);
+    console.log('[Voice Parse API] AI raw response:', responseText);
     
     if (!responseText) {
       throw new Error('No response from AI');
@@ -64,11 +85,11 @@ export async function POST(request: NextRequest) {
     // Parse and validate the JSON response
     const parsed = JSON.parse(responseText);
     
-    // Convert date strings to ensure they're valid
+    // Convert date strings to YYYY-MM-DD format
     if (parsed.startDate) {
       const date = new Date(parsed.startDate);
       if (!isNaN(date.getTime())) {
-        parsed.startDate = date.toISOString();
+        parsed.startDate = date.toISOString().split('T')[0];
       } else {
         delete parsed.startDate;
       }
@@ -77,7 +98,7 @@ export async function POST(request: NextRequest) {
     if (parsed.endDate) {
       const date = new Date(parsed.endDate);
       if (!isNaN(date.getTime())) {
-        parsed.endDate = date.toISOString();
+        parsed.endDate = date.toISOString().split('T')[0];
       } else {
         delete parsed.endDate;
       }

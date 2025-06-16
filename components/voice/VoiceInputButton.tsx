@@ -3,7 +3,7 @@ import { Mic, Square, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { enableVoiceDebug } from '@/lib/voice-parser-enhanced';
+import { enableVoiceDebug, parseVoiceTranscript } from '@/lib/voice-parser-enhanced';
 import { UseFormSetValue } from 'react-hook-form';
 
 interface VoiceInputButtonProps {
@@ -124,16 +124,13 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
           console.log(`[Voice Input] Setting ${key} to:`, value, 'Type:', typeof value);
           
           try {
-            // Handle date fields specially - format them as strings
+            // Handle date fields specially - convert to Date objects
             let formattedValue = value;
             if (key === 'startDate' || key === 'endDate') {
-              if (typeof value === 'string' && value.includes('T')) {
-                // API returns ISO string, convert to YYYY-MM-DD
-                formattedValue = value.split('T')[0];
-                console.log(`[Voice Input] Formatted date ${key}: ${value} -> ${formattedValue}`);
-              } else if (value instanceof Date) {
-                formattedValue = value.toISOString().split('T')[0]; // YYYY-MM-DD format
-                console.log(`[Voice Input] Formatted date ${key}: ${value} -> ${formattedValue}`);
+              if (typeof value === 'string') {
+                // API now returns YYYY-MM-DD, convert to Date object
+                formattedValue = new Date(value + 'T00:00:00');
+                console.log(`[Voice Input] Converted date ${key}: ${value} -> ${formattedValue}`);
               }
             }
             
