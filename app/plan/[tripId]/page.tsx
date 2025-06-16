@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
@@ -12,7 +12,11 @@ import {
   Calendar,
   MapPin,
   Share,
-  MoreHorizontal
+  MoreHorizontal,
+  Map,
+  List,
+  Search as SearchIcon,
+  ArrowLeft
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -31,6 +35,60 @@ const DynamicMap = dynamic(() => import('@/components/MapCanvas').then(mod => mo
   loading: () => <div className="w-full h-full bg-gray-100 animate-pulse" />
 })
 
+// Mobile Bottom Navigation
+function MobileBottomNav({ 
+  activeView, 
+  onViewChange 
+}: { 
+  activeView: MobileView
+  onViewChange: (view: MobileView) => void 
+}) {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t z-50 md:hidden">
+      <div className="flex items-center justify-around py-2">
+        <button
+          onClick={() => onViewChange('map')}
+          className={cn(
+            "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors",
+            activeView === 'map' 
+              ? "text-indigo-600 bg-indigo-50" 
+              : "text-gray-600 hover:text-gray-900"
+          )}
+        >
+          <Map className="h-5 w-5" />
+          <span className="text-xs font-medium">Map</span>
+        </button>
+        
+        <button
+          onClick={() => onViewChange('timeline')}
+          className={cn(
+            "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors",
+            activeView === 'timeline' 
+              ? "text-indigo-600 bg-indigo-50" 
+              : "text-gray-600 hover:text-gray-900"
+          )}
+        >
+          <List className="h-5 w-5" />
+          <span className="text-xs font-medium">Timeline</span>
+        </button>
+        
+        <button
+          onClick={() => onViewChange('explore')}
+          className={cn(
+            "flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors",
+            activeView === 'explore' 
+              ? "text-indigo-600 bg-indigo-50" 
+              : "text-gray-600 hover:text-gray-900"
+          )}
+        >
+          <SearchIcon className="h-5 w-5" />
+          <span className="text-xs font-medium">Explore</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // Header component with search and date navigation
 function TripHeader({ 
   destination, 
@@ -38,7 +96,8 @@ function TripHeader({
   endDate,
   currentDate,
   onDateChange,
-  onBack 
+  onBack,
+  isMobile
 }: {
   destination: string
   startDate: Date
@@ -46,6 +105,7 @@ function TripHeader({
   currentDate: Date
   onDateChange: (date: Date) => void
   onBack: () => void
+  isMobile: boolean
 }) {
   const formatDateRange = () => {
     const start = new Date(startDate)
@@ -66,6 +126,73 @@ function TripHeader({
     }
   }
 
+  if (isMobile) {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-40 bg-white shadow-sm">
+        <div className="flex flex-col">
+          {/* Mobile Header - Simplified */}
+          <div className="flex items-center justify-between px-4 py-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBack}
+              className="h-8 w-8"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            
+            <div className="flex-1 text-center">
+              <h1 className="font-semibold text-base">{destination}</h1>
+              <p className="text-xs text-gray-600">
+                {new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - 
+                {new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </p>
+            </div>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+            >
+              <Share className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          {/* Date Navigation */}
+          <div className="flex items-center justify-between px-4 py-2 border-t bg-gray-50">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateDate('prev')}
+              className="h-7 w-7"
+              disabled={currentDate <= startDate}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <div className="text-center">
+              <p className="text-sm font-medium">
+                {currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </p>
+              <p className="text-xs text-gray-600">Day {Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1}</p>
+            </div>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigateDate('next')}
+              className="h-7 w-7"
+              disabled={currentDate >= endDate}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </header>
+    )
+  }
+  
+  // Desktop header remains the same
   return (
     <header className="absolute top-0 left-0 right-0 z-30 bg-white shadow-sm">
       <div className="flex items-center justify-between px-4 py-3">
@@ -150,6 +277,9 @@ function TripHeader({
   )
 }
 
+// Mobile view types
+type MobileView = 'timeline' | 'map' | 'explore'
+
 export default function ModernTripPlannerPage() {
   const params = useParams()
   const router = useRouter()
@@ -159,6 +289,8 @@ export default function ModernTripPlannerPage() {
   const [showLeftSidebar, setShowLeftSidebar] = useState(true)
   const [showRightSidebar, setShowRightSidebar] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [mobileView, setMobileView] = useState<MobileView>('timeline')
+  const [isMobile, setIsMobile] = useState(false)
   
   const {
     itinerary,
@@ -172,6 +304,24 @@ export default function ModernTripPlannerPage() {
     selectedPoiId,
     highlightedPoiId
   } = usePlanStore()
+  
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+      if (window.innerWidth < 768) {
+        setShowLeftSidebar(false)
+        setShowRightSidebar(false)
+      } else {
+        setShowLeftSidebar(true)
+        setShowRightSidebar(true)
+      }
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   
   // Load trip data
   useEffect(() => {
@@ -264,41 +414,35 @@ export default function ModernTripPlannerPage() {
         currentDate={currentDate}
         onDateChange={setCurrentDate}
         onBack={() => router.push('/plan')}
+        isMobile={isMobile}
       />
       
       {/* Main content */}
-      <div className="absolute inset-0 top-14 flex">
-        {/* Left sidebar - Explore */}
-        <AnimatePresence mode="wait">
-          {showLeftSidebar && (
-            <motion.div
-              initial={{ x: -320, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -320, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25 }}
-              className="relative w-80 bg-white border-r shadow-sm z-20"
-            >
-              <ModernExploreSidebar />
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        {/* Center - Map */}
-        <div className="flex-1 relative">
-          <DynamicMap className="absolute inset-0" />
-        </div>
-        
-        {/* Right sidebar - Timeline */}
-        <AnimatePresence mode="wait">
-          {showRightSidebar && selectedDay && (
-            <motion.div
-              initial={{ x: 320, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 320, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25 }}
-              className="relative w-96 bg-white border-l shadow-sm z-20"
-            >
-              <div className="flex flex-col h-full">
+      {isMobile ? (
+        // Mobile Layout
+        <div className="absolute inset-0" style={{ top: '120px', bottom: '64px' }}>
+          <AnimatePresence mode="wait">
+            {mobileView === 'map' && (
+              <motion.div
+                key="map"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0"
+              >
+                <DynamicMap className="w-full h-full" />
+              </motion.div>
+            )}
+            
+            {mobileView === 'timeline' && selectedDay && (
+              <motion.div
+                key="timeline"
+                initial={{ x: 20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -20, opacity: 0 }}
+                className="absolute inset-0 bg-white overflow-auto"
+              >
+                <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="p-4 border-b">
                   <div className="flex items-start justify-between mb-2">
@@ -333,20 +477,23 @@ export default function ModernTripPlannerPage() {
                 {/* Timeline */}
                 <div className="flex-1 overflow-hidden">
                   <ModernTimeline
-                    activities={selectedDay?.slots?.map(slot => ({
-                      id: slot.id,
-                      name: slot.poi?.name || 'Activity',
-                      time: slot.startTime,
-                      duration: slot.duration,
-                      location: {
-                        lat: slot.poi?.location?.lat || 0,
-                        lng: slot.poi?.location?.lng || 0,
-                        address: slot.poi?.location?.address
-                      },
-                      description: slot.poi?.description,
-                      category: slot.poi?.category === 'restaurant' ? 'dining' : 'activity',
-                      price: slot.poi?.price
-                    })) || []}
+                    activities={selectedDay?.slots?.map(slot => {
+                      const poi = itinerary?.pois?.find(p => p.id === slot.poiId)
+                      return {
+                        id: slot.id,
+                        name: poi?.name || 'Activity',
+                        time: slot.startTime,
+                        duration: slot.duration,
+                        location: {
+                          lat: poi?.location?.lat || 0,
+                          lng: poi?.location?.lng || 0,
+                          address: poi?.location?.address
+                        },
+                        description: poi?.description,
+                        category: poi?.category === 'restaurant' ? 'dining' : 'activity',
+                        price: poi?.price
+                      }
+                    }) || []}
                     onReorder={(activities) => {
                       // Handle reordering
                       console.log('Reordered activities:', activities)
@@ -368,13 +515,149 @@ export default function ModernTripPlannerPage() {
                     }}
                     selectedActivityId={selectedPoiId}
                     highlightedActivityId={highlightedPoiId}
+                    startHour={6}
+                    endHour={23}
                   />
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              </motion.div>
+            )}
+            
+            {mobileView === 'explore' && (
+              <motion.div
+                key="explore"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -20, opacity: 0 }}
+                className="absolute inset-0 bg-white"
+              >
+                <ModernExploreSidebar />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ) : (
+        // Desktop Layout
+        <div className="absolute inset-0 top-14 flex">
+          {/* Left sidebar - Explore */}
+          <AnimatePresence mode="wait">
+            {showLeftSidebar && (
+              <motion.div
+                initial={{ x: -320, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -320, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25 }}
+                className="relative w-80 bg-white border-r shadow-sm z-20"
+              >
+                <ModernExploreSidebar />
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {/* Center - Map */}
+          <div className="flex-1 relative">
+            <DynamicMap className="absolute inset-0" />
+          </div>
+          
+          {/* Right sidebar - Timeline */}
+          <AnimatePresence mode="wait">
+            {showRightSidebar && selectedDay && (
+              <motion.div
+                initial={{ x: 320, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 320, opacity: 0 }}
+                transition={{ type: 'spring', damping: 25 }}
+                className="relative w-96 bg-white border-l shadow-sm z-20"
+              >
+                <div className="flex flex-col h-full">
+                  {/* Header */}
+                  <div className="p-4 border-b">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h1 className="text-xl font-semibold">{itinerary.destination}</h1>
+                        <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{`${new Date(itinerary.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(itinerary.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`} ({differenceInDays(new Date(itinerary.endDate), new Date(itinerary.startDate)) + 1} days)</span>
+                          <span className="text-gray-400">•</span>
+                          <MapPin className="h-4 w-4" />
+                          <span>{itinerary.destination}</span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Day selector */}
+                  <div className="px-4 py-3 border-b">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-semibold">{selectedDay && format(new Date(selectedDay.date), 'EEE, d MMM')}</h2>
+                      <span className="text-sm text-gray-500">{selectedDay?.slots?.length || 0}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Timeline */}
+                  <div className="flex-1 overflow-hidden">
+                    <ModernTimeline
+                      activities={selectedDay?.slots?.map(slot => {
+                        const poi = itinerary?.pois?.find(p => p.id === slot.poiId)
+                        return {
+                          id: slot.id,
+                          name: poi?.name || 'Activity',
+                          time: slot.startTime,
+                          duration: slot.duration,
+                          location: {
+                            lat: poi?.location?.lat || 0,
+                            lng: poi?.location?.lng || 0,
+                            address: poi?.location?.address
+                          },
+                          description: poi?.description,
+                          category: poi?.category === 'restaurant' ? 'dining' : 'activity',
+                          price: poi?.price
+                        }
+                      }) || []}
+                      onReorder={(activities) => {
+                        // Handle reordering
+                        console.log('Reordered activities:', activities)
+                      }}
+                      onEdit={(activity) => {
+                        console.log('Edit activity:', activity)
+                      }}
+                      onDelete={(activityId) => {
+                        removePoiFromDay(selectedDay.id, activityId)
+                      }}
+                      onAdd={() => {
+                        console.log('Add new activity')
+                      }}
+                      onActivityClick={(activityId) => {
+                        selectPoi(activityId)
+                      }}
+                      onActivityHover={(activityId) => {
+                        highlightPoi(activityId)
+                      }}
+                      selectedActivityId={selectedPoiId}
+                      highlightedActivityId={highlightedPoiId}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+      
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <MobileBottomNav 
+          activeView={mobileView} 
+          onViewChange={setMobileView} 
+        />
+      )}
     </div>
   )
 }
