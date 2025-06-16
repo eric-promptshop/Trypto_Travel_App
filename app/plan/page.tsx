@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { AIRequestForm } from '@/components/ai-request-form'
-import { ThreeColumnItineraryBuilder } from '@/components/itinerary/ThreeColumnItineraryBuilder'
 import { motion } from 'framer-motion'
 import { useAnalytics } from '@/lib/analytics/analytics-service'
 import { SkeletonItinerary } from '@/components/ui/skeleton-itinerary'
@@ -33,6 +33,7 @@ interface FormData {
 }
 
 export default function PlanTripPage() {
+  const router = useRouter()
   const { track } = useAnalytics()
   const [currentView, setCurrentView] = useState<'form' | 'itinerary' | 'generating'>('form')
   const [formData, setFormData] = useState<FormData>({})
@@ -97,15 +98,15 @@ export default function PlanTripPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <ThreeColumnItineraryBuilder
-              tripId={formData.tripId || `temp-${Date.now()}`}
-              initialItinerary={generatedItinerary}
-              onBack={() => setCurrentView('form')}
-              onSave={(itinerary) => {
-                console.log('Saving itinerary:', itinerary)
-                toast.success('Itinerary saved successfully!')
-              }}
-            />
+            {/* Store itinerary and redirect to new plan page */}
+            {(() => {
+              if (generatedItinerary) {
+                localStorage.setItem('lastGeneratedItinerary', JSON.stringify(generatedItinerary))
+                const tripId = formData.tripId || `temp-${Date.now()}`
+                router.push(`/plan/${tripId}`)
+              }
+              return null
+            })()}
           </motion.div>
         )}
       </div>

@@ -1,0 +1,390 @@
+"use client"
+
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
+import dynamic from 'next/dynamic'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { MapContainer, TileLayer, Marker, Polyline, useMap, useMapEvents } from 'react-leaflet'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { usePlanStore } from '@/store/planStore'
+
+// Fix Leaflet default marker icon issue
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+  iconUrl: '/leaflet/marker-icon.png',
+  shadowUrl: '/leaflet/marker-shadow.png',
+})
+
+interface MapCanvasProps {
+  className?: string
+  aspectRatio?: string
+}
+
+// Map controller component
+function MapController() {
+  const map = useMap()
+  const { mapCenter, mapZoom, flyToPoi, flyToBounds } = usePlanStore()
+  const prevCenterRef = useRef(mapCenter)
+  const prevZoomRef = useRef(mapZoom)
+  
+  // Handle map center/zoom changes from store
+  useEffect(() => {
+    if (
+      prevCenterRef.current[0] !== mapCenter[0] || 
+      prevCenterRef.current[1] !== mapCenter[1] ||
+      prevZoomRef.current !== mapZoom
+    ) {
+      map.flyTo(mapCenter, mapZoom, {
+        duration: 0.8,
+        easeLinearity: 0.5
+      })
+      prevCenterRef.current = mapCenter
+      prevZoomRef.current = mapZoom
+    }
+  }, [mapCenter, mapZoom, map])
+  
+  // Subscribe to flyTo events
+  useEffect(() => {
+    const unsubscribe = usePlanStore.subscribe(
+      (state) => state.selectedPoiId,
+      (selectedPoiId) => {
+        if (selectedPoiId) {
+          const poi = usePlanStore.getState().itinerary?.pois.find(p => p.id === selectedPoiId)
+          if (poi) {
+            map.flyTo([poi.location.lat, poi.location.lng], 16, {
+              duration: 0.8
+            })
+          }
+        }
+      }
+    )
+    
+    return unsubscribe
+  }, [map])
+  
+  return null
+}
+
+// Map event handler component
+function MapEventHandler() {
+  const map = useMapEvents({
+    moveend: () => {
+      const center = map.getCenter()
+      const zoom = map.getZoom()
+      usePlanStore.getState().setMapView([center.lat, center.lng], zoom)
+    }
+  })
+  
+  return null
+}
+
+// Animated marker component
+interface AnimatedMarkerProps {
+  position: [number, number]
+  isHighlighted: boolean
+  isSelected: boolean
+  poiId: string
+  poiName: string
+}
+
+function AnimatedMarker({ position, isHighlighted, isSelected, poiId, poiName }: AnimatedMarkerProps) {
+  const markerRef = useRef<L.Marker>(null)
+  const { highlightPoi, selectPoi } = usePlanStore()
+  
+  // Create custom icon based on state
+  const icon = useMemo(() => {
+    const iconSize = isHighlighted || isSelected ? 35 : 25
+    const iconAnchor = isHighlighted || isSelected ? [17.5, 35] : [12.5, 25]
+    
+    return L.divIcon({
+      className: 'custom-marker',
+      html: `
+        <div class="${cn(
+          'marker-pin',
+          isHighlighted && 'highlighted',
+          isSelected && 'selected'
+        )}">
+          <div class="marker-pin-inner"></div>
+        </div>
+      `,
+      iconSize: [iconSize, iconSize],
+      iconAnchor: iconAnchor as [number, number]
+    })
+  }, [isHighlighted, isSelected])
+  
+  // Add drop animation when marker appears
+  useEffect(() => {
+    if (markerRef.current) {
+      const marker = markerRef.current
+      marker.setOpacity(0)
+      
+      setTimeout(() => {
+        marker.setOpacity(1)
+        if (marker.getElement()) {
+          marker.getElement()!.classList.add('marker-drop-animation')
+        }
+      }, 100)
+    }
+  }, [])
+  
+  return (
+    <Marker
+      ref={markerRef}
+      position={position}
+      icon={icon}
+      eventHandlers={{
+        mouseover: () => highlightPoi(poiId),
+        mouseout: () => highlightPoi(null),
+        click: () => selectPoi(poiId)
+      }}
+    >
+      {/* Tooltip could be added here */}
+    </Marker>
+  )
+}
+
+// Route polyline component with skeleton
+interface RoutePolylineProps {
+  positions: [number, number][]
+  isCalculating: boolean
+}
+
+function RoutePolyline({ positions, isCalculating }: RoutePolylineProps) {
+  if (isCalculating) {
+    return (
+      <Polyline
+        positions={positions}
+        color="#E5E7EB"
+        weight={4}
+        opacity={0.6}
+        dashArray="10, 10"
+        className="route-skeleton"
+      />
+    )
+  }
+  
+  return (
+    <Polyline
+      positions={positions}
+      color="#3B82F6"
+      weight={4}
+      opacity={0.8}
+      smoothFactor={1}
+      className="route-line"
+    />
+  )
+}
+
+// Main map component
+function MapCanvasContent({ className, aspectRatio = '16/9' }: MapCanvasProps) {
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false)
+  const routeCalculationTimeoutRef = useRef<NodeJS.Timeout>()
+  
+  const {
+    itinerary,
+    selectedDayId,
+    highlightedPoiId,
+    selectedPoiId,
+    getDayRoute,
+    mapCenter,
+    mapZoom
+  } = usePlanStore()
+  
+  // Get current day's activities and route
+  const currentDayRoute = useMemo(() => {
+    if (!selectedDayId) return []
+    return getDayRoute(selectedDayId)
+  }, [selectedDayId, getDayRoute])
+  
+  // All POIs to display on map
+  const allPois = useMemo(() => {
+    if (!itinerary || !selectedDayId) return []
+    
+    const day = itinerary.days.find(d => d.id === selectedDayId)
+    if (!day) return []
+    
+    return day.slots
+      .map(slot => itinerary.pois.find(p => p.id === slot.poiId))
+      .filter(Boolean) as typeof itinerary.pois
+  }, [itinerary, selectedDayId])
+  
+  // Throttled route calculation
+  const calculateRoute = useCallback(() => {
+    if (routeCalculationTimeoutRef.current) {
+      clearTimeout(routeCalculationTimeoutRef.current)
+    }
+    
+    setIsCalculatingRoute(true)
+    
+    routeCalculationTimeoutRef.current = setTimeout(() => {
+      // Simulate route calculation
+      setIsCalculatingRoute(false)
+    }, 500)
+  }, [])
+  
+  // Recalculate route when POIs change
+  useEffect(() => {
+    if (currentDayRoute.length > 1) {
+      calculateRoute()
+    }
+  }, [currentDayRoute, calculateRoute])
+  
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (routeCalculationTimeoutRef.current) {
+        clearTimeout(routeCalculationTimeoutRef.current)
+      }
+    }
+  }, [])
+  
+  return (
+    <div 
+      className={cn("relative w-full bg-gray-100", className)}
+      style={{ aspectRatio }}
+    >
+      <MapContainer
+        center={mapCenter}
+        zoom={mapZoom}
+        className="h-full w-full"
+        zoomControl={false}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        
+        {/* Map controllers */}
+        <MapController />
+        <MapEventHandler />
+        
+        {/* Route polyline */}
+        {currentDayRoute.length > 1 && (
+          <RoutePolyline
+            positions={currentDayRoute}
+            isCalculating={isCalculatingRoute}
+          />
+        )}
+        
+        {/* POI markers */}
+        {allPois.map((poi) => (
+          <AnimatedMarker
+            key={poi.id}
+            position={[poi.location.lat, poi.location.lng]}
+            isHighlighted={highlightedPoiId === poi.id}
+            isSelected={selectedPoiId === poi.id}
+            poiId={poi.id}
+            poiName={poi.name}
+          />
+        ))}
+      </MapContainer>
+      
+      {/* Loading overlay */}
+      {isCalculatingRoute && (
+        <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px] flex items-center justify-center z-10">
+          <div className="bg-white rounded-lg shadow-lg px-4 py-3 flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            <span className="text-sm">Optimizing route...</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Export with dynamic import for SSR
+export const MapCanvas = dynamic(
+  () => Promise.resolve(MapCanvasContent),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full bg-gray-100 flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    )
+  }
+)
+
+// Add custom styles
+if (typeof window !== 'undefined') {
+  const style = document.createElement('style')
+  style.textContent = `
+    .custom-marker {
+      background: transparent;
+      border: none;
+    }
+    
+    .marker-pin {
+      width: 25px;
+      height: 25px;
+      background: #3B82F6;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .marker-pin-inner {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: white;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    .marker-pin.highlighted {
+      background: #FB923C;
+      transform: rotate(-45deg) scale(1.2);
+      box-shadow: 0 4px 8px rgba(251,146,60,0.4);
+    }
+    
+    .marker-pin.selected {
+      background: #3B82F6;
+      transform: rotate(-45deg) scale(1.3);
+      box-shadow: 0 4px 12px rgba(59,130,246,0.5);
+    }
+    
+    .marker-drop-animation {
+      animation: markerDrop 0.5s ease-out;
+    }
+    
+    @keyframes markerDrop {
+      0% {
+        transform: translateY(-30px);
+        opacity: 0;
+      }
+      60% {
+        transform: translateY(5px);
+      }
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .route-line {
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
+    
+    .route-skeleton {
+      animation: routePulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes routePulse {
+      0%, 100% {
+        opacity: 0.3;
+      }
+      50% {
+        opacity: 0.6;
+      }
+    }
+  `
+  document.head.appendChild(style)
+}
