@@ -3,7 +3,7 @@ import { Mic, Square, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { parseVoiceTranscript, enableVoiceDebug } from '@/lib/voice-parser';
+import { enableVoiceDebug } from '@/lib/voice-parser-enhanced';
 import { UseFormSetValue } from 'react-hook-form';
 
 interface VoiceInputButtonProps {
@@ -98,25 +98,42 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
         window.localStorage.setItem('debug-voice', 'true');
       }
       
-      const parsed = parseVoiceTranscript(finalText);
-      console.log('[Voice Input] Parsed fields:', parsed);
-      
-      // Apply parsed fields with proper validation
-      let successfulFields = 0;
-      const basicFieldsNeeded = ['destination', 'startDate', 'endDate', 'travelers'];
+      try {
+        // Call AI parsing API
+        const response = await fetch('/api/voice/parse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transcript: finalText })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to parse transcript');
+        }
+        
+        const parsed = await response.json();
+        console.log('[Voice Input] AI parsed fields:', parsed);
+        
+        // Apply parsed fields with proper validation
+        let successfulFields = 0;
+        const basicFieldsNeeded = ['destination', 'startDate', 'endDate', 'travelers'];
       const foundBasicFields: string[] = [];
       
       // Process each parsed field
       for (const [key, value] of Object.entries(parsed)) {
         if (value !== undefined && value !== null && key !== 'specialRequests') {
-          console.log(`[Voice Input] Setting ${key} to:`, value);
+          console.log(`[Voice Input] Setting ${key} to:`, value, 'Type:', typeof value);
           
           try {
             // Handle date fields specially - format them as strings
             let formattedValue = value;
             if (key === 'startDate' || key === 'endDate') {
-              if (value instanceof Date) {
+              if (typeof value === 'string' && value.includes('T')) {
+                // API returns ISO string, convert to YYYY-MM-DD
+                formattedValue = value.split('T')[0];
+                console.log(`[Voice Input] Formatted date ${key}: ${value} -> ${formattedValue}`);
+              } else if (value instanceof Date) {
                 formattedValue = value.toISOString().split('T')[0]; // YYYY-MM-DD format
+                console.log(`[Voice Input] Formatted date ${key}: ${value} -> ${formattedValue}`);
               }
             }
             
@@ -126,6 +143,11 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
               shouldDirty: true,
               shouldTouch: true 
             });
+            
+            // Verify the value was set
+            setTimeout(() => {
+              console.log(`[Voice Input] Verification - ${key} form value:`, (window as any).lastFormValues?.[key]);
+            }, 100);
             
             console.log(`[Voice Input] Successfully set ${key}`);
             successfulFields++;
@@ -172,8 +194,12 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
         });
       }
       
-      if (onTranscriptComplete) {
-        onTranscriptComplete(finalText);
+        if (onTranscriptComplete) {
+          onTranscriptComplete(finalText);
+        }
+      } catch (error) {
+        console.error('[Voice Input] Error parsing with AI:', error);
+        updateDisplayTranscript('Sorry, could not process your speech. Please try again.');
       }
     }
     
