@@ -125,10 +125,18 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
   const watchedFields = watch()
 
-  const navigateToReview = useCallback(() => {
-    setCurrentStep(3)
-    toast.success('Trip details added from voice input!', { duration: 3000 })
-  }, [])
+  const navigateToReview = useCallback(async () => {
+    // Validate basic fields before navigating
+    const basicFieldsValid = await trigger(['destination', 'startDate', 'endDate', 'travelers'])
+    
+    if (basicFieldsValid) {
+      setCurrentStep(3)
+      toast.success('Trip details added from voice input!', { duration: 3000 })
+    } else {
+      // If basic fields aren't filled, just show what we parsed
+      toast.success('Voice input processed. Please complete any missing fields.', { duration: 4000 })
+    }
+  }, [trigger])
 
 
   const handleNext = async () => {
