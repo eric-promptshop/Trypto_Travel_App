@@ -1,4 +1,5 @@
 import { POI } from '@/store/planStore'
+import { withCache } from './search-cache'
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
@@ -132,66 +133,76 @@ export async function searchPlaces(options: SearchOptions): Promise<POI[]> {
     return []
   }
   
-  try {
-    const { query, categories, proximity, limit = 10, bbox } = options
-    
-    // Build Mapbox Geocoding API URL
-    const baseUrl = 'https://api.mapbox.com/geocoding/v5/mapbox.places'
-    const encodedQuery = encodeURIComponent(query)
-    const url = new URL(`${baseUrl}/${encodedQuery}.json`)
-    
-    // Add parameters
-    url.searchParams.set('access_token', MAPBOX_TOKEN)
-    url.searchParams.set('limit', limit.toString())
-    
-    // Add proximity bias if provided
-    if (proximity) {
-      url.searchParams.set('proximity', `${proximity[0]},${proximity[1]}`)
-    }
-    
-    // Add bounding box if provided
-    if (bbox) {
-      url.searchParams.set('bbox', bbox.join(','))
-    }
-    
-    // Filter by types if categories provided
-    if (categories && categories.length > 0) {
-      // Map our categories to Mapbox types
-      const mapboxTypes = categories
-        .map(cat => getMapboxTypes(cat))
-        .flat()
-        .filter(Boolean)
-        .join(',')
-      
-      if (mapboxTypes) {
-        url.searchParams.set('types', mapboxTypes)
+  // Use cache for search results
+  return withCache(
+    { type: 'search', ...options },
+    async () => {
+      try {
+        const { query, categories, proximity, limit = 10, bbox } = options
+        
+        // Build Mapbox Geocoding API URL
+        const baseUrl = 'https://api.mapbox.com/geocoding/v5/mapbox.places'
+        const encodedQuery = encodeURIComponent(query)
+        const url = new URL(`${baseUrl}/${encodedQuery}.json`)
+        
+        // Add parameters
+        url.searchParams.set('access_token', MAPBOX_TOKEN)
+        url.searchParams.set('limit', limit.toString())
+        
+        // Add proximity bias if provided
+        if (proximity) {
+          url.searchParams.set('proximity', `${proximity[0]},${proximity[1]}`)
+        }
+        
+        // Add bounding box if provided
+        if (bbox) {
+          url.searchParams.set('bbox', bbox.join(','))
+        }
+        
+        // Filter by types if categories provided
+        if (categories && categories.length > 0) {
+          // Map our categories to Mapbox types
+          const mapboxTypes = categories
+            .map(cat => getMapboxTypes(cat))
+            .flat()
+            .filter(Boolean)
+            .join(',')
+          
+          if (mapboxTypes) {
+            url.searchParams.set('types', mapboxTypes)
+          }
+        }
+        
+        const response = await fetch(url.toString())
+        
+        if (!response.ok) {
+          throw new Error(`Mapbox API error: ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        
+        // Convert features to POIs with enhanced data
+        const pois = data.features
+          .map((feature: MapboxFeature) => {
+            const poi = featureToPOI(feature)
+            // Add mock data for better UX
+            return enhancePOIData(poi)
+          })
+          .filter((poi: POI) => {
+            // Filter by our categories if specified
+            if (categories && categories.length > 0) {
+              return categories.includes(poi.category)
+            }
+            return true
+          })
+        
+        return pois
+      } catch (error) {
+        console.error('Error searching places:', error)
+        return []
       }
     }
-    
-    const response = await fetch(url.toString())
-    
-    if (!response.ok) {
-      throw new Error(`Mapbox API error: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    
-    // Convert features to POIs
-    const pois = data.features
-      .map((feature: MapboxFeature) => featureToPOI(feature))
-      .filter((poi: POI) => {
-        // Filter by our categories if specified
-        if (categories && categories.length > 0) {
-          return categories.includes(poi.category)
-        }
-        return true
-      })
-    
-    return pois
-  } catch (error) {
-    console.error('Error searching places:', error)
-    return []
-  }
+  )
 }
 
 // Map our categories to Mapbox place types
@@ -220,56 +231,132 @@ export async function searchByCategory(
   proximity?: [number, number],
   limit = 20
 ): Promise<POI[]> {
-  // For category search, we'll search for common terms in that category
-  const categorySearchTerms: Record<string, string[]> = {
-    'restaurant': ['restaurant', 'food', 'dining'],
-    'restaurants': ['restaurant', 'food', 'dining'],
-    'cafe-bakery': ['cafe', 'coffee', 'bakery', 'pastry'],
-    'bars-nightlife': ['bar', 'pub', 'nightclub', 'cocktail'],
-    'hotel': ['hotel', 'accommodation', 'lodging'],
-    'hotels': ['hotel', 'accommodation', 'lodging'],
-    'art-museums': ['museum', 'art gallery', 'gallery'],
-    'attraction': ['tourist attraction', 'landmark', 'monument', 'sightseeing'],
-    'attractions': ['tourist attraction', 'landmark', 'monument', 'sightseeing'],
-    'shopping': ['shopping', 'mall', 'store', 'boutique'],
-    'beauty-fashion': ['beauty', 'salon', 'spa', 'fashion'],
-    'transport': ['station', 'airport', 'bus', 'metro']
-  }
-  
-  const searchTerms = categorySearchTerms[category] || [category]
-  
-  try {
-    // Search for multiple terms and combine results
-    const allResults = await Promise.all(
-      searchTerms.slice(0, 3).map(async (term) => {
-        return searchPlaces({
-          query: term,
-          proximity,
-          limit: Math.ceil(limit / searchTerms.length)
-        })
-      })
-    )
-    
-    // Combine and deduplicate results
-    const seenIds = new Set<string>()
-    const uniquePois: POI[] = []
-    
-    for (const results of allResults) {
-      for (const poi of results) {
-        if (!seenIds.has(poi.id)) {
-          seenIds.add(poi.id)
-          // Override category to match what was searched for
-          poi.category = category as POI['category']
-          uniquePois.push(poi)
+  // Use cache for category search
+  return withCache(
+    { type: 'category', category, proximity, limit },
+    async () => {
+      // For category search, we'll search for common terms in that category
+      const categorySearchTerms: Record<string, string[]> = {
+        'restaurant': ['restaurant', 'food', 'dining'],
+        'restaurants': ['restaurant', 'food', 'dining'],
+        'cafe-bakery': ['cafe', 'coffee', 'bakery', 'pastry'],
+        'bars-nightlife': ['bar', 'pub', 'nightclub', 'cocktail'],
+        'hotel': ['hotel', 'accommodation', 'lodging'],
+        'hotels': ['hotel', 'accommodation', 'lodging'],
+        'art-museums': ['museum', 'art gallery', 'gallery'],
+        'attraction': ['tourist attraction', 'landmark', 'monument', 'sightseeing'],
+        'attractions': ['tourist attraction', 'landmark', 'monument', 'sightseeing'],
+        'shopping': ['shopping', 'mall', 'store', 'boutique'],
+        'beauty-fashion': ['beauty', 'salon', 'spa', 'fashion'],
+        'transport': ['station', 'airport', 'bus', 'metro']
+      }
+      
+      const searchTerms = categorySearchTerms[category] || [category]
+      
+      try {
+        // Search for multiple terms and combine results
+        const allResults = await Promise.all(
+          searchTerms.slice(0, 3).map(async (term) => {
+            return searchPlaces({
+              query: term,
+              proximity,
+              limit: Math.ceil(limit / searchTerms.length)
+            })
+          })
+        )
+        
+        // Combine and deduplicate results
+        const seenIds = new Set<string>()
+        const uniquePois: POI[] = []
+        
+        for (const results of allResults) {
+          for (const poi of results) {
+            if (!seenIds.has(poi.id)) {
+              seenIds.add(poi.id)
+              // Override category to match what was searched for
+              poi.category = category as POI['category']
+              uniquePois.push(poi)
+            }
+          }
         }
+        
+        return uniquePois.slice(0, limit)
+      } catch (error) {
+        console.error('Error searching by category:', error)
+        return []
       }
     }
-    
-    return uniquePois.slice(0, limit)
-  } catch (error) {
-    console.error('Error searching by category:', error)
-    return []
+  )
+}
+
+// Enhance POI data with mock ratings, reviews, and images
+function enhancePOIData(poi: POI): POI {
+  // Generate consistent mock data based on POI id
+  const hash = poi.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  
+  // Add rating (3.5 to 5.0)
+  poi.rating = 3.5 + (hash % 16) / 10
+  
+  // Add review count
+  poi.reviews = 50 + (hash % 450)
+  
+  // Add price level (1-4)
+  if (poi.category === 'restaurant' || poi.category === 'restaurants' || 
+      poi.category === 'cafe-bakery' || poi.category === 'bars-nightlife') {
+    poi.price = 1 + (hash % 4)
+  } else if (poi.category === 'hotel' || poi.category === 'hotels') {
+    poi.price = 2 + (hash % 3)
   }
+  
+  // Add mock image URL using category
+  const imageCategories: Record<string, string> = {
+    'restaurant': 'restaurant',
+    'restaurants': 'restaurant', 
+    'cafe-bakery': 'coffee',
+    'bars-nightlife': 'bar',
+    'hotel': 'hotel',
+    'hotels': 'hotel',
+    'art-museums': 'museum',
+    'attraction': 'tourist',
+    'attractions': 'tourist',
+    'shopping': 'shopping',
+    'beauty-fashion': 'spa',
+    'transport': 'station'
+  }
+  
+  const imageCategory = imageCategories[poi.category] || 'building'
+  poi.image = `https://source.unsplash.com/160x120/?${imageCategory},${poi.name.replace(/\s+/g, '')}`
+  
+  // Add opening hours (mock)
+  poi.openingHours = {
+    monday: { open: '09:00', close: '21:00' },
+    tuesday: { open: '09:00', close: '21:00' },
+    wednesday: { open: '09:00', close: '21:00' },
+    thursday: { open: '09:00', close: '21:00' },
+    friday: { open: '09:00', close: '22:00' },
+    saturday: { open: '10:00', close: '22:00' },
+    sunday: { open: '10:00', close: '20:00' }
+  }
+  
+  // Add more descriptive tags
+  const categoryTags: Record<string, string[]> = {
+    'restaurant': ['dining', 'food'],
+    'restaurants': ['dining', 'food'],
+    'cafe-bakery': ['coffee', 'pastries', 'breakfast'],
+    'bars-nightlife': ['drinks', 'nightlife', 'cocktails'],
+    'hotel': ['accommodation', 'lodging'],
+    'hotels': ['accommodation', 'lodging'],
+    'art-museums': ['culture', 'art', 'history'],
+    'attraction': ['sightseeing', 'tourist'],
+    'attractions': ['sightseeing', 'tourist'],
+    'shopping': ['retail', 'boutique'],
+    'beauty-fashion': ['wellness', 'beauty'],
+    'transport': ['transit', 'transportation']
+  }
+  
+  poi.tags = [...(poi.tags || []), ...(categoryTags[poi.category] || [])]
+  
+  return poi
 }
 
 // Get place details with additional information

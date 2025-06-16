@@ -81,6 +81,9 @@ interface PlanState {
   suggestions: AISuggestion[]
   appliedSuggestions: string[] // Track which suggestions have been applied
   
+  // Search results
+  searchPois: POI[] // POIs from search results to display on map
+  
   // Actions
   setItinerary: (itinerary: Itinerary) => void
   addPoiToDay: (poi: POI, dayId: string, time?: string) => void
@@ -107,6 +110,9 @@ interface PlanState {
   applySuggestion: (suggestionId: string) => void
   dismissSuggestion: (suggestionId: string) => void
   
+  // Search POIs
+  setSearchPois: (pois: POI[]) => void
+  
   // Computed
   getSelectedDay: () => DayPlan | null
   getSelectedPoi: () => POI | null
@@ -128,6 +134,7 @@ export const usePlanStore = create<PlanState>()(
       mapZoom: 12,
       suggestions: [],
       appliedSuggestions: [],
+      searchPois: [],
       
       // Actions
       setItinerary: (itinerary) => set((state) => {
@@ -288,6 +295,11 @@ export const usePlanStore = create<PlanState>()(
       
       dismissSuggestion: (suggestionId) => set((state) => {
         state.suggestions = state.suggestions.filter(s => s.id !== suggestionId)
+      }),
+      
+      // Search POIs
+      setSearchPois: (pois) => set((state) => {
+        state.searchPois = pois
       }),
       
       // Computed getters

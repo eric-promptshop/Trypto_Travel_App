@@ -25,6 +25,20 @@ import { Button } from '@/components/ui/button'
 import { usePlanStore, POI } from '@/store/planStore'
 import Image from 'next/image'
 import { useDebounce } from '@/hooks/useDebounce'
+import { PlaceFiltersComponent, PlaceFilters } from './PlaceFilters'
+
+// Calculate distance between two points in kilometers
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371 // Radius of the Earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+  return R * c
+}
 
 // Category configuration matching the design
 const CATEGORIES = [
@@ -79,17 +93,25 @@ export function ModernExploreSidebar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [pois, setPois] = useState<POI[]>([])
+  const [filteredPois, setFilteredPois] = useState<POI[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [filters, setFilters] = useState<PlaceFilters>({})
   
   const debouncedSearchQuery = useDebounce(searchQuery, 500)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
   
   const { 
     highlightPoi, 
     selectPoi, 
     selectedPoiId,
     highlightedPoiId,
-    mapCenter
+    mapCenter,
+    setSearchPois
   } = usePlanStore()
   
   // Load places when category or search changes
@@ -97,11 +119,15 @@ export function ModernExploreSidebar() {
     const loadPlaces = async () => {
       if (!selectedCategory && !debouncedSearchQuery) {
         setPois([])
+        setPage(1)
+        setHasMore(true)
         return
       }
       
       setLoading(true)
       setError(null)
+      setPage(1)
+      setHasMore(true)
       
       try {
         const places = await fetchPlaces(
@@ -111,6 +137,7 @@ export function ModernExploreSidebar() {
           mapCenter[1]
         )
         setPois(places)
+        setHasMore(places.length >= 20)
       } catch (err) {
         setError('Failed to load places. Please try again.')
         setPois([])
@@ -122,11 +149,116 @@ export function ModernExploreSidebar() {
     loadPlaces()
   }, [selectedCategory, debouncedSearchQuery, mapCenter])
   
+  // Apply filters to POIs
+  useEffect(() => {
+    let filtered = [...pois]
+    
+    // Filter by price range
+    if (filters.priceRange) {
+      filtered = filtered.filter(poi => 
+        poi.price && 
+        poi.price >= filters.priceRange![0] && 
+        poi.price <= filters.priceRange![1]
+      )
+    }
+    
+    // Filter by minimum rating
+    if (filters.minRating) {
+      filtered = filtered.filter(poi => 
+        poi.rating && poi.rating >= filters.minRating!
+      )
+    }
+    
+    // Filter by maximum distance
+    if (filters.maxDistance && mapCenter) {
+      filtered = filtered.filter(poi => {
+        const distance = calculateDistance(
+          mapCenter[0], mapCenter[1],
+          poi.location.lat, poi.location.lng
+        )
+        return distance <= filters.maxDistance!
+      })
+    }
+    
+    setFilteredPois(filtered)
+    // Update search POIs in store for map display
+    setSearchPois(filtered)
+  }, [pois, filters, mapCenter, setSearchPois])
+  
+  // Load more places when scrolling
+  const loadMorePlaces = useCallback(async () => {
+    if (loadingMore || !hasMore || (!selectedCategory && !searchQuery)) return
+    
+    setLoadingMore(true)
+    
+    try {
+      // For demo purposes, we'll just show "no more results" after page 2
+      // In a real app, you'd implement proper pagination in the API
+      if (page >= 2) {
+        setHasMore(false)
+        return
+      }
+      
+      const morePlaces = await fetchPlaces(
+        searchQuery,
+        selectedCategory,
+        mapCenter[0],
+        mapCenter[1]
+      )
+      
+      // Filter out duplicates
+      const existingIds = new Set(pois.map(p => p.id))
+      const newPlaces = morePlaces.filter(p => !existingIds.has(p.id))
+      
+      setPois(prev => [...prev, ...newPlaces])
+      setPage(prev => prev + 1)
+      setHasMore(newPlaces.length >= 10)
+    } catch (err) {
+      console.error('Error loading more places:', err)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [loadingMore, hasMore, selectedCategory, searchQuery, page, pois, mapCenter])
+  
+  // Setup intersection observer for infinite scroll
+  useEffect(() => {
+    if (loading) return
+    
+    const handleObserver = (entries: IntersectionObserverEntry[]) => {
+      const target = entries[0]
+      if (target.isIntersecting && hasMore && !loadingMore) {
+        loadMorePlaces()
+      }
+    }
+    
+    observerRef.current = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0
+    })
+    
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current)
+    }
+    
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [loading, hasMore, loadingMore, loadMorePlaces])
+  
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 space-y-3">
-        <h2 className="text-xl font-semibold">Explore</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Explore</h2>
+          <PlaceFiltersComponent
+            filters={filters}
+            onFiltersChange={setFilters}
+          />
+        </div>
         
         {/* Search */}
         <div className="relative">
@@ -215,9 +347,9 @@ export function ModernExploreSidebar() {
                 Try Again
               </Button>
             </div>
-          ) : pois.length > 0 ? (
+          ) : filteredPois.length > 0 ? (
             // Place cards
-            pois.map((poi) => (
+            filteredPois.map((poi) => (
               <PlaceCard
                 key={poi.id}
                 poi={poi}
@@ -228,6 +360,19 @@ export function ModernExploreSidebar() {
                 onClick={() => selectPoi(poi.id)}
               />
             ))
+          ) : pois.length > 0 && filteredPois.length === 0 ? (
+            // No results after filtering
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-sm">No places match your filters</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFilters({})}
+                className="mt-2"
+              >
+                Clear filters
+              </Button>
+            </div>
           ) : selectedCategory || searchQuery ? (
             // Empty state
             <div className="text-center py-8 text-gray-500">
@@ -241,6 +386,25 @@ export function ModernExploreSidebar() {
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">Select a category or search for places</p>
             </div>
+          )}
+          
+          {/* Infinite scroll trigger */}
+          {hasMore && !loading && filteredPois.length > 0 && (
+            <div ref={loadMoreRef} className="h-10 flex items-center justify-center">
+              {loadingMore && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Loading more...</span>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* No more results */}
+          {!hasMore && filteredPois.length > 0 && (
+            <p className="text-center text-sm text-gray-500 py-4">
+              No more places to show
+            </p>
           )}
         </div>
       </ScrollArea>

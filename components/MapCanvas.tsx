@@ -209,7 +209,8 @@ function MapCanvasContent({ className, aspectRatio = '16/9' }: MapCanvasProps) {
     selectedPoiId,
     getDayRoute,
     mapCenter,
-    mapZoom
+    mapZoom,
+    searchPois
   } = usePlanStore()
   
   // Get current day's activities and route
@@ -288,7 +289,42 @@ function MapCanvasContent({ className, aspectRatio = '16/9' }: MapCanvasProps) {
           />
         )}
         
-        {/* POI markers */}
+        {/* Search result POI markers (lighter style) */}
+        {searchPois.map((poi) => {
+          // Don't show search POIs that are already in the itinerary
+          const isInItinerary = allPois.some(p => p.id === poi.id)
+          if (isInItinerary) return null
+          
+          return (
+            <Marker
+              key={`search-${poi.id}`}
+              position={[poi.location.lat, poi.location.lng]}
+              icon={L.divIcon({
+                className: 'custom-marker',
+                html: `
+                  <div style="
+                    background-color: ${highlightedPoiId === poi.id ? '#FB923C' : '#E5E7EB'};
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    border: 2px solid white;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                    transition: all 0.2s;
+                  "></div>
+                `,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10],
+              })}
+              eventHandlers={{
+                mouseover: () => usePlanStore.getState().highlightPoi(poi.id),
+                mouseout: () => usePlanStore.getState().highlightPoi(null),
+                click: () => usePlanStore.getState().selectPoi(poi.id)
+              }}
+            />
+          )
+        })}
+        
+        {/* Itinerary POI markers */}
         {allPois.map((poi) => (
           <AnimatedMarker
             key={poi.id}
