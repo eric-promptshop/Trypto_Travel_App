@@ -211,7 +211,13 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
   }
 
   const onFormSubmit = handleSubmit(async (data) => {
-    await onSubmit(data)
+    console.log('[Form] Submitting form with data:', data);
+    try {
+      await onSubmit(data);
+    } catch (error) {
+      console.error('[Form] Error submitting form:', error);
+      toast.error('Failed to generate itinerary. Please try again.');
+    }
   })
 
   return (
