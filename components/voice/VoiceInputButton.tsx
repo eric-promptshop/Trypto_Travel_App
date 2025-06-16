@@ -92,6 +92,12 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
     const finalText = accumulatedTranscriptRef.current.trim();
     if (finalText) {
       console.log('[Voice Input] Final transcript:', finalText);
+      
+      // Enable debug logging temporarily
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('debug-voice', 'true');
+      }
+      
       const parsed = parseVoiceTranscript(finalText);
       console.log('[Voice Input] Parsed fields:', parsed);
       
@@ -106,8 +112,16 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
           console.log(`[Voice Input] Setting ${key} to:`, value);
           
           try {
-            // Use await to ensure the field is set before continuing
-            await setValue(key as any, value, { 
+            // Handle date fields specially - format them as strings
+            let formattedValue = value;
+            if (key === 'startDate' || key === 'endDate') {
+              if (value instanceof Date) {
+                formattedValue = value.toISOString().split('T')[0]; // YYYY-MM-DD format
+              }
+            }
+            
+            // Use setValue with the formatted value
+            setValue(key as any, formattedValue, { 
               shouldValidate: true,
               shouldDirty: true,
               shouldTouch: true 

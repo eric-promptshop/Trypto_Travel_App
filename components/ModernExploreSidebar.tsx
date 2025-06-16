@@ -61,6 +61,8 @@ async function fetchPlaces(
   lat?: number,
   lng?: number
 ): Promise<POI[]> {
+  console.log('[fetchPlaces] Called with:', { searchQuery, category, lat, lng });
+  
   try {
     const params = new URLSearchParams()
     
@@ -76,16 +78,20 @@ async function fetchPlaces(
     }
     params.append('limit', '20')
     
+    console.log('[fetchPlaces] Fetching from:', `/api/places/search?${params}`);
     const response = await fetch(`/api/places/search?${params}`)
     
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[fetchPlaces] Response error:', response.status, errorText);
       throw new Error('Failed to fetch places')
     }
     
     const data = await response.json()
+    console.log('[fetchPlaces] Received data:', data);
     return data.places || []
   } catch (error) {
-    console.error('Error fetching places:', error)
+    console.error('[fetchPlaces] Error:', error)
     return []
   }
 }
@@ -120,6 +126,12 @@ export function ModernExploreSidebar() {
   // Load places when category or search changes
   useEffect(() => {
     const loadPlaces = async () => {
+      console.log('[ModernExploreSidebar] loadPlaces called:', {
+        selectedCategory,
+        debouncedSearchQuery,
+        mapCenter
+      });
+      
       if (!selectedCategory && !debouncedSearchQuery) {
         setPois([])
         setPage(1)

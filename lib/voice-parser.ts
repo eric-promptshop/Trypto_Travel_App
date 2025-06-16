@@ -78,6 +78,12 @@ const FIELD_PARSERS: FieldParser[] = [
         extractor: (match) => match[1].trim()
       },
       {
+        regex: /(?:i'm heading to|heading to|we're heading to)\s+([a-z\s,]+?)(?:\s+from\s+\d+:\d+|(?:\s+(?:for|from|on|leaving|departing))|[,.]|$)/i,
+        confidence: 0.94,
+        description: '"I\'m heading to Brazil"',
+        extractor: (match) => match[1].trim()
+      },
+      {
         regex: /(?:travel to|traveling to|trip to|visiting|visit)\s+([a-z\s,]+?)(?:\s+(?:for|from|on)|[,.]|$)/i,
         confidence: 0.92,
         description: '"travel to London"',
@@ -122,6 +128,18 @@ const FIELD_PARSERS: FieldParser[] = [
           const month = MONTHS[match[1].toLowerCase()];
           if (month === undefined) return null;
           const day = parseInt(match[2]);
+          const year = new Date().getFullYear();
+          return new Date(year, month, day);
+        }
+      },
+      {
+        regex: /from\s+(\d{1,2}):?(\d{2})?\s+to\s+(\d{1,2})\s+([a-z]+)/i,
+        confidence: 0.92,
+        description: '"from 10:00 to 19 July"',
+        extractor: (match) => {
+          const day = parseInt(match[1]);
+          const month = MONTHS[match[4].toLowerCase()];
+          if (month === undefined) return null;
           const year = new Date().getFullYear();
           return new Date(year, month, day);
         }
@@ -192,6 +210,18 @@ const FIELD_PARSERS: FieldParser[] = [
           const month = MONTHS[match[1].toLowerCase()];
           if (month === undefined) return null;
           const day = parseInt(match[2]);
+          const year = new Date().getFullYear();
+          return new Date(year, month, day);
+        }
+      },
+      {
+        regex: /from\s+\d{1,2}:?\d{0,2}\s+to\s+(\d{1,2})\s+([a-z]+)/i,
+        confidence: 0.92,
+        description: '"from 10:00 to 19 July"',
+        extractor: (match) => {
+          const day = parseInt(match[1]);
+          const month = MONTHS[match[2].toLowerCase()];
+          if (month === undefined) return null;
           const year = new Date().getFullYear();
           return new Date(year, month, day);
         }
@@ -297,6 +327,12 @@ const FIELD_PARSERS: FieldParser[] = [
         extractor: () => 2
       },
       {
+        regex: /with\s+my\s+(wife|husband|partner|spouse)/i,
+        confidence: 0.91,
+        description: '"with my wife"',
+        extractor: () => 2
+      },
+      {
         regex: /\b(family|family trip|family vacation)\b/i,
         confidence: 0.75,
         description: '"family trip"',
@@ -315,6 +351,12 @@ const FIELD_PARSERS: FieldParser[] = [
   {
     field: 'budget',
     patterns: [
+      {
+        regex: /\$?(\d{1,3}(?:,?\d{3})*(?:\.\d{2})?)\s*(?:in\s+)?(?:total|for\s+the\s+trip|overall)/i,
+        confidence: 0.96,
+        description: '"$10,000 in total"',
+        extractor: (match) => match[1].replace(/,/g, '')
+      },
       {
         regex: /budget\s+(?:is\s+)?(?:around\s+)?\$?(\d{1,3}(?:,?\d{3})*(?:\.\d{2})?)\s*(?:dollars?)?\s*(?:per\s+person|each|pp)/i,
         confidence: 0.95,
@@ -390,6 +432,31 @@ const FIELD_PARSERS: FieldParser[] = [
           const acc = match[1].toLowerCase();
           return acc.includes('inclusive') ? 'resort' : acc;
         }
+      },
+      {
+        regex: /stay\s+in\s+a\s+(really\s+)?(nice|luxury|good|great)\s+(hotel|resort|place)/i,
+        confidence: 0.85,
+        description: '"stay in a really nice hotel"',
+        extractor: (match) => match[3].toLowerCase()
+      }
+    ]
+  },
+
+  // SPECIAL REQUESTS PARSER
+  {
+    field: 'specialRequests',
+    patterns: [
+      {
+        regex: /for\s+(our|my|their)\s+(honeymoon|anniversary|birthday|wedding)/i,
+        confidence: 0.95,
+        description: '"for our honeymoon"',
+        extractor: (match) => `${match[2]} trip`
+      },
+      {
+        regex: /(honeymoon|anniversary|birthday|wedding)\s+(trip|vacation|holiday)/i,
+        confidence: 0.93,
+        description: '"honeymoon trip"',
+        extractor: (match) => `${match[1]} trip`
       }
     ]
   },

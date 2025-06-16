@@ -42,6 +42,9 @@ export function AIRequestForm({ onComplete, onGenerating }: AIRequestFormProps) 
   const [isGenerating, setIsGenerating] = useState(false)
   
   const handleFormComplete = async (data: any) => {
+    console.log('[AIRequestForm] handleFormComplete called with data:', data);
+    console.trace('[AIRequestForm] Call stack'); // This will help us see where it's being called from
+    
     setIsGenerating(true)
     
     // Notify parent component that we're generating

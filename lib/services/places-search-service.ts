@@ -128,6 +128,9 @@ function featureToPOI(feature: MapboxFeature): POI {
 }
 
 export async function searchPlaces(options: SearchOptions): Promise<POI[]> {
+  console.log('[SearchPlaces] Called with options:', options);
+  console.log('[SearchPlaces] Mapbox token available:', !!MAPBOX_TOKEN);
+  
   if (!MAPBOX_TOKEN) {
     console.error('Mapbox token not configured')
     return []
@@ -159,31 +162,41 @@ export async function searchPlaces(options: SearchOptions): Promise<POI[]> {
           url.searchParams.set('bbox', bbox.join(','))
         }
         
-        // Filter by types if categories provided
+        // Filter by types - always include POI to get actual places
+        const types = ['poi', 'poi.landmark']
         if (categories && categories.length > 0) {
           // Map our categories to Mapbox types
           const mapboxTypes = categories
             .map(cat => getMapboxTypes(cat))
             .flat()
             .filter(Boolean)
-            .join(',')
           
-          if (mapboxTypes) {
-            url.searchParams.set('types', mapboxTypes)
+          if (mapboxTypes.length > 0) {
+            types.push(...mapboxTypes)
           }
         }
+        url.searchParams.set('types', types.join(','))
         
+        console.log('[SearchPlaces] Fetching from URL:', url.toString());
         const response = await fetch(url.toString())
         
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[SearchPlaces] Mapbox API error:', response.status, errorText);
           throw new Error(`Mapbox API error: ${response.statusText}`)
         }
         
         const data = await response.json()
+        console.log('[SearchPlaces] Mapbox response:', data);
         
         // Convert features to POIs with enhanced data
         const pois = data.features
           .map((feature: MapboxFeature) => {
+            console.log('[SearchPlaces] Processing feature:', {
+              name: feature.text,
+              place_type: feature.place_type,
+              category: feature.properties.category
+            });
             const poi = featureToPOI(feature)
             // Add mock data for better UX
             return enhancePOIData(poi)
@@ -198,7 +211,7 @@ export async function searchPlaces(options: SearchOptions): Promise<POI[]> {
         
         return pois
       } catch (error) {
-        console.error('Error searching places:', error)
+        console.error('[SearchPlaces] Error:', error)
         return []
       }
     }
@@ -208,21 +221,21 @@ export async function searchPlaces(options: SearchOptions): Promise<POI[]> {
 // Map our categories to Mapbox place types
 function getMapboxTypes(category: string): string[] {
   const typeMap: Record<string, string[]> = {
-    'restaurant': ['restaurant'],
-    'restaurants': ['restaurant'],
-    'cafe-bakery': ['cafe', 'bakery'],
-    'bars-nightlife': ['bar', 'nightclub'],
-    'hotel': ['lodging'],
-    'hotels': ['lodging'],
-    'art-museums': ['museum', 'art_gallery'],
-    'attraction': ['tourist_attraction', 'landmark', 'monument'],
-    'attractions': ['tourist_attraction', 'landmark', 'monument'],
-    'shopping': ['shop', 'shopping_mall'],
-    'beauty-fashion': ['beauty_salon', 'spa'],
-    'transport': ['airport', 'train_station', 'bus_station']
+    'restaurant': ['poi'],
+    'restaurants': ['poi'],
+    'cafe-bakery': ['poi'],
+    'bars-nightlife': ['poi'],
+    'hotel': ['poi'],
+    'hotels': ['poi'],
+    'art-museums': ['poi'],
+    'attraction': ['poi', 'poi.landmark'],
+    'attractions': ['poi', 'poi.landmark'],
+    'shopping': ['poi'],
+    'beauty-fashion': ['poi'],
+    'transport': ['poi']
   }
   
-  return typeMap[category] || []
+  return typeMap[category] || ['poi']
 }
 
 // Search for POIs by category
@@ -231,24 +244,25 @@ export async function searchByCategory(
   proximity?: [number, number],
   limit = 20
 ): Promise<POI[]> {
+  console.log('[SearchByCategory] Called with:', { category, proximity, limit });
   // Use cache for category search
   return withCache(
     { type: 'category', category, proximity, limit },
     async () => {
       // For category search, we'll search for common terms in that category
       const categorySearchTerms: Record<string, string[]> = {
-        'restaurant': ['restaurant', 'food', 'dining'],
-        'restaurants': ['restaurant', 'food', 'dining'],
-        'cafe-bakery': ['cafe', 'coffee', 'bakery', 'pastry'],
-        'bars-nightlife': ['bar', 'pub', 'nightclub', 'cocktail'],
-        'hotel': ['hotel', 'accommodation', 'lodging'],
-        'hotels': ['hotel', 'accommodation', 'lodging'],
-        'art-museums': ['museum', 'art gallery', 'gallery'],
-        'attraction': ['tourist attraction', 'landmark', 'monument', 'sightseeing'],
-        'attractions': ['tourist attraction', 'landmark', 'monument', 'sightseeing'],
-        'shopping': ['shopping', 'mall', 'store', 'boutique'],
-        'beauty-fashion': ['beauty', 'salon', 'spa', 'fashion'],
-        'transport': ['station', 'airport', 'bus', 'metro']
+        'restaurant': ['restaurant'],
+        'restaurants': ['restaurant'],
+        'cafe-bakery': ['cafe', 'coffee shop', 'bakery'],
+        'bars-nightlife': ['bar', 'pub', 'nightclub'],
+        'hotel': ['hotel'],
+        'hotels': ['hotel'],
+        'art-museums': ['museum', 'art gallery'],
+        'attraction': ['tourist attraction', 'landmark'],
+        'attractions': ['tourist attraction', 'landmark'],
+        'shopping': ['shopping mall', 'store'],
+        'beauty-fashion': ['beauty salon', 'spa'],
+        'transport': ['train station', 'bus station', 'metro station']
       }
       
       const searchTerms = categorySearchTerms[category] || [category]

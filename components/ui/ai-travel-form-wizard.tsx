@@ -60,7 +60,7 @@ const travelFormSchema = z.object({
   // Step 2: Preferences
   budget: z.string().optional(),
   accommodation: z.enum(["hotel", "airbnb", "hostel", "resort", "any"]).default("any"),
-  interests: z.array(z.string()).min(1, "Select at least one interest"),
+  interests: z.array(z.string()).optional().default([]),
   
   // Step 3: Details
   specialRequests: z.string().optional(),
@@ -190,6 +190,8 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
 
   const handleNext = async () => {
+    console.log('[Form] handleNext called, currentStep:', currentStep);
+    
     // Validate current step fields
     let fieldsToValidate: (keyof TravelFormData)[] = []
     
@@ -200,9 +202,12 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     }
     
     const isStepValid = await trigger(fieldsToValidate)
+    console.log('[Form] Validation result:', isStepValid);
     
     if (isStepValid) {
-      setCurrentStep(prev => Math.min(prev + 1, 3))
+      const nextStep = Math.min(currentStep + 1, 3);
+      console.log('[Form] Moving to step:', nextStep);
+      setCurrentStep(nextStep);
     }
   }
 
@@ -211,7 +216,16 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
   }
 
   const onFormSubmit = handleSubmit(async (data) => {
+    console.log('[Form] onFormSubmit called, currentStep:', currentStep);
     console.log('[Form] Submitting form with data:', data);
+    console.trace('[Form] Submit call stack');
+    
+    // Only submit if we're on step 3
+    if (currentStep !== 3) {
+      console.error('[Form] ERROR: Form submitted from step', currentStep);
+      return;
+    }
+    
     try {
       await onSubmit(data);
     } catch (error) {
@@ -336,7 +350,13 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       {/* Form Steps */}
       <Card className="shadow-xl border-gray-200 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-8">
-          <form onSubmit={onFormSubmit}>
+          <form onSubmit={onFormSubmit} onKeyDown={(e) => {
+            // Prevent Enter key from submitting form except on step 3
+            if (e.key === 'Enter' && currentStep !== 3) {
+              e.preventDefault();
+              console.log('[Form] Prevented Enter key submission on step', currentStep);
+            }
+          }}>
             <AnimatePresence mode="wait">
               {/* Step 1: Basics */}
               {currentStep === 1 && (
