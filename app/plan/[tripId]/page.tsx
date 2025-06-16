@@ -28,6 +28,7 @@ import { format, differenceInDays } from 'date-fns'
 import { ModernExploreSidebar } from '@/components/ModernExploreSidebar'
 import { ModernTimeline } from '@/components/itinerary/ModernTimeline'
 import { MobileDayCards } from '@/components/itinerary/MobileDayCards'
+import { TimelineWithImages } from '@/components/itinerary/TimelineWithImages'
 import { MapCanvas } from '@/components/MapCanvas'
 
 // Dynamically import map to avoid SSR issues
@@ -496,41 +497,8 @@ export default function ModernTripPlannerPage() {
                 transition={{ type: 'spring', damping: 25 }}
                 className="relative w-96 bg-white border-l shadow-sm z-20"
               >
-                <div className="flex flex-col h-full">
-                  {/* Header */}
-                  <div className="p-4 border-b">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h1 className="text-xl font-semibold">{itinerary.destination}</h1>
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{`${new Date(itinerary.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(itinerary.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`} ({differenceInDays(new Date(itinerary.endDate), new Date(itinerary.startDate)) + 1} days)</span>
-                          <span className="text-gray-400">•</span>
-                          <MapPin className="h-4 w-4" />
-                          <span>{itinerary.destination}</span>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {/* Day selector */}
-                  <div className="px-4 py-3 border-b">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-lg font-semibold">{selectedDay && format(new Date(selectedDay.date), 'EEE, d MMM')}</h2>
-                      <span className="text-sm text-gray-500">{selectedDay?.slots?.length || 0}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Timeline */}
-                  <div className="flex-1 overflow-hidden">
-                    <ModernTimeline
+                <div className="h-full">
+                    <TimelineWithImages
                       activities={selectedDay?.slots?.map(slot => {
                         const poi = itinerary?.pois?.find(p => p.id === slot.poiId)
                         return {
@@ -544,8 +512,17 @@ export default function ModernTripPlannerPage() {
                             address: poi?.location?.address
                           },
                           description: poi?.description,
-                          category: poi?.category === 'restaurant' ? 'dining' : 'activity',
-                          price: poi?.price
+                          category: poi?.category === 'restaurant' ? 'dining' : 
+                                   poi?.category === 'cafe-bakery' ? 'dining' :
+                                   poi?.category === 'bars-nightlife' ? 'dining' :
+                                   poi?.category === 'hotel' ? 'accommodation' :
+                                   poi?.category === 'shopping' ? 'shopping' :
+                                   poi?.category === 'beauty-fashion' ? 'shopping' :
+                                   poi?.category === 'transport' ? 'transport' :
+                                   poi?.category === 'art-museums' ? 'activity' :
+                                   poi?.category === 'attraction' ? 'activity' : 'activity',
+                          price: poi?.price,
+                          rating: poi?.rating
                         }
                       }) || []}
                       onReorder={(activities) => {
@@ -559,7 +536,7 @@ export default function ModernTripPlannerPage() {
                         removePoiFromDay(selectedDay.id, activityId)
                       }}
                       onAdd={() => {
-                        console.log('Add new activity')
+                        setShowLeftSidebar(true)
                       }}
                       onActivityClick={(activityId) => {
                         selectPoi(activityId)
@@ -569,8 +546,12 @@ export default function ModernTripPlannerPage() {
                       }}
                       selectedActivityId={selectedPoiId}
                       highlightedActivityId={highlightedPoiId}
+                      dayInfo={selectedDay ? {
+                        destination: itinerary.destination,
+                        date: new Date(selectedDay.date),
+                        dayNumber: selectedDay.dayNumber
+                      } : undefined}
                     />
-                  </div>
                 </div>
               </motion.div>
             )}
