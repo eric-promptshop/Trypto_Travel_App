@@ -39,6 +39,8 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
   }, []);
 
   const handleTranscript = useCallback((transcript: string, isFinal: boolean) => {
+    console.log('[Voice Input] Transcript received:', { transcript, isFinal });
+    
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
     }
@@ -58,6 +60,7 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
 
     // Reset silence timer
     silenceTimerRef.current = setTimeout(() => {
+      console.log('[Voice Input] Silence detected, stopping...');
       handleStopRef.current();
     }, SILENCE_LIMIT_MS);
   }, [updateDisplayTranscript]);
@@ -157,6 +160,7 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
       
       abortControllerRef.current = new AbortController();
       const timeoutId = setTimeout(() => {
+        console.log('[Voice Input] Max session time reached, stopping...');
         if (isListening) {
           handleStop();
         }
@@ -166,6 +170,7 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
         clearTimeout(timeoutId);
       });
       
+      console.log('[Voice Input] Starting speech recognition...');
       start();
     }
   }, [isListening, start, handleStop]);
@@ -204,7 +209,7 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
   }
 
   return (
-    <div className="relative inline-block">
+    <div className="relative">
       <div className="flex items-center gap-2">
         <Button
           type="button"
@@ -252,26 +257,23 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
         )}
       </div>
       
-      {/* Subtle overlay beneath mic button */}
-      <div 
-        className={cn(
-          "absolute -bottom-3 left-0 w-max max-w-[300px] rounded-lg bg-slate-800/80 px-3 py-1.5 text-sm text-white shadow-lg backdrop-blur-sm transition-all duration-300 z-50",
-          isOverlayVisible && displayTranscript
-            ? "opacity-100 translate-y-1"
-            : "opacity-0 translate-y-0 pointer-events-none"
-        )}
-        role="status"
-        aria-live="polite"
-      >
-        <div className="flex items-start gap-2">
-          {isListening && (
-            <div className="animate-pulse w-1.5 h-1.5 bg-red-500 rounded-full mt-1 flex-shrink-0" />
-          )}
-          <p className="text-xs leading-tight">
-            {displayTranscript}
-          </p>
+      {/* Grey box for transcription display */}
+      {isOverlayVisible && displayTranscript && (
+        <div 
+          className="mt-2 w-full max-w-md rounded-lg bg-gray-100 border border-gray-200 p-3 shadow-sm animate-in fade-in duration-200"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-start gap-2">
+            {isListening && (
+              <div className="animate-pulse w-2 h-2 bg-red-500 rounded-full mt-1 flex-shrink-0" />
+            )}
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {displayTranscript}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
       
       <div className="sr-only" aria-live="polite" aria-atomic="true">
         {isListening ? "Listening..." : "Recording stopped"}
