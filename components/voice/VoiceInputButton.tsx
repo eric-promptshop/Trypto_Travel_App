@@ -79,7 +79,7 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
     onError: handleError,
   });
 
-  handleStopRef.current = useCallback(() => {
+  handleStopRef.current = useCallback(async () => {
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
     }
@@ -97,37 +97,65 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
       
       // Apply parsed fields with proper validation
       let hasBasicFields = false;
-      let appliedFields: string[] = [];
+      let appliedFields: Record<string, any> = {};
+      const basicFieldsFound: string[] = [];
       
-      Object.entries(parsed).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          // Skip specialRequests as it's just the raw transcript
-          if (key !== 'specialRequests') {
-            console.log(`[Voice Input] Setting ${key} to:`, value);
-            setValue(key as any, value, { shouldValidate: true });
-            appliedFields.push(key);
+      // Process each parsed field
+      for (const [key, value] of Object.entries(parsed)) {
+        if (value !== undefined && value !== null && key !== 'specialRequests') {
+          console.log(`[Voice Input] Attempting to set ${key} to:`, value);
+          
+          try {
+            // For debugging, let's see what happens with setValue
+            const result = await setValue(key as any, value, { 
+              shouldValidate: true,
+              shouldDirty: true,
+              shouldTouch: true 
+            });
+            
+            console.log(`[Voice Input] setValue result for ${key}:`, result);
+            appliedFields[key] = value;
             
             if (['destination', 'startDate', 'endDate', 'travelers'].includes(key)) {
+              basicFieldsFound.push(key);
               hasBasicFields = true;
             }
+          } catch (error) {
+            console.error(`[Voice Input] Error setting ${key}:`, error);
           }
         }
-      });
+      }
       
       console.log('[Voice Input] Applied fields:', appliedFields);
+      console.log('[Voice Input] Basic fields found:', basicFieldsFound);
       console.log('[Voice Input] Has basic fields:', hasBasicFields);
+      
+      // Let's also check if the form validation passes
+      if (hasBasicFields) {
+        console.log('[Voice Input] Attempting navigation to review...');
+        // Add a small delay to ensure form state is updated
+        setTimeout(() => {
+          navigateToReview();
+        }, 100);
+      } else if (Object.keys(appliedFields).length > 0) {
+        console.log('[Voice Input] Some fields parsed but missing basic fields:', {
+          foundFields: Object.keys(appliedFields),
+          missingBasicFields: ['destination', 'startDate', 'endDate', 'travelers'].filter(
+            field => !basicFieldsFound.includes(field)
+          )
+        });
+      } else {
+        console.log('[Voice Input] No fields could be parsed from the transcript');
+        console.log('[Voice Input] Consider these patterns:', {
+          destination: 'I\'m going to [place]',
+          dates: 'leaving on [date] returning [date]',
+          travelers: '[number] people',
+          budget: 'budget is [amount] per person'
+        });
+      }
       
       if (onTranscriptComplete) {
         onTranscriptComplete(finalText);
-      }
-      
-      // Only navigate if we have meaningful data
-      if (hasBasicFields) {
-        navigateToReview();
-      } else if (appliedFields.length > 0) {
-        console.log('[Voice Input] Some fields parsed but missing basic fields for navigation');
-      } else {
-        console.log('[Voice Input] No fields could be parsed from the transcript');
       }
     }
     
@@ -171,6 +199,10 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
       });
       
       console.log('[Voice Input] Starting speech recognition...');
+      console.log('[Voice Input] Try saying something like:');
+      console.log('  - "I\'m going to Paris from July 10th to July 18th"');
+      console.log('  - "Travel to Tokyo, leaving August 5th for 7 days with 2 people"');
+      console.log('  - "Destination is London, departing September 1st returning September 8th, party of 4"');
       start();
     }
   }, [isListening, start, handleStop]);
@@ -198,6 +230,11 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
       }
     };
   }, [isListening, stop]);
+
+  // Debug: Log when setValue prop changes
+  useEffect(() => {
+    console.log('[Voice Input] setValue function updated:', typeof setValue);
+  }, [setValue]);
 
   if (!isSupported) {
     return (
@@ -248,6 +285,22 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
                 window.localStorage?.getItem('debug-voice') === 'true';
               enableVoiceDebug(!isDebugEnabled);
               console.log(`[Voice Debug] ${!isDebugEnabled ? 'Enabled' : 'Disabled'}`);
+              
+              // Also log current form state for debugging
+              console.log('[Voice Debug] Test parsing examples:');
+              const testInputs = [
+                "I'm going to Tokyo from July 10th to July 18th",
+                "destination is Paris",
+                "leaving on August 5th",
+                "returning August 12th", 
+                "4 people",
+                "budget is $2000 per person"
+              ];
+              
+              testInputs.forEach(input => {
+                const parsed = parseVoiceTranscript(input);
+                console.log(`[Voice Debug] "${input}" ->`, parsed);
+              });
             }}
             className="p-2"
             title="Toggle voice debug logging"

@@ -111,7 +111,8 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     watch,
     formState: { errors, isValid },
     trigger,
-    setValue
+    setValue,
+    getValues
   } = useForm<TravelFormData>({
     resolver: zodResolver(travelFormSchema),
     mode: "onChange",
@@ -125,18 +126,68 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
   const watchedFields = watch()
 
+  // Wrapper for setValue that handles any necessary field transformations
+  const setValueWrapper = useCallback(async (name: string, value: any, options?: any) => {
+    console.log(`[Form] Setting ${name} to:`, value, 'type:', typeof value);
+    
+    // The form expects specific types for certain fields
+    if (name === 'travelers' && typeof value === 'string') {
+      value = parseInt(value, 10);
+    }
+    
+    // Ensure dates are Date objects
+    if ((name === 'startDate' || name === 'endDate') && !(value instanceof Date)) {
+      console.error(`[Form] ${name} must be a Date object, got:`, value);
+      return Promise.resolve(false);
+    }
+    
+    // Special handling for arrays
+    if ((name === 'interests' || name === 'transportation') && Array.isArray(value)) {
+      console.log(`[Form] Setting array field ${name}:`, value);
+    }
+    
+    try {
+      const result = setValue(name, value, {
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true,
+        ...options
+      });
+      
+      // Force a re-render to ensure the UI updates
+      if (name === 'destination' || name === 'startDate' || name === 'endDate' || name === 'travelers') {
+        console.log(`[Form] Critical field ${name} set, triggering validation`);
+        setTimeout(() => {
+          trigger(name);
+        }, 50);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`[Form] Error setting ${name}:`, error);
+      return Promise.resolve(false);
+    }
+  }, [setValue, trigger]);
+
   const navigateToReview = useCallback(async () => {
+    console.log('[Form] Navigating to review, current values:', getValues());
+    
     // Validate basic fields before navigating
     const basicFieldsValid = await trigger(['destination', 'startDate', 'endDate', 'travelers'])
+    console.log('[Form] Basic fields validation result:', basicFieldsValid);
     
     if (basicFieldsValid) {
       setCurrentStep(3)
       toast.success('Trip details added from voice input!', { duration: 3000 })
     } else {
+      // Log which fields failed validation
+      const errors = formState.errors;
+      console.log('[Form] Validation errors:', errors);
+      
       // If basic fields aren't filled, just show what we parsed
       toast.success('Voice input processed. Please complete any missing fields.', { duration: 4000 })
     }
-  }, [trigger])
+  }, [trigger, getValues, formState.errors])
 
 
   const handleNext = async () => {
@@ -245,9 +296,36 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       <div className="flex items-center justify-center gap-2 mb-6 text-sm">
         <span className="text-gray-600">or</span>
         <VoiceInputButton 
-          setValue={setValue}
+          setValue={setValueWrapper}
           navigateToReview={navigateToReview}
         />
+        {/* Debug: Test form setValue */}
+        {process.env.NODE_ENV === 'development' && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={async () => {
+              console.log('[Debug] Testing form setValue...');
+              const testDate = new Date();
+              testDate.setDate(testDate.getDate() + 7);
+              const endDate = new Date(testDate);
+              endDate.setDate(endDate.getDate() + 5);
+              
+              await setValueWrapper('destination', 'Paris');
+              await setValueWrapper('startDate', testDate);
+              await setValueWrapper('endDate', endDate);
+              await setValueWrapper('travelers', 2);
+              
+              setTimeout(() => {
+                console.log('[Debug] Form values after test:', getValues());
+              }, 500);
+            }}
+            className="text-xs"
+          >
+            Test Fill
+          </Button>
+        )}
       </div>
 
       {/* Form Steps */}
