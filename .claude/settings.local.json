@@ -34,7 +34,8 @@
       "Bash(curl:*)",
       "Bash(rm:*)",
       "Bash(npx tsc:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }

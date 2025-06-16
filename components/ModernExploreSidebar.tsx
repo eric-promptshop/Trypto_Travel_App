@@ -14,7 +14,8 @@ import {
   ShoppingBag,
   Sparkles,
   Car,
-  Plus
+  Plus,
+  Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
@@ -23,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { usePlanStore, POI } from '@/store/planStore'
 import Image from 'next/image'
+import { useDebounce } from '@/hooks/useDebounce'
 
 // Category configuration matching the design
 const CATEGORIES = [
@@ -37,40 +39,40 @@ const CATEGORIES = [
   { id: 'transport', label: 'Transport', icon: Car, color: 'text-gray-600' }
 ]
 
-// Mock place data generator
-function generateMockPlaces(category: string): POI[] {
-  const places: Record<string, any[]> = {
-    'restaurants': [
-      { name: 'Le Bistro du Perigord', rating: 4.5, reviews: 3245, price: 3, image: '/api/placeholder/160/120' },
-      { name: 'Musee du Louvre', rating: 4.5, reviews: 3245, price: 3, image: '/api/placeholder/160/120' },
-      { name: 'Les Catacombs de Paris', rating: 4.8, reviews: 3245, price: 3, image: '/api/placeholder/160/120' },
-      { name: 'Le Temps des Cerises', rating: 4.5, reviews: 3245, price: 3, image: '/api/placeholder/160/120' }
-    ],
-    'art-museums': [
-      { name: 'Louvre Museum', rating: 4.8, reviews: 15234, price: 2, image: '/api/placeholder/160/120' },
-      { name: 'Musée d\'Orsay', rating: 4.7, reviews: 8921, price: 2, image: '/api/placeholder/160/120' },
-      { name: 'Centre Pompidou', rating: 4.5, reviews: 6543, price: 2, image: '/api/placeholder/160/120' }
-    ]
+// Fetch places from API
+async function fetchPlaces(
+  searchQuery?: string, 
+  category?: string | null,
+  lat?: number,
+  lng?: number
+): Promise<POI[]> {
+  try {
+    const params = new URLSearchParams()
+    
+    if (searchQuery) {
+      params.append('query', searchQuery)
+    }
+    if (category) {
+      params.append('category', category)
+    }
+    if (lat && lng) {
+      params.append('lat', lat.toString())
+      params.append('lng', lng.toString())
+    }
+    params.append('limit', '20')
+    
+    const response = await fetch(`/api/places/search?${params}`)
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch places')
+    }
+    
+    const data = await response.json()
+    return data.places || []
+  } catch (error) {
+    console.error('Error fetching places:', error)
+    return []
   }
-
-  const templates = places[category] || places['restaurants']
-  
-  return templates.map((template, index) => ({
-    id: `${category}-${index}`,
-    name: template.name,
-    category: category as POI['category'],
-    location: {
-      lat: 48.8566 + (Math.random() - 0.5) * 0.05,
-      lng: 2.3522 + (Math.random() - 0.5) * 0.05,
-      address: `${index + 1} Rue Example, Paris`
-    },
-    rating: template.rating,
-    price: template.price,
-    description: `A wonderful ${category} in the heart of Paris.`,
-    tags: ['popular', 'recommended'],
-    image: template.image,
-    reviews: template.reviews
-  }))
 }
 
 export function ModernExploreSidebar() {
@@ -78,25 +80,47 @@ export function ModernExploreSidebar() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [pois, setPois] = useState<POI[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  
+  const debouncedSearchQuery = useDebounce(searchQuery, 500)
   
   const { 
     highlightPoi, 
     selectPoi, 
     selectedPoiId,
-    highlightedPoiId
+    highlightedPoiId,
+    mapCenter
   } = usePlanStore()
   
-  // Load places when category changes
+  // Load places when category or search changes
   useEffect(() => {
-    if (selectedCategory) {
+    const loadPlaces = async () => {
+      if (!selectedCategory && !debouncedSearchQuery) {
+        setPois([])
+        return
+      }
+      
       setLoading(true)
-      // Simulate API call
-      setTimeout(() => {
-        setPois(generateMockPlaces(selectedCategory))
+      setError(null)
+      
+      try {
+        const places = await fetchPlaces(
+          debouncedSearchQuery,
+          selectedCategory,
+          mapCenter[0],
+          mapCenter[1]
+        )
+        setPois(places)
+      } catch (err) {
+        setError('Failed to load places. Please try again.')
+        setPois([])
+      } finally {
         setLoading(false)
-      }, 500)
+      }
     }
-  }, [selectedCategory])
+    
+    loadPlaces()
+  }, [selectedCategory, debouncedSearchQuery, mapCenter])
   
   return (
     <div className="flex flex-col h-full">
@@ -157,6 +181,40 @@ export function ModernExploreSidebar() {
                 <Skeleton key={i} className="h-32 w-full rounded-lg" />
               ))}
             </>
+          ) : error ? (
+            // Error state
+            <div className="text-center py-8">
+              <p className="text-sm text-red-600 mb-2">{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setError(null)
+                  // Retry logic
+                  if (selectedCategory || searchQuery) {
+                    const loadPlaces = async () => {
+                      setLoading(true)
+                      try {
+                        const places = await fetchPlaces(
+                          searchQuery,
+                          selectedCategory,
+                          mapCenter[0],
+                          mapCenter[1]
+                        )
+                        setPois(places)
+                      } catch (err) {
+                        setError('Failed to load places. Please try again.')
+                      } finally {
+                        setLoading(false)
+                      }
+                    }
+                    loadPlaces()
+                  }
+                }}
+              >
+                Try Again
+              </Button>
+            </div>
           ) : pois.length > 0 ? (
             // Place cards
             pois.map((poi) => (
@@ -170,15 +228,18 @@ export function ModernExploreSidebar() {
                 onClick={() => selectPoi(poi.id)}
               />
             ))
-          ) : selectedCategory ? (
+          ) : selectedCategory || searchQuery ? (
             // Empty state
             <div className="text-center py-8 text-gray-500">
               <p className="text-sm">No places found</p>
+              {searchQuery && (
+                <p className="text-xs mt-1">Try a different search term</p>
+              )}
             </div>
           ) : (
             // Select category prompt
             <div className="text-center py-8 text-gray-500">
-              <p className="text-sm">Select a category to explore</p>
+              <p className="text-sm">Select a category or search for places</p>
             </div>
           )}
         </div>

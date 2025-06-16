@@ -1,0 +1,281 @@
+import { POI } from '@/store/planStore'
+
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+
+export interface SearchOptions {
+  query: string
+  categories?: string[]
+  proximity?: [number, number] // [lng, lat]
+  limit?: number
+  bbox?: [number, number, number, number] // [minLng, minLat, maxLng, maxLat]
+}
+
+export interface MapboxFeature {
+  id: string
+  type: string
+  place_type: string[]
+  relevance: number
+  properties: {
+    category?: string
+    maki?: string
+    address?: string
+    foursquare?: string
+    landmark?: boolean
+    wikidata?: string
+  }
+  text: string
+  place_name: string
+  center: [number, number] // [lng, lat]
+  geometry: {
+    type: string
+    coordinates: [number, number]
+  }
+  context?: Array<{
+    id: string
+    text: string
+    wikidata?: string
+    short_code?: string
+  }>
+}
+
+// Map Mapbox categories to our POI categories
+const CATEGORY_MAPPING: Record<string, POI['category']> = {
+  'restaurant': 'restaurant',
+  'restaurant.pizza': 'restaurant',
+  'restaurant.burger': 'restaurant',
+  'restaurant.chinese': 'restaurant',
+  'restaurant.italian': 'restaurant',
+  'restaurant.french': 'restaurant',
+  'cafe': 'cafe-bakery',
+  'cafe.coffee': 'cafe-bakery',
+  'cafe.tea': 'cafe-bakery',
+  'bakery': 'cafe-bakery',
+  'bar': 'bars-nightlife',
+  'nightclub': 'bars-nightlife',
+  'pub': 'bars-nightlife',
+  'hotel': 'hotel',
+  'lodging': 'hotel',
+  'hostel': 'hotel',
+  'motel': 'hotel',
+  'museum': 'art-museums',
+  'art_gallery': 'art-museums',
+  'gallery': 'art-museums',
+  'tourist_attraction': 'attraction',
+  'attraction': 'attraction',
+  'landmark': 'attraction',
+  'monument': 'attraction',
+  'shop': 'shopping',
+  'shopping_mall': 'shopping',
+  'store': 'shopping',
+  'beauty': 'beauty-fashion',
+  'beauty_salon': 'beauty-fashion',
+  'spa': 'beauty-fashion',
+  'transport': 'transport',
+  'airport': 'transport',
+  'train_station': 'transport',
+  'bus_station': 'transport',
+  'subway': 'transport',
+}
+
+// Get category from Mapbox feature
+function getCategoryFromFeature(feature: MapboxFeature): POI['category'] {
+  // Check properties.category first
+  if (feature.properties.category) {
+    const mapped = CATEGORY_MAPPING[feature.properties.category]
+    if (mapped) return mapped
+  }
+  
+  // Check place_type
+  for (const placeType of feature.place_type) {
+    const mapped = CATEGORY_MAPPING[placeType]
+    if (mapped) return mapped
+  }
+  
+  // Check maki icon
+  if (feature.properties.maki) {
+    const mapped = CATEGORY_MAPPING[feature.properties.maki]
+    if (mapped) return mapped
+  }
+  
+  return 'other'
+}
+
+// Convert Mapbox feature to POI
+function featureToPOI(feature: MapboxFeature): POI {
+  const category = getCategoryFromFeature(feature)
+  
+  // Extract address from place_name
+  const parts = feature.place_name.split(',')
+  const name = parts[0].trim()
+  const address = parts.slice(1).join(',').trim()
+  
+  return {
+    id: feature.id,
+    name: name,
+    category: category,
+    location: {
+      lat: feature.center[1],
+      lng: feature.center[0],
+      address: address || feature.properties.address
+    },
+    // Mapbox doesn't provide ratings, so we'll need to fetch from another source or omit
+    rating: undefined,
+    price: undefined,
+    description: undefined,
+    tags: feature.properties.landmark ? ['landmark'] : []
+  }
+}
+
+export async function searchPlaces(options: SearchOptions): Promise<POI[]> {
+  if (!MAPBOX_TOKEN) {
+    console.error('Mapbox token not configured')
+    return []
+  }
+  
+  try {
+    const { query, categories, proximity, limit = 10, bbox } = options
+    
+    // Build Mapbox Geocoding API URL
+    const baseUrl = 'https://api.mapbox.com/geocoding/v5/mapbox.places'
+    const encodedQuery = encodeURIComponent(query)
+    const url = new URL(`${baseUrl}/${encodedQuery}.json`)
+    
+    // Add parameters
+    url.searchParams.set('access_token', MAPBOX_TOKEN)
+    url.searchParams.set('limit', limit.toString())
+    
+    // Add proximity bias if provided
+    if (proximity) {
+      url.searchParams.set('proximity', `${proximity[0]},${proximity[1]}`)
+    }
+    
+    // Add bounding box if provided
+    if (bbox) {
+      url.searchParams.set('bbox', bbox.join(','))
+    }
+    
+    // Filter by types if categories provided
+    if (categories && categories.length > 0) {
+      // Map our categories to Mapbox types
+      const mapboxTypes = categories
+        .map(cat => getMapboxTypes(cat))
+        .flat()
+        .filter(Boolean)
+        .join(',')
+      
+      if (mapboxTypes) {
+        url.searchParams.set('types', mapboxTypes)
+      }
+    }
+    
+    const response = await fetch(url.toString())
+    
+    if (!response.ok) {
+      throw new Error(`Mapbox API error: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    
+    // Convert features to POIs
+    const pois = data.features
+      .map((feature: MapboxFeature) => featureToPOI(feature))
+      .filter((poi: POI) => {
+        // Filter by our categories if specified
+        if (categories && categories.length > 0) {
+          return categories.includes(poi.category)
+        }
+        return true
+      })
+    
+    return pois
+  } catch (error) {
+    console.error('Error searching places:', error)
+    return []
+  }
+}
+
+// Map our categories to Mapbox place types
+function getMapboxTypes(category: string): string[] {
+  const typeMap: Record<string, string[]> = {
+    'restaurant': ['restaurant'],
+    'restaurants': ['restaurant'],
+    'cafe-bakery': ['cafe', 'bakery'],
+    'bars-nightlife': ['bar', 'nightclub'],
+    'hotel': ['lodging'],
+    'hotels': ['lodging'],
+    'art-museums': ['museum', 'art_gallery'],
+    'attraction': ['tourist_attraction', 'landmark', 'monument'],
+    'attractions': ['tourist_attraction', 'landmark', 'monument'],
+    'shopping': ['shop', 'shopping_mall'],
+    'beauty-fashion': ['beauty_salon', 'spa'],
+    'transport': ['airport', 'train_station', 'bus_station']
+  }
+  
+  return typeMap[category] || []
+}
+
+// Search for POIs by category
+export async function searchByCategory(
+  category: string, 
+  proximity?: [number, number],
+  limit = 20
+): Promise<POI[]> {
+  // For category search, we'll search for common terms in that category
+  const categorySearchTerms: Record<string, string[]> = {
+    'restaurant': ['restaurant', 'food', 'dining'],
+    'restaurants': ['restaurant', 'food', 'dining'],
+    'cafe-bakery': ['cafe', 'coffee', 'bakery', 'pastry'],
+    'bars-nightlife': ['bar', 'pub', 'nightclub', 'cocktail'],
+    'hotel': ['hotel', 'accommodation', 'lodging'],
+    'hotels': ['hotel', 'accommodation', 'lodging'],
+    'art-museums': ['museum', 'art gallery', 'gallery'],
+    'attraction': ['tourist attraction', 'landmark', 'monument', 'sightseeing'],
+    'attractions': ['tourist attraction', 'landmark', 'monument', 'sightseeing'],
+    'shopping': ['shopping', 'mall', 'store', 'boutique'],
+    'beauty-fashion': ['beauty', 'salon', 'spa', 'fashion'],
+    'transport': ['station', 'airport', 'bus', 'metro']
+  }
+  
+  const searchTerms = categorySearchTerms[category] || [category]
+  
+  try {
+    // Search for multiple terms and combine results
+    const allResults = await Promise.all(
+      searchTerms.slice(0, 3).map(async (term) => {
+        return searchPlaces({
+          query: term,
+          proximity,
+          limit: Math.ceil(limit / searchTerms.length)
+        })
+      })
+    )
+    
+    // Combine and deduplicate results
+    const seenIds = new Set<string>()
+    const uniquePois: POI[] = []
+    
+    for (const results of allResults) {
+      for (const poi of results) {
+        if (!seenIds.has(poi.id)) {
+          seenIds.add(poi.id)
+          // Override category to match what was searched for
+          poi.category = category as POI['category']
+          uniquePois.push(poi)
+        }
+      }
+    }
+    
+    return uniquePois.slice(0, limit)
+  } catch (error) {
+    console.error('Error searching by category:', error)
+    return []
+  }
+}
+
+// Get place details with additional information
+export async function getPlaceDetails(placeId: string): Promise<POI | null> {
+  // Mapbox doesn't have a separate details endpoint, 
+  // so we'll return the basic info we have
+  // In a real app, you might want to fetch additional details from other sources
+  return null
+}
