@@ -20,8 +20,9 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 import { usePlanStore } from '@/store/planStore'
+import { format, differenceInDays } from 'date-fns'
 import { ModernExploreSidebar } from '@/components/ModernExploreSidebar'
-import { ModernDayTimeline } from '@/components/ModernDayTimeline'
+import { ModernTimeline } from '@/components/itinerary/ModernTimeline'
 import { MapCanvas } from '@/components/MapCanvas'
 
 // Dynamically import map to avoid SSR issues
@@ -164,7 +165,12 @@ export default function ModernTripPlannerPage() {
     setItinerary,
     selectedDayId,
     selectDay,
-    getSelectedDay
+    getSelectedDay,
+    removePoiFromDay,
+    selectPoi,
+    highlightPoi,
+    selectedPoiId,
+    highlightedPoiId
   } = usePlanStore()
   
   // Load trip data
@@ -292,11 +298,79 @@ export default function ModernTripPlannerPage() {
               transition={{ type: 'spring', damping: 25 }}
               className="relative w-96 bg-white border-l shadow-sm z-20"
             >
-              <ModernDayTimeline 
-                day={selectedDay}
-                tripName={itinerary.destination}
-                dates={`${new Date(itinerary.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(itinerary.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-              />
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="p-4 border-b">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h1 className="text-xl font-semibold">{itinerary.destination}</h1>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{`${new Date(itinerary.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(itinerary.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`} ({differenceInDays(new Date(itinerary.endDate), new Date(itinerary.startDate)) + 1} days)</span>
+                        <span className="text-gray-400">•</span>
+                        <MapPin className="h-4 w-4" />
+                        <span>{itinerary.destination}</span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Day selector */}
+                <div className="px-4 py-3 border-b">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">{selectedDay && format(new Date(selectedDay.date), 'EEE, d MMM')}</h2>
+                    <span className="text-sm text-gray-500">{selectedDay?.slots?.length || 0}</span>
+                  </div>
+                </div>
+                
+                {/* Timeline */}
+                <div className="flex-1 overflow-hidden">
+                  <ModernTimeline
+                    activities={selectedDay?.slots?.map(slot => ({
+                      id: slot.id,
+                      name: slot.poi?.name || 'Activity',
+                      time: slot.startTime,
+                      duration: slot.duration,
+                      location: {
+                        lat: slot.poi?.location?.lat || 0,
+                        lng: slot.poi?.location?.lng || 0,
+                        address: slot.poi?.location?.address
+                      },
+                      description: slot.poi?.description,
+                      category: slot.poi?.category === 'restaurant' ? 'dining' : 'activity',
+                      price: slot.poi?.price
+                    })) || []}
+                    onReorder={(activities) => {
+                      // Handle reordering
+                      console.log('Reordered activities:', activities)
+                    }}
+                    onEdit={(activity) => {
+                      console.log('Edit activity:', activity)
+                    }}
+                    onDelete={(activityId) => {
+                      removePoiFromDay(selectedDay.id, activityId)
+                    }}
+                    onAdd={() => {
+                      console.log('Add new activity')
+                    }}
+                    onActivityClick={(activityId) => {
+                      selectPoi(activityId)
+                    }}
+                    onActivityHover={(activityId) => {
+                      highlightPoi(activityId)
+                    }}
+                    selectedActivityId={selectedPoiId}
+                    highlightedActivityId={highlightedPoiId}
+                  />
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
