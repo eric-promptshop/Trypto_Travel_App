@@ -7,7 +7,7 @@ import { differenceInMinutes, format } from 'date-fns'
 export interface POI {
   id: string
   name: string
-  category: 'restaurant' | 'attraction' | 'hotel' | 'shopping' | 'transport' | 'other'
+  category: 'restaurant' | 'attraction' | 'hotel' | 'shopping' | 'transport' | 'other' | 'art-museums' | 'bars-nightlife' | 'cafe-bakery' | 'restaurants' | 'hotels' | 'attractions' | 'beauty-fashion'
   location: {
     lat: number
     lng: number
@@ -17,6 +17,8 @@ export interface POI {
   price?: number
   description?: string
   images?: string[]
+  image?: string  // Single main image for display
+  reviews?: number  // Number of reviews
   openingHours?: {
     [day: string]: { open: string; close: string }
   }
