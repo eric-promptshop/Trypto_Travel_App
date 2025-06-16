@@ -22,6 +22,15 @@ export async function GET(request: NextRequest) {
     // Fetch tours from content table for this tenant
     console.log('Fetching tours with tenantId:', tenantId)
     
+    // First check what content exists
+    const allContent = await prisma.content.findMany({
+      where: {
+        tenantId
+      }
+    })
+    console.log('All content for tenant:', allContent.length, 'items')
+    console.log('Content types:', [...new Set(allContent.map(c => c.type))])
+    
     const tours = await prisma.content.findMany({
       where: {
         tenantId,
@@ -33,6 +42,22 @@ export async function GET(request: NextRequest) {
     })
     
     console.log('Tours found:', tours.length)
+    
+    // If no tours found with current tenant, try 'default' tenant
+    if (tours.length === 0 && tenantId !== 'default') {
+      console.log('No tours found for tenant, trying default tenant...')
+      const defaultTours = await prisma.content.findMany({
+        where: {
+          tenantId: 'default',
+          type: 'activity'
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      })
+      console.log('Default tenant tours found:', defaultTours.length)
+      tours.push(...defaultTours)
+    }
     
     // Transform content to tour format
     const formattedTours = tours.map(content => ({

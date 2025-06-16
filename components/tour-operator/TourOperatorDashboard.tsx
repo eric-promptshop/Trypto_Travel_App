@@ -67,21 +67,35 @@ export default function TourOperatorDashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      console.log('[TourOperatorDashboard] Fetching dashboard data...')
+      
       // Fetch tours
       const toursResponse = await fetch('/api/tour-operator/tours')
+      console.log('[TourOperatorDashboard] Tours response status:', toursResponse.status)
+      
       if (toursResponse.ok) {
         const toursData = await toursResponse.json()
+        console.log('[TourOperatorDashboard] Tours data:', toursData)
         setTours(toursData.tours || [])
+      } else {
+        const errorText = await toursResponse.text()
+        console.error('[TourOperatorDashboard] Tours fetch error:', toursResponse.status, errorText)
       }
 
       // Fetch stats
       const statsResponse = await fetch('/api/tour-operator/stats')
+      console.log('[TourOperatorDashboard] Stats response status:', statsResponse.status)
+      
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
+        console.log('[TourOperatorDashboard] Stats data:', statsData)
         setStats(statsData.stats || stats)
+      } else {
+        const errorText = await statsResponse.text()
+        console.error('[TourOperatorDashboard] Stats fetch error:', statsResponse.status, errorText)
       }
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      console.error('[TourOperatorDashboard] Error fetching dashboard data:', error)
     } finally {
       setIsLoading(false)
     }
