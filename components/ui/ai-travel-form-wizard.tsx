@@ -181,13 +181,12 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       toast.success('Trip details added from voice input!', { duration: 3000 })
     } else {
       // Log which fields failed validation
-      const errors = formState.errors;
       console.log('[Form] Validation errors:', errors);
       
       // If basic fields aren't filled, just show what we parsed
       toast.success('Voice input processed. Please complete any missing fields.', { duration: 4000 })
     }
-  }, [trigger, getValues, formState.errors])
+  }, [trigger, getValues, errors])
 
 
   const handleNext = async () => {
