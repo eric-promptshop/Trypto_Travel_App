@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import { motion, AnimatePresence, Reorder } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   DndContext,
   closestCenter,
@@ -14,12 +14,9 @@ import {
   DragOverlay
 } from '@dnd-kit/core'
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable'
-import {
+  verticalListSortingStrategy,
   useSortable
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -37,7 +34,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+// import { ScrollArea } from '@/components/ui/scroll-area'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from 'sonner'
 import { usePlanStore, TimeSlot, DayPlan } from '@/store/planStore'
@@ -148,7 +145,7 @@ export function DayTimeline({ day, onSlotClick }: DayTimelineProps) {
       </div>
       
       {/* Timeline */}
-      <ScrollArea className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         <div className="p-4">
           <DndContext
             sensors={sensors}
@@ -229,7 +226,7 @@ export function DayTimeline({ day, onSlotClick }: DayTimelineProps) {
             </DragOverlay>
           </DndContext>
         </div>
-      </ScrollArea>
+      </div>
       
       {/* Summary */}
       {day.slots.length === 0 && (
