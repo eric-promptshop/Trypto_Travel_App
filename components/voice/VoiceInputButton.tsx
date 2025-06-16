@@ -1,9 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Mic, Square } from 'lucide-react';
+import { Mic, Square, Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
-import { parseVoiceTranscript } from '@/lib/voice-parser';
+import { parseVoiceTranscript, enableVoiceDebug } from '@/lib/voice-parser';
 import { UseFormSetValue } from 'react-hook-form';
 
 interface VoiceInputButtonProps {
@@ -88,21 +88,31 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
     
     const finalText = accumulatedTranscriptRef.current.trim();
     if (finalText) {
+      console.log('[Voice Input] Final transcript:', finalText);
       const parsed = parseVoiceTranscript(finalText);
+      console.log('[Voice Input] Parsed fields:', parsed);
       
       // Apply parsed fields with proper validation
       let hasBasicFields = false;
+      let appliedFields: string[] = [];
+      
       Object.entries(parsed).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           // Skip specialRequests as it's just the raw transcript
           if (key !== 'specialRequests') {
+            console.log(`[Voice Input] Setting ${key} to:`, value);
             setValue(key as any, value, { shouldValidate: true });
+            appliedFields.push(key);
+            
             if (['destination', 'startDate', 'endDate', 'travelers'].includes(key)) {
               hasBasicFields = true;
             }
           }
         }
       });
+      
+      console.log('[Voice Input] Applied fields:', appliedFields);
+      console.log('[Voice Input] Has basic fields:', hasBasicFields);
       
       if (onTranscriptComplete) {
         onTranscriptComplete(finalText);
@@ -111,6 +121,10 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
       // Only navigate if we have meaningful data
       if (hasBasicFields) {
         navigateToReview();
+      } else if (appliedFields.length > 0) {
+        console.log('[Voice Input] Some fields parsed but missing basic fields for navigation');
+      } else {
+        console.log('[Voice Input] No fields could be parsed from the transcript');
       }
     }
     
@@ -191,31 +205,52 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
 
   return (
     <div className="relative inline-block">
-      <Button
-        type="button"
-        variant={isListening ? "destructive" : "outline"}
-        size="sm"
-        onClick={handleToggle}
-        className={cn(
-          "gap-2 transition-all",
-          isListening && "animate-pulse",
-          className
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant={isListening ? "destructive" : "outline"}
+          size="sm"
+          onClick={handleToggle}
+          className={cn(
+            "gap-2 transition-all",
+            isListening && "animate-pulse",
+            className
+          )}
+          aria-label={isListening ? "Stop recording" : "Start recording"}
+          aria-pressed={isListening}
+        >
+          {isListening ? (
+            <>
+              <Square className="h-4 w-4" />
+              <span>Tap to finish</span>
+            </>
+          ) : (
+            <>
+              <Mic className="h-4 w-4" />
+              <span>Describe your trip</span>
+            </>
+          )}
+        </Button>
+        
+        {/* Debug toggle - only show in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              const isDebugEnabled = typeof window !== 'undefined' && 
+                window.localStorage?.getItem('debug-voice') === 'true';
+              enableVoiceDebug(!isDebugEnabled);
+              console.log(`[Voice Debug] ${!isDebugEnabled ? 'Enabled' : 'Disabled'}`);
+            }}
+            className="p-2"
+            title="Toggle voice debug logging"
+          >
+            <Bug className="h-4 w-4" />
+          </Button>
         )}
-        aria-label={isListening ? "Stop recording" : "Start recording"}
-        aria-pressed={isListening}
-      >
-        {isListening ? (
-          <>
-            <Square className="h-4 w-4" />
-            <span>Tap to finish</span>
-          </>
-        ) : (
-          <>
-            <Mic className="h-4 w-4" />
-            <span>Describe your trip</span>
-          </>
-        )}
-      </Button>
+      </div>
       
       {/* Subtle overlay beneath mic button */}
       <div 
