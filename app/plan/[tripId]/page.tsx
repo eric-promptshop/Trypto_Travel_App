@@ -25,6 +25,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 import { usePlanStore } from '@/store/planStore'
 import { format, differenceInDays } from 'date-fns'
+import { convertAIItineraryToStoreFormat, storeItineraryMetadata } from '@/lib/services/itinerary-converter'
 import { ModernExploreSidebar } from '@/components/ModernExploreSidebar'
 import { ModernTimeline } from '@/components/itinerary/ModernTimeline'
 import { MobileDayCards } from '@/components/itinerary/MobileDayCards'
@@ -296,27 +297,47 @@ export default function ModernTripPlannerPage() {
         const storedItinerary = localStorage.getItem('lastGeneratedItinerary')
         if (storedItinerary) {
           const parsed = JSON.parse(storedItinerary)
+          console.log('Loading AI-generated itinerary:', parsed)
           
-          // Convert to store format
-          const storeItinerary = {
+          // Convert AI itinerary to store format with activities
+          const storeItinerary = convertAIItineraryToStoreFormat(parsed, tripId)
+          
+          // Store metadata for later use
+          storeItineraryMetadata(parsed)
+          
+          // Set the itinerary in the store
+          setItinerary(storeItinerary)
+          setCurrentDate(storeItinerary.startDate)
+          
+          // Select the first day
+          if (storeItinerary.days.length > 0) {
+            selectDay(storeItinerary.days[0].id)
+          }
+          
+          // Map will auto-center on POIs
+          
+          localStorage.removeItem('lastGeneratedItinerary')
+          toast.success('Your personalized itinerary is ready!')
+        } else {
+          // No generated itinerary, create empty one
+          const emptyItinerary = {
             id: tripId,
             tripId,
-            destination: parsed.location || parsed.destination || 'Paris, France',
-            startDate: new Date(parsed.startDate || Date.now()),
-            endDate: new Date(parsed.endDate || Date.now()),
-            days: parsed.days?.map((day: any, index: number) => ({
-              id: `day-${index + 1}`,
-              dayNumber: index + 1,
-              date: new Date(Date.now() + index * 24 * 60 * 60 * 1000),
+            destination: 'Your Destination',
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            days: Array.from({ length: 7 }, (_, i) => ({
+              id: `day-${i + 1}`,
+              dayNumber: i + 1,
+              date: new Date(Date.now() + i * 24 * 60 * 60 * 1000),
               slots: [],
-              notes: day.description
-            })) || [],
+              notes: ''
+            })),
             pois: []
           }
           
-          setItinerary(storeItinerary)
-          setCurrentDate(storeItinerary.startDate)
-          localStorage.removeItem('lastGeneratedItinerary')
+          setItinerary(emptyItinerary)
+          setCurrentDate(emptyItinerary.startDate)
         }
       } catch (error) {
         console.error('Error loading trip:', error)
