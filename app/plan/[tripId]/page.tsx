@@ -31,6 +31,7 @@ import { ModernTimeline } from '@/components/itinerary/ModernTimeline'
 import { MobileDayCards } from '@/components/itinerary/MobileDayCards'
 import { TimelineWithImagesV2 as TimelineWithImages } from '@/components/itinerary/TimelineWithImagesV2'
 import { MapCanvas } from '@/components/MapCanvas'
+import { ShareItineraryModal } from '@/components/ShareItineraryModal'
 
 // Dynamically import map to avoid SSR issues
 const DynamicMap = dynamic(() => import('@/components/MapCanvas').then(mod => mod.MapCanvas), {
@@ -113,7 +114,8 @@ function TripHeader({
   currentDate,
   onDateChange,
   onBack,
-  isMobile
+  isMobile,
+  onShare
 }: {
   destination: string
   startDate: Date
@@ -122,6 +124,7 @@ function TripHeader({
   onDateChange: (date: Date) => void
   onBack: () => void
   isMobile: boolean
+  onShare?: () => void
 }) {
   const formatDateRange = () => {
     const start = new Date(startDate)
@@ -161,6 +164,7 @@ function TripHeader({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
+            onClick={onShare}
           >
             <Share className="h-5 w-5" />
           </Button>
@@ -236,6 +240,7 @@ function TripHeader({
             variant="default"
             size="sm"
             className="h-8 px-4 bg-indigo-600 hover:bg-indigo-700"
+            onClick={onShare}
           >
             <Share className="h-3.5 w-3.5 mr-2" />
             Share
@@ -268,6 +273,7 @@ export default function ModernTripPlannerPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [mobileView, setMobileView] = useState<MobileView>('timeline')
   const [isMobile, setIsMobile] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   
   const {
     itinerary,
@@ -412,6 +418,7 @@ export default function ModernTripPlannerPage() {
         onDateChange={setCurrentDate}
         onBack={() => router.push('/plan')}
         isMobile={isMobile}
+        onShare={() => setShowShareModal(true)}
       />
       
       {/* Main content */}
@@ -635,6 +642,19 @@ export default function ModernTripPlannerPage() {
         <MobileBottomNav 
           activeView={mobileView} 
           onViewChange={setMobileView} 
+        />
+      )}
+
+      {/* Share Modal */}
+      {itinerary && (
+        <ShareItineraryModal
+          isOpen={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          tripId={tripId}
+          tripTitle={itinerary.title || 'My Trip'}
+          destination={itinerary.destination || ''}
+          startDate={itinerary.startDate || ''}
+          endDate={itinerary.endDate || ''}
         />
       )}
     </div>
