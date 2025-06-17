@@ -1,5 +1,7 @@
 # Vercel Environment Variables Setup
 
+<!-- Last updated: 2024-12-17 - DATABASE_URL configured -->
+
 ## Required Environment Variables
 
 ### Database Connection (Supabase)
