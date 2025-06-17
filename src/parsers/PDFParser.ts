@@ -1,9 +1,9 @@
-import pdfParse from 'pdf-parse';
+import { parsePDF } from './pdf-parse-wrapper';
 import { BaseDocumentParser, ParsedDocument } from './BaseDocumentParser';
 
 export class PDFParser extends BaseDocumentParser {
   async parse(buffer: Buffer): Promise<ParsedDocument> {
-    const data = await pdfParse(buffer);
+    const data = await parsePDF(buffer);
     const rawText = data.text;
     // TODO: Implement structure detection and metadata extraction
     return {
