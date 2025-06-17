@@ -29,7 +29,7 @@ import { convertAIItineraryToStoreFormat, storeItineraryMetadata } from '@/lib/s
 import { ModernExploreSidebar } from '@/components/ModernExploreSidebar'
 import { ModernTimeline } from '@/components/itinerary/ModernTimeline'
 import { MobileDayCards } from '@/components/itinerary/MobileDayCards'
-import { TimelineWithImages } from '@/components/itinerary/TimelineWithImages'
+import { TimelineWithImagesV2 as TimelineWithImages } from '@/components/itinerary/TimelineWithImagesV2'
 import { MapCanvas } from '@/components/MapCanvas'
 
 // Dynamically import map to avoid SSR issues
