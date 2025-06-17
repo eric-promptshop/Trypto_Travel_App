@@ -228,7 +228,7 @@ export async function convertAIItineraryToStoreFormat(
       }
       
       slots.push(slot)
-    })
+    }
     
     // Add accommodation as a POI if available
     if (aiDay.accommodation) {
