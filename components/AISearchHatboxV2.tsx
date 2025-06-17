@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Chip } from '@/components/ui/chip'
+import { ChipTray } from '@/components/ui/chip-tray'
 import { AutoResizeTextarea } from '@/components/ui/auto-resize-textarea'
 import { usePlanStore } from '@/store/planStore'
 import ReactMarkdown from 'react-markdown'
@@ -190,6 +191,7 @@ export function AISearchHatboxV2() {
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   
   const itinerary = usePlanStore((state) => state.itinerary)
   const searchPoisByQuery = usePlanStore((state) => state.searchPoisByQuery)
@@ -203,6 +205,23 @@ export function AISearchHatboxV2() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Detect keyboard visibility on mobile
+  useEffect(() => {
+    if (!isMobile) return
+
+    const handleFocus = () => setIsKeyboardVisible(true)
+    const handleBlur = () => setIsKeyboardVisible(false)
+
+    // Listen to all input elements
+    document.addEventListener('focusin', handleFocus)
+    document.addEventListener('focusout', handleBlur)
+
+    return () => {
+      document.removeEventListener('focusin', handleFocus)
+      document.removeEventListener('focusout', handleBlur)
+    }
+  }, [isMobile])
 
   // Don't persist chat history for cleaner experience
   // Remove localStorage loading to start fresh each time
@@ -442,7 +461,7 @@ export function AISearchHatboxV2() {
       location: item.location || {
         lat: 48.8566 + (Math.random() - 0.5) * 0.1, // Demo coordinates near Paris
         lng: 2.3522 + (Math.random() - 0.5) * 0.1,
-        address: item.location?.address || ''
+        address: (item.location as any)?.address || ''
       },
       description: item.description,
       rating: item.rating,
@@ -585,10 +604,10 @@ export function AISearchHatboxV2() {
             exit={{ opacity: 0, y: isMobile ? 100 : -10 }}
             transition={{ duration: 0.2, type: "spring", damping: 25 }}
             className={cn(
-              "bg-white border border-gray-200 shadow-lg",
+              "bg-white border border-gray-200 shadow-lg flex flex-col",
               isMobile 
                 ? "fixed inset-x-0 bottom-0 z-50 rounded-t-2xl max-h-[80vh]" 
-                : "absolute top-full left-0 right-0 rounded-b-lg z-40 mt-[-1px] border-t-0"
+                : "absolute top-full left-0 right-0 rounded-b-lg z-40 mt-[-1px] border-t-0 h-[600px]"
             )}
           >
             {/* Header */}
@@ -602,10 +621,10 @@ export function AISearchHatboxV2() {
 
             {/* Chat messages */}
             <div 
-              ref={scrollAreaRef}
+              ref={chatContainerRef}
               className={cn(
-                "overflow-y-auto scroll-smooth",
-                isMobile ? "h-[calc(80vh-120px)]" : "h-[500px]"
+                "flex-1 overflow-y-auto scroll-smooth",
+                "min-h-0" // Important for flex child
               )}
               style={{ overscrollBehavior: 'contain' }}
             >
@@ -616,7 +635,7 @@ export function AISearchHatboxV2() {
                 )}
               >
                 {messages.length === 0 ? (
-                  <div className="text-center py-8">
+                  <div className="text-center py-4">
                     <Sparkles className="h-12 w-12 text-blue-200 mx-auto mb-3" />
                     <p className="text-gray-600 mb-2 text-base">Hi! I'm your AI travel guide.</p>
                     <p className="text-sm text-gray-500">Ask me anything about {itinerary?.destination || 'your destination'}!</p>
@@ -643,9 +662,8 @@ export function AISearchHatboxV2() {
                           {message.role === 'assistant' ? (
                             <div className="p-4 sm:p-6">
                               {/* AI message with improved readability */}
-                              <div className="space-y-4">
+                              <div className="space-y-4 prose prose-sm sm:prose-base max-w-none">
                                 <ReactMarkdown
-                                  className="prose prose-sm sm:prose-base max-w-none"
                                   components={{
                                     p: ({ children }) => (
                                       <p className="text-sm sm:text-base leading-relaxed mb-3 sm:mb-4 text-gray-700">
@@ -747,9 +765,20 @@ export function AISearchHatboxV2() {
                 )}
               </div>
             </div>
+            
+            {/* Sticky chip tray - always visible at bottom when no messages */}
+            {messages.length === 0 && (
+              <ChipTray
+                chips={DEFAULT_CATEGORIES}
+                onChipClick={handleAIQuery}
+                isLoading={isLoading}
+                isKeyboardVisible={isKeyboardVisible}
+                className={isMobile ? "" : "border-t-0"}
+              />
+            )}
 
-            {/* Mobile input area */}
-            {isMobile && (
+            {/* Mobile input area and quick replies */}
+            {isMobile && messages.length > 0 && (
               <div className="border-t bg-white dark:bg-gray-900 p-4">
                 <form onSubmit={handleSubmit} className="flex gap-2 items-end">
                   <AutoResizeTextarea
@@ -803,12 +832,12 @@ export function AISearchHatboxV2() {
             )}
 
             {/* Desktop quick reply chips and input */}
-            {!isMobile && (
+            {!isMobile && messages.length > 0 && (
               <div className="border-t bg-white dark:bg-gray-900">
                 {/* Chips */}
                 <div className="px-4 pt-3 pb-2">
                   <div className="flex flex-wrap gap-2 max-w-2xl mx-auto">
-                    {(messages.length === 0 ? DEFAULT_CATEGORIES : quickReplies).map((chip, idx) => (
+                    {quickReplies.map((chip, idx) => (
                       <Chip
                         key={idx}
                         onClick={() => handleAIQuery(chip.text)}
