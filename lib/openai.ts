@@ -14,10 +14,10 @@ export async function createCompletion(messages: any[], options?: any) {
   }
   
   return openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
+    model: process.env.MODEL || 'gpt-4o-mini',
     messages,
-    temperature: 0.7,
-    max_tokens: 500,
+    temperature: parseFloat(process.env.TEMPERATURE || '0.7'),
+    max_tokens: parseInt(process.env.MAX_TOKENS || '500'),
     ...options
   })
 }

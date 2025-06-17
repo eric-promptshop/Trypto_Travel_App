@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-
-// Dynamic import to handle missing API key gracefully
-let openai: any
-try {
-  const openaiModule = require('@/lib/openai')
-  openai = openaiModule.openai
-} catch (error) {
-  console.warn('OpenAI not configured:', error)
-}
+import { openai } from '@/lib/openai'
 
 const chatRequestSchema = z.object({
   message: z.string().min(1),
@@ -85,10 +77,10 @@ export async function POST(request: NextRequest) {
     
     // Create streaming response
     const stream = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+      model: process.env.MODEL || 'gpt-4o-mini',
       messages,
-      temperature: 0.7,
-      max_tokens: 500,
+      temperature: parseFloat(process.env.TEMPERATURE || '0.7'),
+      max_tokens: parseInt(process.env.MAX_TOKENS || '500'),
       stream: true
     })
     
