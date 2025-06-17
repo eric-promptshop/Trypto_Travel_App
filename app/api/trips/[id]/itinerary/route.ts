@@ -204,21 +204,26 @@ export const PUT = withErrorHandling(async (
     }
   });
 
-  // Log the update
-  if (session.user.tenantId) {
-    await prisma.auditLog.create({
-      data: {
-        action: 'UPDATE_ITINERARY',
-        resource: 'itinerary',
-        resourceId: id,
-        tenantId: session.user.tenantId,
-        userId: session.user.id,
-        newValues: {
-          totalPrice,
-          daysUpdated: validation.data.length
+  // Log the update - only if user exists in database
+  if (session.user.tenantId && !session.user.id.startsWith('demo-')) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: 'UPDATE_ITINERARY',
+          resource: 'itinerary',
+          resourceId: id,
+          tenantId: session.user.tenantId,
+          userId: session.user.id,
+          newValues: {
+            totalPrice,
+            daysUpdated: validation.data.length
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Failed to create audit log:', error);
+      // Don't fail the request if audit logging fails
+    }
   }
 
   return createSuccessResponse({
@@ -315,22 +320,27 @@ export const POST = withErrorHandling(async (
     }
   });
 
-  // Log the addition
-  if (session.user.tenantId) {
-    await prisma.auditLog.create({
-      data: {
-        action: 'ADD_ACTIVITY',
-        resource: 'itinerary',
-        resourceId: id,
-        tenantId: session.user.tenantId,
-        userId: session.user.id,
-        newValues: {
-          day: dayNumber,
-          activityType,
-          activityName: activity.name
+  // Log the addition - only if user exists in database
+  if (session.user.tenantId && !session.user.id.startsWith('demo-')) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: 'ADD_ACTIVITY',
+          resource: 'itinerary',
+          resourceId: id,
+          tenantId: session.user.tenantId,
+          userId: session.user.id,
+          newValues: {
+            day: dayNumber,
+            activityType,
+            activityName: activity.name
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Failed to create audit log:', error);
+      // Don't fail the request if audit logging fails
+    }
   }
 
   return createSuccessResponse({

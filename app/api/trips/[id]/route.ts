@@ -164,25 +164,30 @@ export const PUT = withErrorHandling(async (
     data: updateData
   });
 
-  // Log the update
-  if (session.user.tenantId) {
-    await prisma.auditLog.create({
-      data: {
-        action: 'UPDATE',
-        resource: 'itinerary',
-        resourceId: id,
-        tenantId: session.user.tenantId,
-        userId: session.user.id,
-        oldValues: {
-          title: existingItinerary.title,
-          destination: existingItinerary.destination
-        },
-        newValues: {
-          title: updatedItinerary.title,
-          destination: updatedItinerary.destination
+  // Log the update - only if user exists in database
+  if (session.user.tenantId && !session.user.id.startsWith('demo-')) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: 'UPDATE',
+          resource: 'itinerary',
+          resourceId: id,
+          tenantId: session.user.tenantId,
+          userId: session.user.id,
+          oldValues: {
+            title: existingItinerary.title,
+            destination: existingItinerary.destination
+          },
+          newValues: {
+            title: updatedItinerary.title,
+            destination: updatedItinerary.destination
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Failed to create audit log:', error);
+      // Don't fail the request if audit logging fails
+    }
   }
 
   // Transform to Trip interface
@@ -239,21 +244,26 @@ export const DELETE = withErrorHandling(async (
     where: { id }
   });
 
-  // Log the deletion
-  if (session.user.tenantId) {
-    await prisma.auditLog.create({
-      data: {
-        action: 'DELETE',
-        resource: 'itinerary',
-        resourceId: id,
-        tenantId: session.user.tenantId,
-        userId: session.user.id,
-        oldValues: {
-          title: existingItinerary.title,
-          destination: existingItinerary.destination
+  // Log the deletion - only if user exists in database
+  if (session.user.tenantId && !session.user.id.startsWith('demo-')) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: 'DELETE',
+          resource: 'itinerary',
+          resourceId: id,
+          tenantId: session.user.tenantId,
+          userId: session.user.id,
+          oldValues: {
+            title: existingItinerary.title,
+            destination: existingItinerary.destination
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Failed to create audit log:', error);
+      // Don't fail the request if audit logging fails
+    }
   }
 
   return createSuccessResponse({ message: 'Trip deleted successfully' });

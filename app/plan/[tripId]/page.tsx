@@ -80,12 +80,12 @@ function MobileBottomNav({
             "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors",
             "text-gray-600 hover:text-gray-900"
           )}
-          onClick={() => toast.info('Hotels feature coming soon!')}
+          onClick={() => toast.info('Flights feature coming soon!')}
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0011.5 2A1.5 1.5 0 0010 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
           </svg>
-          <span className="text-xs font-medium">Hotels</span>
+          <span className="text-xs font-medium">Flights</span>
         </button>
         
         <button
@@ -509,7 +509,28 @@ export default function ModernTripPlannerPage() {
                 exit={{ y: -20, opacity: 0 }}
                 className="absolute inset-0 bg-white"
               >
-                <ModernExploreSidebar />
+                <div className="flex flex-col h-full">
+                  {/* List/Map Toggle for Explore View */}
+                  <div className="px-4 pt-4 pb-2">
+                    <div className="flex bg-gray-100 rounded-lg p-1">
+                      <button
+                        onClick={() => setMobileView('timeline')}
+                        className="flex-1 py-2 px-4 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900"
+                      >
+                        List
+                      </button>
+                      <button
+                        onClick={() => setMobileView('map')}
+                        className="flex-1 py-2 px-4 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900"
+                      >
+                        Map
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <ModernExploreSidebar />
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

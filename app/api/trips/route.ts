@@ -184,22 +184,27 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     }
   });
 
-  // Log the creation
-  if (session.user.tenantId) {
-    await prisma.auditLog.create({
-      data: {
-        action: 'CREATE',
-        resource: 'itinerary',
-        resourceId: newItinerary.id,
-        tenantId: session.user.tenantId,
-        userId: session.user.id,
-        newValues: {
-          title,
-          destination: location,
-          dates: `${startDate} - ${endDate}`
+  // Log the creation - only if user exists in database
+  if (session.user.tenantId && !session.user.id.startsWith('demo-')) {
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: 'CREATE',
+          resource: 'itinerary',
+          resourceId: newItinerary.id,
+          tenantId: session.user.tenantId,
+          userId: session.user.id,
+          newValues: {
+            title,
+            destination: location,
+            dates: `${startDate} - ${endDate}`
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Failed to create audit log:', error);
+      // Don't fail the request if audit logging fails
+    }
   }
 
   // Transform to Trip interface
