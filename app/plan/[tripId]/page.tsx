@@ -300,7 +300,7 @@ export default function ModernTripPlannerPage() {
           console.log('Loading AI-generated itinerary:', parsed)
           
           // Convert AI itinerary to store format with activities
-          const storeItinerary = convertAIItineraryToStoreFormat(parsed, tripId)
+          const storeItinerary = await convertAIItineraryToStoreFormat(parsed, tripId)
           
           // Store metadata for later use
           storeItineraryMetadata(parsed)
