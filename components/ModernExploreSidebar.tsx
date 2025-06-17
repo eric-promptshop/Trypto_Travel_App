@@ -28,7 +28,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { PlaceFiltersComponent, PlaceFilters } from './PlaceFilters'
 import { PlaceCardWithImage } from './PlaceCardWithImage'
 import { toast } from 'sonner'
-import { AISearchHatbox } from './AISearchHatbox'
+import { AISearchHatboxV2 as AISearchHatbox } from './AISearchHatboxV2'
 
 // Calculate distance between two points in kilometers
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
