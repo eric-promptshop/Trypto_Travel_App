@@ -146,6 +146,7 @@
     "react-hot-toast": "^2.5.2",
     "react-leaflet": "^5.0.0",
     "react-map-gl": "^8.0.4",
+    "react-markdown": "^10.1.0",
     "react-resizable-panels": "^2.1.7",
     "react-swipeable": "^7.0.2",
     "recharts": "2.15.0",

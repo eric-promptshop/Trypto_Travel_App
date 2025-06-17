@@ -28,6 +28,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { PlaceFiltersComponent, PlaceFilters } from './PlaceFilters'
 import { PlaceCardWithImage } from './PlaceCardWithImage'
 import { toast } from 'sonner'
+import { AISearchHatbox } from './AISearchHatbox'
 
 // Calculate distance between two points in kilometers
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -310,39 +311,17 @@ export function ModernExploreSidebar() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-semibold">Explore</h2>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant={showAIRecommendations ? "default" : "outline"}
-              onClick={async () => {
-                setShowAIRecommendations(!showAIRecommendations)
-                if (!showAIRecommendations && aiRecommendations.length === 0) {
-                  await loadAIRecommendations()
-                }
-              }}
-              className="gap-1"
-            >
-              <Sparkles className="h-3 w-3" />
-              AI Guide
-            </Button>
-            <PlaceFiltersComponent
-              filters={filters}
-              onFiltersChange={setFilters}
-            />
-          </div>
+          <PlaceFiltersComponent
+            filters={filters}
+            onFiltersChange={setFilters}
+          />
         </div>
         
-        {/* Search */}
+        {/* AI Search Hatbox */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search a place"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10 bg-gray-50 border-gray-200"
-          />
+          <AISearchHatbox />
         </div>
       </div>
       

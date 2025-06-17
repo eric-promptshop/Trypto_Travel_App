@@ -86,6 +86,7 @@ interface PlanState {
   
   // Actions
   setItinerary: (itinerary: Itinerary) => void
+  searchPoisByQuery: (query: string) => Promise<POI[]>
   addPoiToDay: (poi: POI, dayId: string, time?: string) => void
   removePoiFromDay: (dayId: string, slotId: string) => void
   reorderDaySlots: (dayId: string, fromIndex: number, toIndex: number) => void
@@ -171,6 +172,18 @@ export const usePlanStore = create<PlanState>()(
           }
         }
       }),
+
+      searchPoisByQuery: async (query: string): Promise<POI[]> => {
+        try {
+          const response = await fetch(`/api/places/search?query=${encodeURIComponent(query)}&limit=10`)
+          if (!response.ok) throw new Error('Search failed')
+          const data = await response.json()
+          return data.places || []
+        } catch (error) {
+          console.error('Search error:', error)
+          return []
+        }
+      },
       
       addPoiToDay: (poi, dayId, time) => set((state) => {
         if (!state.itinerary) return
