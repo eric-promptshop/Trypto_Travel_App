@@ -299,7 +299,7 @@ export async function convertAIItineraryToStoreFormat(
           slots.splice(insertIndex, 0, mealSlot)
         }
       }
-    })
+    }
     
     // Create day plan
     const dayPlan: DayPlan = {
@@ -311,7 +311,7 @@ export async function convertAIItineraryToStoreFormat(
     }
     
     days.push(dayPlan)
-  })
+  }
   
   // Create the complete itinerary
   const itinerary: Itinerary = {
