@@ -174,6 +174,14 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
         
         // Small delay to ensure form state is fully updated
         setTimeout(() => {
+          // Stop any ongoing processes
+          stop();
+          
+          // Clear focus from any form elements
+          if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+          }
+          
           navigateToReview();
         }, 500);
       } else if (successfulFields > 0) {

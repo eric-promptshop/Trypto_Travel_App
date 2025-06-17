@@ -177,8 +177,31 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     console.log('[Form] Basic fields validation result:', basicFieldsValid);
     
     if (basicFieldsValid) {
-      setCurrentStep(3)
-      toast.success('Trip details added from voice input!', { duration: 3000 })
+      // Clear any focus to prevent accidental submission
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      
+      // Use setTimeout to ensure state updates are processed
+      setTimeout(() => {
+        setCurrentStep(3)
+        toast.success('Trip details added from voice input!', { duration: 3000 })
+        
+        // Prevent any immediate form submission
+        const form = document.querySelector('form');
+        if (form) {
+          form.addEventListener('submit', (e) => {
+            console.log('[Form] Preventing immediate submission after voice input');
+            e.preventDefault();
+            e.stopPropagation();
+          }, { once: true, capture: true });
+          
+          // Remove the prevention after a delay
+          setTimeout(() => {
+            console.log('[Form] Re-enabling form submission');
+          }, 1000);
+        }
+      }, 100);
     } else {
       // Log which fields failed validation
       console.log('[Form] Validation errors:', errors);
@@ -225,6 +248,17 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       console.error('[Form] ERROR: Form submitted from step', currentStep);
       return;
     }
+    
+    // Additional check to prevent auto-submission from voice input
+    const submitButton = document.activeElement as HTMLElement;
+    if (!submitButton || submitButton.getAttribute('type') !== 'submit' || 
+        !(submitButton as any).dataset?.userClicked) {
+      console.log('[Form] Form submission not triggered by explicit user click on Generate Trip button, ignoring');
+      return;
+    }
+    
+    // Clear the flag
+    delete (submitButton as any).dataset.userClicked;
     
     try {
       await onSubmit(data);
@@ -835,6 +869,11 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
                   type="submit"
                   disabled={isGenerating || !isValid}
                   className="gap-2 bg-gradient-to-r from-[#ff6b35] to-[#ff8759] hover:from-[#ff5525] hover:to-[#ff7649] text-white font-medium px-8 shadow-lg hover:shadow-xl transition-all duration-300"
+                  onClick={(e) => {
+                    console.log('[Form] Generate Trip button clicked');
+                    // Mark this as an explicit user action
+                    (e.currentTarget as any).dataset.userClicked = 'true';
+                  }}
                 >
                   {isGenerating ? (
                     <>
