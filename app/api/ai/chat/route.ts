@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { openai } from '@/lib/openai'
 import { z } from 'zod'
+
+// Dynamic import to handle missing API key gracefully
+let openai: any
+try {
+  const openaiModule = require('@/lib/openai')
+  openai = openaiModule.openai
+} catch (error) {
+  console.warn('OpenAI not configured:', error)
+}
 
 const chatRequestSchema = z.object({
   message: z.string().min(1),
@@ -13,6 +21,21 @@ const chatRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if OpenAI is configured
+    if (!openai) {
+      // Return a mock response for demo purposes
+      return new Response(
+        'I apologize, but the AI service is not configured yet. To enable AI features, please add your OpenAI API key to the environment variables. For now, you can use the category buttons below to explore places!',
+        {
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+          }
+        }
+      )
+    }
+
     const body = await request.json()
     const validation = chatRequestSchema.safeParse(body)
     
