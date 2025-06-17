@@ -325,36 +325,7 @@ export function ModernExploreSidebar() {
         </div>
       </div>
       
-      {/* Categories Grid */}
-      <div className="px-4 pb-4">
-        <div className="grid grid-cols-3 gap-2">
-          {CATEGORIES.map((category) => {
-            const Icon = category.icon
-            return (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={cn(
-                  "flex flex-col items-center gap-2 p-3 rounded-lg transition-all",
-                  selectedCategory === category.id
-                    ? "bg-gray-100 shadow-sm"
-                    : "hover:bg-gray-50"
-                )}
-              >
-                <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center",
-                  selectedCategory === category.id ? "bg-white" : "bg-gray-100"
-                )}>
-                  <Icon className={cn("h-5 w-5", category.color)} />
-                </div>
-                <span className="text-xs font-medium text-gray-700 text-center leading-tight">
-                  {category.label}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      {/* Category buttons removed - AI chat is now the primary interface */}
       
       {/* Places List */}
       <ScrollArea className="flex-1 px-4">

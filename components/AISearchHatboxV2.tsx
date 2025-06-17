@@ -180,7 +180,7 @@ function RecommendationCard({
 }
 
 export function AISearchHatboxV2() {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true) // Start expanded by default
   const [isFocused, setIsFocused] = useState(false)
   const [query, setQuery] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -224,16 +224,7 @@ export function AISearchHatboxV2() {
     }
   }, [messages])
 
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isExpanded) {
-        setIsExpanded(false)
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isExpanded])
+  // Keyboard shortcuts removed - chat always stays open
 
   // Generate contextual quick replies
   const generateQuickReplies = useCallback((destination: string, messageContent?: string) => {
@@ -327,8 +318,24 @@ export function AISearchHatboxV2() {
         // Fallback to regular POI search
         const results = await searchPoisByQuery(userQuery)
         if (results.length > 0) {
-          setIsExpanded(false)
-          toast.info(`Found ${results.length} places for "${userQuery}"`)
+          // Show results in chat instead of collapsing
+          const aiMessage: ChatMessage = {
+            id: `ai-${Date.now()}`,
+            role: 'assistant',
+            content: `I found ${results.length} places matching "${userQuery}". Here are some top results:`,
+            timestamp: new Date(),
+            recommendations: results.slice(0, 3).map(poi => ({
+              id: poi.id,
+              type: 'place' as const,
+              name: poi.name,
+              description: poi.description || 'Popular destination',
+              rating: poi.rating,
+              priceLevel: poi.price,
+              category: poi.category,
+              location: poi.location
+            }))
+          }
+          setMessages(prev => [...prev, aiMessage])
           return
         }
       }
@@ -454,10 +461,7 @@ export function AISearchHatboxV2() {
       </div>
     )
     
-      // Collapse chat after a short delay
-      setTimeout(() => {
-        setIsExpanded(false)
-      }, 1500)
+      // Chat stays open after adding items
     } catch (error) {
       console.error('Error adding to itinerary:', error)
       toast.error('Failed to add to itinerary')
@@ -475,8 +479,7 @@ export function AISearchHatboxV2() {
   // Handle expansion
   const handleExpand = () => {
     setIsExpanded(true)
-    // Clear messages when opening for fresh start
-    setMessages([])
+    // Don't clear messages since chat is always open
     if (!quickReplies.length && itinerary?.destination) {
       setQuickReplies(generateQuickReplies(itinerary.destination))
     }
@@ -574,16 +577,7 @@ export function AISearchHatboxV2() {
       <AnimatePresence>
         {isExpanded && (
           <>
-            {/* Mobile backdrop */}
-            {isMobile && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 z-40"
-                onClick={() => setIsExpanded(false)}
-              />
-            )}
+            {/* Mobile backdrop removed - chat stays open */}
             
           <motion.div
             initial={{ opacity: 0, y: isMobile ? 100 : -10 }}
@@ -603,14 +597,7 @@ export function AISearchHatboxV2() {
                 <Sparkles className="h-4 w-4 text-blue-600" />
                 <h3 className="font-semibold">TripNav AI</h3>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsExpanded(false)}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              {/* Close button removed - chat always open */}
             </div>
 
             {/* Chat messages */}
@@ -618,7 +605,7 @@ export function AISearchHatboxV2() {
               ref={scrollAreaRef}
               className={cn(
                 "overflow-y-auto scroll-smooth",
-                isMobile ? "h-[calc(80vh-120px)]" : "h-[400px]"
+                isMobile ? "h-[calc(80vh-120px)]" : "h-[500px]"
               )}
               style={{ overscrollBehavior: 'contain' }}
             >
@@ -869,17 +856,7 @@ export function AISearchHatboxV2() {
               </div>
             )}
 
-            {/* Mobile floating close button */}
-            {isMobile && (
-              <Button
-                className="fixed bottom-20 right-4 rounded-full shadow-lg z-50"
-                size="icon"
-                variant="secondary"
-                onClick={() => setIsExpanded(false)}
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            )}
+            {/* Close button removed - chat stays open */}
           </motion.div>
           </>
         )}
