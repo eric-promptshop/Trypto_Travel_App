@@ -21,11 +21,9 @@ import {
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { usePlanStore } from '@/store/planStore'
-import { useDebounce } from '@/hooks/useDebounce'
 import ReactMarkdown from 'react-markdown'
 import { toast } from 'sonner'
 import Image from 'next/image'
@@ -73,14 +71,19 @@ function RecommendationCard({
   onAdd 
 }: { 
   item: RecommendationItem
-  onAdd: () => void 
+  onAdd: () => void | Promise<void>
 }) {
   const [isAdding, setIsAdding] = useState(false)
   
   const handleAdd = async () => {
-    setIsAdding(true)
-    await onAdd()
-    setIsAdding(false)
+    try {
+      setIsAdding(true)
+      await onAdd()
+    } catch (error) {
+      console.error('Error adding recommendation:', error)
+    } finally {
+      setIsAdding(false)
+    }
   }
   
   return (
@@ -169,11 +172,13 @@ export function AISearchHatboxV2() {
   const [isLoading, setIsLoading] = useState(false)
   const [quickReplies, setQuickReplies] = useState<QuickReplyChip[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
   
-  const debouncedQuery = useDebounce(query, 300)
-  const { itinerary, searchPoisByQuery, addPoiToDay, getSelectedDay } = usePlanStore()
+  const itinerary = usePlanStore((state) => state.itinerary)
+  const searchPoisByQuery = usePlanStore((state) => state.searchPoisByQuery)
+  const addPoiToDay = usePlanStore((state) => state.addPoiToDay)
+  const getSelectedDay = usePlanStore((state) => state.getSelectedDay)
 
   // Check if mobile
   useEffect(() => {
@@ -193,8 +198,13 @@ export function AISearchHatboxV2() {
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    if (chatContainerRef.current) {
+      // Add a small delay to ensure DOM is updated
+      setTimeout(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+        }
+      }, 100)
     }
   }, [messages])
 
@@ -282,7 +292,7 @@ export function AISearchHatboxV2() {
       // Check if it's a simple place search (just a city/place name)
       const isSimpleSearch = userQuery.split(' ').length <= 3 && !userQuery.includes('?')
       
-      if (isSimpleSearch) {
+      if (isSimpleSearch && searchPoisByQuery) {
         // Fallback to regular POI search
         const results = await searchPoisByQuery(userQuery)
         if (results.length > 0) {
@@ -374,11 +384,17 @@ export function AISearchHatboxV2() {
 
   // Handle adding recommendation to itinerary
   const handleAddToItinerary = async (item: RecommendationItem) => {
-    const selectedDay = getSelectedDay()
-    if (!selectedDay) {
-      toast.error('Please select a day first')
-      return
-    }
+    try {
+      if (!getSelectedDay || !addPoiToDay) {
+        toast.error('Unable to add to itinerary. Please refresh the page.')
+        return
+      }
+      
+      const selectedDay = getSelectedDay()
+      if (!selectedDay) {
+        toast.error('Please select a day first')
+        return
+      }
 
     // Create POI from recommendation
     const poi = {
@@ -396,10 +412,10 @@ export function AISearchHatboxV2() {
       imageUrl: item.imageUrl
     }
 
-    // Add to selected day
-    addPoiToDay(poi, selectedDay.id)
-    
-    // Show success toast
+      // Add to selected day
+      addPoiToDay(poi, selectedDay.id)
+      
+      // Show success toast
     toast.success(
       <div className="flex items-center gap-2">
         <MapPin className="h-4 w-4" />
@@ -407,10 +423,14 @@ export function AISearchHatboxV2() {
       </div>
     )
     
-    // Collapse chat after a short delay
-    setTimeout(() => {
-      setIsExpanded(false)
-    }, 1500)
+      // Collapse chat after a short delay
+      setTimeout(() => {
+        setIsExpanded(false)
+      }, 1500)
+    } catch (error) {
+      console.error('Error adding to itinerary:', error)
+      toast.error('Failed to add to itinerary')
+    }
   }
 
   // Handle input submit
@@ -556,18 +576,20 @@ export function AISearchHatboxV2() {
             </div>
 
             {/* Chat messages */}
-            <ScrollArea 
-              ref={scrollRef}
+            <div 
+              ref={scrollAreaRef}
               className={cn(
-                "px-4 py-3",
-                isMobile ? "h-[calc(80vh-120px)]" : "max-h-[70vh]"
+                "overflow-y-auto scroll-smooth",
+                isMobile ? "h-[calc(80vh-120px)]" : "h-[400px]"
               )}
               style={{ overscrollBehavior: 'contain' }}
             >
-              <div className={cn(
-                "mx-auto",
-                "w-full max-w-2xl", // Centered container with max width
-              )}>
+              <div 
+                className={cn(
+                  "mx-auto px-4 py-3",
+                  "w-full max-w-2xl", // Centered container with max width
+                )}
+              >
                 {messages.length === 0 ? (
                   <div className="text-center py-8">
                     <Sparkles className="h-12 w-12 text-blue-200 mx-auto mb-3" />
@@ -590,33 +612,33 @@ export function AISearchHatboxV2() {
                             message.role === 'user' 
                               ? "bg-blue-600 text-white max-w-[80%] px-4 py-3" 
                               : "bg-gray-50 text-gray-900 max-w-full p-0",
-                            message.role === 'assistant' && styles['ai-bubble']
+                            message.role === 'assistant' && styles.aiBubble
                           )}
                         >
                           {message.role === 'assistant' ? (
-                            <div className="p-6">
+                            <div className="p-4 sm:p-6">
                               {/* AI message with improved readability */}
                               <div className="space-y-4">
                                 <ReactMarkdown
-                                  className="text-gray-700"
+                                  className="prose prose-sm sm:prose-base max-w-none"
                                   components={{
                                     p: ({ children }) => (
-                                      <p className="text-base leading-relaxed mb-4 text-gray-700">
+                                      <p className="text-sm sm:text-base leading-relaxed mb-3 sm:mb-4 text-gray-700">
                                         {children}
                                       </p>
                                     ),
                                     h1: ({ children }) => (
-                                      <h1 className="text-xl font-bold mb-3 text-gray-900 mt-4">
+                                      <h1 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-gray-900 mt-3 sm:mt-4">
                                         {children}
                                       </h1>
                                     ),
                                     h2: ({ children }) => (
-                                      <h2 className="text-lg font-semibold mb-3 text-gray-900 mt-4">
+                                      <h2 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-900 mt-3 sm:mt-4">
                                         {children}
                                       </h2>
                                     ),
                                     h3: ({ children }) => (
-                                      <h3 className="text-base font-semibold mb-2 text-gray-900 mt-3">
+                                      <h3 className="text-sm sm:text-base font-semibold mb-2 text-gray-900 mt-2 sm:mt-3">
                                         {children}
                                       </h3>
                                     ),
@@ -624,16 +646,16 @@ export function AISearchHatboxV2() {
                                       <strong className="font-semibold text-gray-900">{children}</strong>
                                     ),
                                     ul: ({ children }) => (
-                                      <ul className="list-none space-y-2 my-4 pl-0">{children}</ul>
+                                      <ul className="list-none space-y-2 my-3 sm:my-4 pl-0">{children}</ul>
                                     ),
                                     ol: ({ children }) => (
-                                      <ol className="list-decimal list-inside space-y-2 my-4 pl-4">
+                                      <ol className="list-decimal list-inside space-y-2 my-3 sm:my-4 pl-3 sm:pl-4">
                                         {children}
                                       </ol>
                                     ),
                                     li: ({ children }) => (
-                                      <li className="flex items-start gap-2">
-                                        <span className="text-blue-600 mt-1">•</span>
+                                      <li className="flex items-start gap-2 text-sm sm:text-base">
+                                        <span className="text-blue-600 mt-0.5 sm:mt-1">•</span>
                                         <span className="flex-1">{children}</span>
                                       </li>
                                     ),
@@ -658,9 +680,9 @@ export function AISearchHatboxV2() {
                               
                               {/* Pro tips */}
                               {message.tips && message.tips.length > 0 && (
-                                <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200 space-y-2">
                                   {message.tips.map((tip, idx) => (
-                                    <p key={idx} className="text-sm text-gray-600">
+                                    <p key={idx} className="text-xs sm:text-sm text-gray-600">
                                       {tip.emoji} {tip.text}
                                     </p>
                                   ))}
@@ -668,7 +690,7 @@ export function AISearchHatboxV2() {
                               )}
                             </div>
                           ) : (
-                            <p className="text-sm">{message.content}</p>
+                            <p className="text-sm sm:text-base">{message.content}</p>
                           )}
                         </div>
                       </div>
@@ -688,7 +710,7 @@ export function AISearchHatboxV2() {
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Mobile input area */}
             {isMobile && (

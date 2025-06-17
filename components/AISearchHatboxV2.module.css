@@ -31,7 +31,7 @@
 }
 
 /* AI bubble styling */
-.ai-bubble {
+.aiBubble {
   background-color: #f9fafb;
   border-radius: 16px;
   border: 1px solid #e5e7eb;
@@ -41,7 +41,7 @@
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  .ai-bubble {
+  .aiBubble {
     background-color: #1f2937;
     color: #f3f4f6;
   }
