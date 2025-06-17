@@ -23,6 +23,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Chip } from '@/components/ui/chip'
+import { AutoResizeTextarea } from '@/components/ui/auto-resize-textarea'
 import { usePlanStore } from '@/store/planStore'
 import ReactMarkdown from 'react-markdown'
 import { toast } from 'sonner'
@@ -61,6 +63,19 @@ interface QuickReplyChip {
   text: string
   icon?: React.ReactNode
 }
+
+// Default quick reply categories
+const DEFAULT_CATEGORIES = [
+  { text: 'Art & Museums', icon: null },
+  { text: 'Bars & Nightlife', icon: null },
+  { text: 'Cafe & Bakery', icon: null },
+  { text: 'Restaurants', icon: null },
+  { text: 'Hotels', icon: null },
+  { text: 'Attractions', icon: null },
+  { text: 'Shopping', icon: null },
+  { text: 'Beauty & Fashion', icon: null },
+  { text: 'Transport', icon: null },
+]
 
 const STORAGE_KEY = 'tripnav-ai-chat-history'
 const MAX_STORED_MESSAGES = 15
@@ -222,24 +237,39 @@ export function AISearchHatboxV2() {
 
   // Generate contextual quick replies
   const generateQuickReplies = useCallback((destination: string, messageContent?: string) => {
-    const baseReplies: QuickReplyChip[] = [
-      { text: "Hidden gems", icon: <Sparkles className="h-3 w-3" /> },
-      { text: "Budget options", icon: <DollarSign className="h-3 w-3" /> },
-      { text: "Family friendly", icon: <Users className="h-3 w-3" /> },
-      { text: "Best time to visit", icon: <Calendar className="h-3 w-3" /> },
-      { text: "Local transport", icon: <MapPin className="h-3 w-3" /> }
-    ]
-
-    // Add context-specific replies based on the last message
-    if (messageContent?.toLowerCase().includes('museum') || messageContent?.toLowerCase().includes('art')) {
-      baseReplies.unshift({ text: "Gallery hours", icon: <Clock className="h-3 w-3" /> })
+    // If we've asked about a specific category, show related queries
+    if (messageContent?.toLowerCase().includes('restaurant') || messageContent?.toLowerCase().includes('food')) {
+      return [
+        { text: "Best local cuisine", icon: null },
+        { text: "Vegetarian options", icon: null },
+        { text: "Fine dining spots", icon: null },
+        { text: "Budget eats", icon: null },
+        { text: "Food markets", icon: null }
+      ]
     }
     
-    if (messageContent?.toLowerCase().includes('food') || messageContent?.toLowerCase().includes('restaurant')) {
-      baseReplies.unshift({ text: "Vegetarian options", icon: <Users className="h-3 w-3" /> })
+    if (messageContent?.toLowerCase().includes('museum') || messageContent?.toLowerCase().includes('art')) {
+      return [
+        { text: "Must-see museums", icon: null },
+        { text: "Art galleries", icon: null },
+        { text: "Gallery hours", icon: null },
+        { text: "Museum passes", icon: null },
+        { text: "Contemporary art", icon: null }
+      ]
     }
-
-    return baseReplies.slice(0, 5)
+    
+    // Default to destination-specific queries
+    return [
+      { text: `Best of ${destination || 'this city'}`, icon: null },
+      { text: "Hidden gems", icon: null },
+      { text: "Local favorites", icon: null },
+      { text: "Day trip ideas", icon: null },
+      { text: "Evening activities", icon: null },
+      { text: "Budget tips", icon: null },
+      { text: "Transport guide", icon: null },
+      { text: "Weather & packing", icon: null },
+      { text: "Safety tips", icon: null }
+    ]
   }, [])
 
   // Extract recommendations from AI response
@@ -488,6 +518,12 @@ export function AISearchHatboxV2() {
                 fontSize: '16px',
                 textAlign: 'left'
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault()
+                  handleSubmit(e as any)
+                }
+              }}
               autoComplete="off"
             />
             
@@ -610,10 +646,10 @@ export function AISearchHatboxV2() {
                       >
                         <div
                           className={cn(
-                            "rounded-xl",
+                            "rounded-2xl",
                             message.role === 'user' 
-                              ? "bg-blue-600 text-white max-w-[80%] px-4 py-3" 
-                              : "bg-gray-50 text-gray-900 max-w-full p-0",
+                              ? "bg-brand-blue-500 text-white max-w-[80%] px-4 py-3 ml-auto" 
+                              : "bg-[#f7f7fb] dark:bg-gray-800 text-gray-900 dark:text-gray-100 max-w-[65ch] p-0",
                             message.role === 'assistant' && styles.aiBubble
                           )}
                         >
@@ -695,6 +731,17 @@ export function AISearchHatboxV2() {
                             <p className="text-sm sm:text-base">{message.content}</p>
                           )}
                         </div>
+                        {/* Timestamp */}
+                        <p className={cn(
+                          "text-[11px] text-gray-400 dark:text-gray-500 mt-1",
+                          message.role === 'user' ? "text-right" : "text-left"
+                        )}>
+                          {new Date(message.timestamp).toLocaleTimeString('en-US', { 
+                            hour: 'numeric', 
+                            minute: '2-digit',
+                            hour12: true 
+                          })}
+                        </p>
                       </div>
                     ))}
                     
@@ -716,26 +763,27 @@ export function AISearchHatboxV2() {
 
             {/* Mobile input area */}
             {isMobile && (
-              <div className="border-t bg-white p-4">
-                <form onSubmit={handleSubmit} className="flex gap-2">
-                  <Input
+              <div className="border-t bg-white dark:bg-gray-900 p-4">
+                <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+                  <AutoResizeTextarea
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Type your question..."
-                    className={cn("flex-1 text-left text-base px-4 h-12", styles.chatInput)}
-                    style={{ 
-                      fontSize: '16px',
-                      lineHeight: '1.5',
-                      textAlign: 'left',
-                      WebkitAppearance: 'none',
-                      appearance: 'none'
+                    placeholder="Ask TripNav AI anything..."
+                    className="flex-1"
+                    minRows={1}
+                    maxRows={6}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault()
+                        handleSubmit(e as any)
+                      }
                     }}
                     autoFocus
                   />
                   <Button
                     type="submit"
                     size="icon"
-                    className="bg-blue-600 hover:bg-blue-700 h-12 w-12"
+                    className="bg-brand-blue-500 hover:bg-brand-blue-600 h-10 w-10 rounded-full flex-shrink-0"
                     disabled={isLoading || !query.trim()}
                   >
                     {isLoading ? (
@@ -747,44 +795,76 @@ export function AISearchHatboxV2() {
                 </form>
                 
                 {/* Quick reply chips */}
-                {quickReplies.length > 0 && !isLoading && (
-                  <div className="mt-3">
-                    <p className="text-xs text-gray-500 mb-2">Suggested:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {quickReplies.slice(0, 3).map((chip, idx) => (
-                        <Button
-                          key={idx}
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs"
-                          onClick={() => handleAIQuery(chip.text)}
-                        >
-                          {chip.text}
-                        </Button>
-                      ))}
-                    </div>
+                <div className="mt-3 -mx-4 px-4 overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-2 pb-1" style={{ scrollSnapType: 'x mandatory' }}>
+                    {(messages.length === 0 ? DEFAULT_CATEGORIES : quickReplies).map((chip, idx) => (
+                      <Chip
+                        key={idx}
+                        onClick={() => handleAIQuery(chip.text)}
+                        icon={chip.icon}
+                        className="flex-shrink-0"
+                        style={{ scrollSnapAlign: 'start' }}
+                        aria-label={`Send quick reply ${chip.text}`}
+                        disabled={isLoading}
+                      >
+                        {chip.text}
+                      </Chip>
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
             )}
 
-            {/* Desktop quick reply chips */}
-            {!isMobile && quickReplies.length > 0 && !isLoading && messages.length > 0 && (
-              <div className="px-4 py-4 border-t bg-white">
-                <p className="text-xs text-gray-500 mb-2">Suggested questions:</p>
-                <div className="flex flex-wrap gap-2">
-                  {quickReplies.map((chip, idx) => (
+            {/* Desktop quick reply chips and input */}
+            {!isMobile && (
+              <div className="border-t bg-white dark:bg-gray-900">
+                {/* Chips */}
+                <div className="px-4 pt-3 pb-2">
+                  <div className="flex flex-wrap gap-2 max-w-2xl mx-auto">
+                    {(messages.length === 0 ? DEFAULT_CATEGORIES : quickReplies).map((chip, idx) => (
+                      <Chip
+                        key={idx}
+                        onClick={() => handleAIQuery(chip.text)}
+                        icon={chip.icon}
+                        aria-label={`Send quick reply ${chip.text}`}
+                        disabled={isLoading}
+                      >
+                        {chip.text}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Input area */}
+                <div className="px-4 pb-4">
+                  <form onSubmit={handleSubmit} className="flex gap-2 items-end max-w-2xl mx-auto">
+                    <AutoResizeTextarea
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Ask TripNav AI anything..."
+                      className="flex-1"
+                      minRows={1}
+                      maxRows={6}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                          e.preventDefault()
+                          handleSubmit(e as any)
+                        }
+                      }}
+                    />
                     <Button
-                      key={idx}
-                      variant="outline"
-                      size="sm"
-                      className="h-9 text-sm border-gray-200 hover:bg-gray-50 hover:border-gray-300"
-                      onClick={() => handleAIQuery(chip.text)}
+                      type="submit"
+                      size="icon"
+                      className="bg-brand-blue-500 hover:bg-brand-blue-600 h-10 w-10 rounded-full flex-shrink-0"
+                      disabled={isLoading || !query.trim()}
                     >
-                      {chip.icon && <span className="mr-1">{chip.icon}</span>}
-                      {chip.text}
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
                     </Button>
-                  ))}
+                  </form>
                 </div>
               </div>
             )}
