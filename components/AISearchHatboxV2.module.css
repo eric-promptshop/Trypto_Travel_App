@@ -5,6 +5,9 @@
   font-size: 16px;
   line-height: 1.6;
   text-align: left;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 .chat-bubble p {
@@ -37,6 +40,9 @@
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   text-align: left;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* Dark mode support */
@@ -91,14 +97,11 @@
     padding-right: 1rem !important;
     text-indent: 0 !important;
     direction: ltr !important;
-  }
-  
-  /* Fix text rendering on mobile */
-  * {
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
+  
 }
 
 /* Smooth scrolling */
