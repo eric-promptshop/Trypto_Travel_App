@@ -480,7 +480,8 @@ export function AISearchHatboxV2() {
                 "pl-10 pr-24 h-11 bg-white border-gray-200 transition-all",
                 "placeholder:text-gray-400 text-left",
                 (isFocused || isExpanded) && "ring-2 ring-blue-500 border-blue-500",
-                isExpanded && !isMobile && "rounded-b-none"
+                isExpanded && !isMobile && "rounded-b-none",
+                isMobile && styles.chatInput
               )}
               style={{
                 fontSize: '16px',
@@ -720,7 +721,7 @@ export function AISearchHatboxV2() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Type your question..."
-                    className="flex-1 text-left text-base px-4 h-12"
+                    className={cn("flex-1 text-left text-base px-4 h-12", styles.chatInput)}
                     style={{ 
                       fontSize: '16px',
                       lineHeight: '1.5',

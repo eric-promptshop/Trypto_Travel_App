@@ -80,19 +80,13 @@
   }
   
   /* Fix mobile input text alignment */
-  input[type="text"],
-  input[type="search"] {
+  .chatInput {
     text-align: left !important;
     font-size: 16px !important;
     line-height: 1.5 !important;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
     appearance: none !important;
-  }
-  
-  /* Ensure proper cursor positioning */
-  .chat-input,
-  input {
     padding-left: 1rem !important;
     padding-right: 1rem !important;
     text-indent: 0 !important;
@@ -115,7 +109,7 @@
 }
 
 /* Focus states for accessibility */
-.chat-input:focus {
+.chatInput:focus {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
