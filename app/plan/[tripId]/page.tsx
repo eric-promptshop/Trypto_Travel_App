@@ -651,10 +651,10 @@ export default function ModernTripPlannerPage() {
           isOpen={showShareModal}
           onClose={() => setShowShareModal(false)}
           tripId={tripId}
-          tripTitle={itinerary.title || 'My Trip'}
+          tripTitle={`Trip to ${itinerary.destination || 'Unknown Destination'}`}
           destination={itinerary.destination || ''}
-          startDate={itinerary.startDate || ''}
-          endDate={itinerary.endDate || ''}
+          startDate={itinerary.startDate ? itinerary.startDate.toISOString().split('T')[0] : ''}
+          endDate={itinerary.endDate ? itinerary.endDate.toISOString().split('T')[0] : ''}
         />
       )}
     </div>
