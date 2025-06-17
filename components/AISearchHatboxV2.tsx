@@ -173,6 +173,7 @@ export function AISearchHatboxV2() {
   const [quickReplies, setQuickReplies] = useState<QuickReplyChip[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const chatContainerRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
   
   const itinerary = usePlanStore((state) => state.itinerary)
