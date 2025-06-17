@@ -183,25 +183,8 @@ export function AISearchHatboxV2() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Load chat history on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        setMessages(parsed.slice(-MAX_STORED_MESSAGES))
-      } catch (e) {
-        console.error('Failed to load chat history:', e)
-      }
-    }
-  }, [])
-
-  // Save chat history
-  useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-MAX_STORED_MESSAGES)))
-    }
-  }, [messages])
+  // Don't persist chat history for cleaner experience
+  // Remove localStorage loading to start fresh each time
 
   // Auto-focus on mount
   useEffect(() => {
@@ -281,6 +264,9 @@ export function AISearchHatboxV2() {
   const handleAIQuery = async (userQuery: string) => {
     if (!userQuery.trim()) return
 
+    // Clear previous messages for cleaner experience
+    setMessages([])
+
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
@@ -288,7 +274,7 @@ export function AISearchHatboxV2() {
       timestamp: new Date()
     }
 
-    setMessages(prev => [...prev, userMessage])
+    setMessages([userMessage])
     setIsLoading(true)
     setQuery('')
 
@@ -438,6 +424,8 @@ export function AISearchHatboxV2() {
   // Handle expansion
   const handleExpand = () => {
     setIsExpanded(true)
+    // Clear messages when opening for fresh start
+    setMessages([])
     if (!quickReplies.length && itinerary?.destination) {
       setQuickReplies(generateQuickReplies(itinerary.destination))
     }
@@ -464,9 +452,7 @@ export function AISearchHatboxV2() {
               }}
               onFocus={() => {
                 setIsFocused(true)
-                if (messages.length > 0) {
-                  handleExpand()
-                }
+                // Don't auto-expand on focus to keep interface clean
               }}
               onBlur={() => setIsFocused(false)}
               placeholder="Ask TripNav AI about any destination..."
@@ -584,33 +570,57 @@ export function AISearchHatboxV2() {
                       >
                         <div
                           className={cn(
-                            "rounded-xl px-4 py-2",
+                            "rounded-xl",
                             message.role === 'user' 
-                              ? "bg-blue-600 text-white max-w-[80%]" 
-                              : "bg-gray-100 text-gray-900 max-w-full",
+                              ? "bg-blue-600 text-white max-w-[80%] px-4 py-3" 
+                              : "bg-gray-50 text-gray-900 max-w-full p-0",
                             message.role === 'assistant' && styles['ai-bubble']
                           )}
                         >
                           {message.role === 'assistant' ? (
-                            <div>
-                              {/* AI message with readable formatting */}
-                              <div 
-                                className="prose prose-sm max-w-none"
-                                style={{ 
-                                  fontSize: '16px',
-                                  lineHeight: '1.6',
-                                  maxWidth: '65ch'
-                                }}
-                              >
+                            <div className="p-6">
+                              {/* AI message with improved readability */}
+                              <div className="space-y-4">
                                 <ReactMarkdown
+                                  className="text-gray-700"
                                   components={{
-                                    p: ({ children }) => <p className="mb-3">{children}</p>,
-                                    h1: ({ children }) => <h1 className="text-lg font-semibold mb-2">{children}</h1>,
-                                    h2: ({ children }) => <h2 className="text-lg font-semibold mb-2">{children}</h2>,
-                                    h3: ({ children }) => <h3 className="text-base font-semibold mb-2">{children}</h3>,
-                                    ul: ({ children }) => <ul className="list-disc pl-5 mb-3">{children}</ul>,
-                                    ol: ({ children }) => <ol className="list-decimal pl-5 mb-3">{children}</ol>,
-                                    li: ({ children }) => <li className="mb-1">{children}</li>,
+                                    p: ({ children }) => (
+                                      <p className="text-base leading-relaxed mb-4 text-gray-700">
+                                        {children}
+                                      </p>
+                                    ),
+                                    h1: ({ children }) => (
+                                      <h1 className="text-xl font-bold mb-3 text-gray-900 mt-4">
+                                        {children}
+                                      </h1>
+                                    ),
+                                    h2: ({ children }) => (
+                                      <h2 className="text-lg font-semibold mb-3 text-gray-900 mt-4">
+                                        {children}
+                                      </h2>
+                                    ),
+                                    h3: ({ children }) => (
+                                      <h3 className="text-base font-semibold mb-2 text-gray-900 mt-3">
+                                        {children}
+                                      </h3>
+                                    ),
+                                    strong: ({ children }) => (
+                                      <strong className="font-semibold text-gray-900">{children}</strong>
+                                    ),
+                                    ul: ({ children }) => (
+                                      <ul className="list-none space-y-2 my-4 pl-0">{children}</ul>
+                                    ),
+                                    ol: ({ children }) => (
+                                      <ol className="list-decimal list-inside space-y-2 my-4 pl-4">
+                                        {children}
+                                      </ol>
+                                    ),
+                                    li: ({ children }) => (
+                                      <li className="flex items-start gap-2">
+                                        <span className="text-blue-600 mt-1">•</span>
+                                        <span className="flex-1">{children}</span>
+                                      </li>
+                                    ),
                                   }}
                                 >
                                   {message.content}
@@ -665,18 +675,19 @@ export function AISearchHatboxV2() {
             </ScrollArea>
 
             {/* Quick reply chips */}
-            {quickReplies.length > 0 && !isLoading && (
-              <div className="px-4 py-3 border-t bg-gray-50">
+            {quickReplies.length > 0 && !isLoading && messages.length > 0 && (
+              <div className="px-4 py-4 border-t bg-white">
+                <p className="text-xs text-gray-500 mb-2">Suggested questions:</p>
                 <div className="flex flex-wrap gap-2">
                   {quickReplies.map((chip, idx) => (
                     <Button
                       key={idx}
                       variant="outline"
                       size="sm"
-                      className="h-8 text-xs"
+                      className="h-9 text-sm border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                       onClick={() => handleAIQuery(chip.text)}
                     >
-                      {chip.icon}
+                      {chip.icon && <span className="mr-1">{chip.icon}</span>}
                       {chip.text}
                     </Button>
                   ))}

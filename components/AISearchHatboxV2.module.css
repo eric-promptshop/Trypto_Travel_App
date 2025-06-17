@@ -31,8 +31,10 @@
 
 /* AI bubble styling */
 .ai-bubble {
-  background-color: #f7f7fb;
-  border-radius: 12px;
+  background-color: #f9fafb;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* Dark mode support */
