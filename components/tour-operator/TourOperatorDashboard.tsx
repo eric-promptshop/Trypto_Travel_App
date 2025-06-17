@@ -19,10 +19,32 @@ import {
   Trash2,
   Search,
   Filter,
-  Download
+  Download,
+  Upload,
+  FileUp
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import TourUploadModal from './TourUploadModal'
+import TourDetailModal from './TourDetailModal'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Tour {
   id: string
@@ -60,6 +82,10 @@ export default function TourOperatorDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'draft' | 'archived'>('all')
   const [isLoading, setIsLoading] = useState(true)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
+  const [tourModalMode, setTourModalMode] = useState<'view' | 'edit'>('view')
+  const [tourToDelete, setTourToDelete] = useState<string | null>(null)
 
   useEffect(() => {
     fetchDashboardData()
@@ -114,6 +140,36 @@ export default function TourOperatorDashboard() {
       case 'draft': return 'bg-yellow-100 text-yellow-800'
       case 'archived': return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const handleViewTour = (tour: Tour) => {
+    setSelectedTour(tour)
+    setTourModalMode('view')
+  }
+
+  const handleEditTour = (tour: Tour) => {
+    setSelectedTour(tour)
+    setTourModalMode('edit')
+  }
+
+  const handleDeleteTour = async (tourId: string) => {
+    try {
+      const response = await fetch(`/api/tour-operator/tours/${tourId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete tour')
+      }
+
+      toast.success('Tour deleted successfully!')
+      fetchDashboardData()
+    } catch (error) {
+      console.error('Error deleting tour:', error)
+      toast.error('Failed to delete tour')
+    } finally {
+      setTourToDelete(null)
     }
   }
 
@@ -197,10 +253,35 @@ export default function TourOperatorDashboard() {
                   <CardTitle>Your Tours</CardTitle>
                   <CardDescription>Manage your tour offerings</CardDescription>
                 </div>
-                <Button className="bg-accent-orange hover:bg-orange-600">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add New Tour
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setShowUploadModal(true)}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Tours
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button className="bg-accent-orange hover:bg-orange-600">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add New Tour
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Create Tour</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setShowUploadModal(true)}>
+                        <FileUp className="h-4 w-4 mr-2" />
+                        Upload from Document
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Create Manually
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -291,13 +372,25 @@ export default function TourOperatorDashboard() {
                           <td className="py-3 px-4">{tour.bookings}</td>
                           <td className="py-3 px-4">
                             <div className="flex gap-2">
-                              <Button variant="ghost" size="icon">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleViewTour(tour)}
+                              >
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => handleEditTour(tour)}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon">
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => setTourToDelete(tour.id)}
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -374,6 +467,51 @@ export default function TourOperatorDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Tour Upload Modal */}
+      <TourUploadModal 
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onTourCreated={() => {
+          setShowUploadModal(false)
+          fetchDashboardData() // Refresh tours list
+        }}
+      />
+
+      {/* Tour Detail Modal */}
+      {selectedTour && (
+        <TourDetailModal
+          tour={selectedTour}
+          isOpen={!!selectedTour}
+          onClose={() => setSelectedTour(null)}
+          onSave={() => {
+            setSelectedTour(null)
+            fetchDashboardData()
+          }}
+          mode={tourModalMode}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!tourToDelete} onOpenChange={() => setTourToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Tour</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this tour? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => tourToDelete && handleDeleteTour(tourToDelete)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

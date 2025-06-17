@@ -27,6 +27,7 @@ import Image from 'next/image'
 import { useDebounce } from '@/hooks/useDebounce'
 import { PlaceFiltersComponent, PlaceFilters } from './PlaceFilters'
 import { PlaceCardWithImage } from './PlaceCardWithImage'
+import { toast } from 'sonner'
 
 // Calculate distance between two points in kilometers
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -107,6 +108,9 @@ export function ModernExploreSidebar() {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [filters, setFilters] = useState<PlaceFilters>({})
+  const [showAIRecommendations, setShowAIRecommendations] = useState(false)
+  const [aiRecommendations, setAiRecommendations] = useState<any[]>([])
+  const [loadingAI, setLoadingAI] = useState(false)
   
   const debouncedSearchQuery = useDebounce(searchQuery, 500)
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -120,8 +124,47 @@ export function ModernExploreSidebar() {
     mapCenter,
     setSearchPois,
     getSelectedDay,
-    addPoiToDay
+    addPoiToDay,
+    itinerary
   } = usePlanStore()
+  
+  // Load AI recommendations
+  const loadAIRecommendations = async () => {
+    if (!itinerary) return
+    
+    setLoadingAI(true)
+    try {
+      const selectedDay = getSelectedDay()
+      const existingActivities = selectedDay?.slots?.map(slot => {
+        const poi = itinerary.pois.find(p => p.id === slot.poiId)
+        return poi?.name || ''
+      }).filter(Boolean) || []
+      
+      const response = await fetch('/api/explore/recommendations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destination: itinerary.destination,
+          interests: [], // Could be populated from user preferences
+          dayInfo: selectedDay ? {
+            dayNumber: selectedDay.dayNumber,
+            existingActivities
+          } : undefined,
+          category: selectedCategory || undefined
+        })
+      })
+      
+      if (!response.ok) throw new Error('Failed to get recommendations')
+      
+      const data = await response.json()
+      setAiRecommendations(data.recommendations || [])
+    } catch (error) {
+      console.error('Error loading AI recommendations:', error)
+      setError('Failed to load AI recommendations')
+    } finally {
+      setLoadingAI(false)
+    }
+  }
   
   // Load places when category or search changes
   useEffect(() => {
@@ -269,10 +312,26 @@ export function ModernExploreSidebar() {
       <div className="p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Explore</h2>
-          <PlaceFiltersComponent
-            filters={filters}
-            onFiltersChange={setFilters}
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={showAIRecommendations ? "default" : "outline"}
+              onClick={async () => {
+                setShowAIRecommendations(!showAIRecommendations)
+                if (!showAIRecommendations && aiRecommendations.length === 0) {
+                  await loadAIRecommendations()
+                }
+              }}
+              className="gap-1"
+            >
+              <Sparkles className="h-3 w-3" />
+              AI Guide
+            </Button>
+            <PlaceFiltersComponent
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+          </div>
         </div>
         
         {/* Search */}
@@ -321,6 +380,109 @@ export function ModernExploreSidebar() {
       {/* Places List */}
       <ScrollArea className="flex-1 px-4">
         <div className="space-y-3 pb-4">
+          {/* AI Recommendations Section */}
+          {showAIRecommendations && (
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="h-4 w-4 text-purple-600" />
+                <h3 className="font-semibold text-sm">AI Recommendations</h3>
+              </div>
+              
+              {loadingAI ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={`ai-${i}`} className="h-24 w-full rounded-lg" />
+                  ))}
+                </div>
+              ) : aiRecommendations.length > 0 ? (
+                <div className="space-y-3">
+                  {aiRecommendations.map((rec, index) => (
+                    <div 
+                      key={`ai-rec-${index}`}
+                      className="p-3 rounded-lg bg-purple-50 border border-purple-200 space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-medium text-sm">{rec.name}</h4>
+                          <p className="text-xs text-gray-600 mt-1">{rec.description}</p>
+                        </div>
+                        <span className="text-xs font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                          {rec.priceRange || '$'}
+                        </span>
+                      </div>
+                      
+                      {rec.whyRecommended && (
+                        <p className="text-xs text-purple-700 italic">
+                          ✨ {rec.whyRecommended}
+                        </p>
+                      )}
+                      
+                      {rec.localTip && (
+                        <p className="text-xs text-gray-600">
+                          💡 <span className="font-medium">Tip:</span> {rec.localTip}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-xs text-gray-500">
+                          {rec.bestTimeToVisit} • {rec.estimatedDuration}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            // Convert AI recommendation to POI format
+                            const poi: POI = {
+                              id: `ai-${Date.now()}-${index}`,
+                              name: rec.name,
+                              category: rec.category || 'attraction',
+                              location: {
+                                lat: mapCenter[0] + (Math.random() - 0.5) * 0.01,
+                                lng: mapCenter[1] + (Math.random() - 0.5) * 0.01,
+                                address: rec.location?.area || ''
+                              },
+                              description: rec.description,
+                              rating: 4.5,
+                              price: rec.priceRange?.length || 2
+                            }
+                            
+                            const selectedDay = getSelectedDay()
+                            if (selectedDay) {
+                              addPoiToDay(poi, selectedDay.id)
+                              toast.success(`Added ${poi.name} to Day ${selectedDay.dayNumber}`)
+                            } else {
+                              toast.error('Please select a day first')
+                            }
+                          }}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  <p className="text-sm">No recommendations yet</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={loadAIRecommendations}
+                    className="mt-2"
+                  >
+                    Get Recommendations
+                  </Button>
+                </div>
+              )}
+              
+              <div className="mt-4 border-t pt-4">
+                <h3 className="font-semibold text-sm mb-3">Browse Places</h3>
+              </div>
+            </div>
+          )}
+          
           {loading ? (
             // Loading skeletons
             <>
@@ -378,7 +540,7 @@ export function ModernExploreSidebar() {
                   onAdd={() => {
                     const selectedDay = getSelectedDay()
                     if (selectedDay) {
-                      addPoiToDay(selectedDay.id, poi.id)
+                      addPoiToDay(poi, selectedDay.id)
                       toast.success(`Added ${poi.name} to ${selectedDay.dayNumber ? `Day ${selectedDay.dayNumber}` : 'itinerary'}`)
                     } else {
                       toast.error('Please select a day first')

@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { MapContainer, TileLayer, Marker, Polyline, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap, useMapEvents } from 'react-leaflet'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -45,12 +45,28 @@ interface MapCanvasProps {
 // Map controller component
 function MapController() {
   const map = useMap()
-  const { mapCenter, mapZoom, flyToPoi, flyToBounds } = usePlanStore()
+  const { mapCenter, mapZoom, flyToPoi, flyToBounds, itinerary } = usePlanStore()
   const prevCenterRef = useRef(mapCenter)
   const prevZoomRef = useRef(mapZoom)
+  const hasInitializedRef = useRef(false)
+  
+  // Handle initial map centering based on POIs
+  useEffect(() => {
+    if (!hasInitializedRef.current && itinerary && itinerary.pois.length > 0) {
+      const validPois = itinerary.pois.filter(p => p.location.lat !== 0 && p.location.lng !== 0)
+      if (validPois.length > 0) {
+        const bounds = L.latLngBounds(validPois.map(p => [p.location.lat, p.location.lng]))
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 })
+        hasInitializedRef.current = true
+      }
+    }
+  }, [itinerary, map])
   
   // Handle map center/zoom changes from store
   useEffect(() => {
+    // Skip if center is still at [0,0] (not initialized)
+    if (mapCenter[0] === 0 && mapCenter[1] === 0) return
+    
     if (
       prevCenterRef.current[0] !== mapCenter[0] || 
       prevCenterRef.current[1] !== mapCenter[1] ||
@@ -111,7 +127,21 @@ interface AnimatedMarkerProps {
 
 function AnimatedMarker({ position, isHighlighted, isSelected, poiId, poiName }: AnimatedMarkerProps) {
   const markerRef = useRef<L.Marker>(null)
-  const { highlightPoi, selectPoi } = usePlanStore()
+  const { highlightPoi, selectPoi, itinerary } = usePlanStore()
+  const [showPopup, setShowPopup] = useState(false)
+  
+  // Get POI details
+  const poi = useMemo(() => {
+    return itinerary?.pois.find(p => p.id === poiId)
+  }, [itinerary, poiId])
+  
+  // Get activity index for numbering
+  const activityIndex = useMemo(() => {
+    if (!itinerary?.selectedDayId) return -1
+    const day = itinerary.days.find(d => d.id === itinerary.selectedDayId)
+    if (!day) return -1
+    return day.slots.findIndex(slot => slot.poiId === poiId)
+  }, [itinerary, poiId])
   
   // Create custom icon based on state
   const icon = useMemo(() => {
@@ -126,13 +156,14 @@ function AnimatedMarker({ position, isHighlighted, isSelected, poiId, poiName }:
           isHighlighted && 'highlighted',
           isSelected && 'selected'
         )}">
-          <div class="marker-pin-inner"></div>
+          <div class="marker-pin-inner">${activityIndex >= 0 ? activityIndex + 1 : ''}</div>
         </div>
       `,
       iconSize: [iconSize, iconSize],
-      iconAnchor: iconAnchor as [number, number]
+      iconAnchor: iconAnchor as [number, number],
+      popupAnchor: [0, -iconSize]
     })
-  }, [isHighlighted, isSelected])
+  }, [isHighlighted, isSelected, activityIndex])
   
   // Add drop animation when marker appears
   useEffect(() => {
@@ -149,6 +180,13 @@ function AnimatedMarker({ position, isHighlighted, isSelected, poiId, poiName }:
     }
   }, [])
   
+  // Show popup when selected
+  useEffect(() => {
+    if (isSelected && markerRef.current) {
+      markerRef.current.openPopup()
+    }
+  }, [isSelected])
+  
   return (
     <Marker
       ref={markerRef}
@@ -157,10 +195,49 @@ function AnimatedMarker({ position, isHighlighted, isSelected, poiId, poiName }:
       eventHandlers={{
         mouseover: () => highlightPoi(poiId),
         mouseout: () => highlightPoi(null),
-        click: () => selectPoi(poiId)
+        click: () => {
+          selectPoi(poiId)
+          setShowPopup(true)
+        }
       }}
     >
-      {/* Tooltip could be added here */}
+      {poi && (
+        <Popup 
+          className="map-popup" 
+          closeButton={false}
+          autoPan={true}
+        >
+          <div className="p-3 min-w-[200px] max-w-[280px]">
+            <div className="flex items-start justify-between mb-2">
+              <h4 className="font-semibold text-gray-900 pr-2">{poi.name}</h4>
+              {activityIndex >= 0 && (
+                <span className="text-xs font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                  {activityIndex + 1}
+                </span>
+              )}
+            </div>
+            {poi.description && (
+              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{poi.description}</p>
+            )}
+            {poi.location.address && (
+              <div className="flex items-start gap-1 text-xs text-gray-500 mt-2">
+                <svg className="w-3 h-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="line-clamp-2">{poi.location.address}</span>
+              </div>
+            )}
+            {poi.rating && (
+              <div className="flex items-center gap-1 text-sm text-gray-600 mt-2">
+                <span className="text-yellow-500">★</span>
+                <span>{poi.rating.toFixed(1)}</span>
+                {poi.reviews && <span className="text-gray-400">({poi.reviews})</span>}
+              </div>
+            )}
+          </div>
+        </Popup>
+      )}
     </Marker>
   )
 }
@@ -261,13 +338,16 @@ function MapCanvasContent({ className, aspectRatio = '16/9' }: MapCanvasProps) {
     }
   }, [])
   
+  // Use a sensible default center if map center is not initialized
+  const initialCenter = mapCenter[0] === 0 && mapCenter[1] === 0 ? [40.7128, -74.0060] : mapCenter
+  
   return (
     <div 
       className={cn("relative w-full bg-gray-100", className)}
       style={{ aspectRatio }}
     >
       <MapContainer
-        center={mapCenter}
+        center={initialCenter}
         zoom={mapZoom}
         className="h-full w-full"
         zoomControl={false}
@@ -385,13 +465,14 @@ if (typeof window !== 'undefined') {
     
     .marker-pin-inner {
       position: absolute;
-      width: 10px;
-      height: 10px;
-      background: white;
-      border-radius: 50%;
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) rotate(45deg);
+      text-align: center;
+      line-height: 1;
     }
     
     .marker-pin.highlighted {
@@ -439,6 +520,25 @@ if (typeof window !== 'undefined') {
       50% {
         opacity: 0.6;
       }
+    }
+    
+    /* Airbnb-style popup styles */
+    .map-popup .leaflet-popup-content-wrapper {
+      padding: 0;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .map-popup .leaflet-popup-content {
+      margin: 0;
+      min-width: 200px;
+      max-width: 280px;
+    }
+    
+    .map-popup .leaflet-popup-tip {
+      background: white;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
   `
   document.head.appendChild(style)

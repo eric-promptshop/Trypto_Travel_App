@@ -130,7 +130,7 @@ export const usePlanStore = create<PlanState>()(
       highlightedPoiId: null,
       activePane: 'map',
       exploreDrawerOpen: false,
-      mapCenter: [48.8566, 2.3522], // Default to Paris
+      mapCenter: [0, 0], // Will be set based on POIs
       mapZoom: 12,
       suggestions: [],
       appliedSuggestions: [],
@@ -141,6 +141,34 @@ export const usePlanStore = create<PlanState>()(
         state.itinerary = itinerary
         if (itinerary.days.length > 0 && !state.selectedDayId) {
           state.selectedDayId = itinerary.days[0].id
+        }
+        
+        // Auto-center map on POIs if they exist
+        if (itinerary.pois.length > 0) {
+          const validPois = itinerary.pois.filter(p => p.location.lat !== 0 && p.location.lng !== 0)
+          if (validPois.length > 0) {
+            const avgLat = validPois.reduce((sum, p) => sum + p.location.lat, 0) / validPois.length
+            const avgLng = validPois.reduce((sum, p) => sum + p.location.lng, 0) / validPois.length
+            state.mapCenter = [avgLat, avgLng]
+            
+            // Adjust zoom based on POI spread
+            if (validPois.length === 1) {
+              state.mapZoom = 15
+            } else {
+              // Calculate bounds to determine zoom
+              const latitudes = validPois.map(p => p.location.lat)
+              const longitudes = validPois.map(p => p.location.lng)
+              const latDiff = Math.max(...latitudes) - Math.min(...latitudes)
+              const lngDiff = Math.max(...longitudes) - Math.min(...longitudes)
+              const maxDiff = Math.max(latDiff, lngDiff)
+              
+              // Set zoom based on spread
+              if (maxDiff > 0.1) state.mapZoom = 11
+              else if (maxDiff > 0.05) state.mapZoom = 12
+              else if (maxDiff > 0.02) state.mapZoom = 13
+              else state.mapZoom = 14
+            }
+          }
         }
       }),
       
