@@ -267,8 +267,8 @@ export function ModernItineraryBuilder({
           time: activity.time || `${9 + index * 2}:00`,
           duration: activity.duration || 60,
           location: {
-            lat: activity.coordinates?.lat || activity.location?.lat || 48.8566 + (Math.random() - 0.5) * 0.1,
-            lng: activity.coordinates?.lng || activity.location?.lng || 2.3522 + (Math.random() - 0.5) * 0.1,
+            lat: activity.coordinates?.lat || activity.location?.lat || 0,
+            lng: activity.coordinates?.lng || activity.location?.lng || 0,
             address: activity.address || activity.location?.address
           },
           category: 'activity',
@@ -295,8 +295,8 @@ export function ModernItineraryBuilder({
           time: mealTimes[meal.type] || '12:00',
           duration: meal.type === 'dinner' ? 120 : 60,
           location: {
-            lat: meal.coordinates?.lat || 48.8566 + (Math.random() - 0.5) * 0.1,
-            lng: meal.coordinates?.lng || 2.3522 + (Math.random() - 0.5) * 0.1,
+            lat: meal.coordinates?.lat || 0,
+            lng: meal.coordinates?.lng || 0,
             address: meal.address
           },
           category: 'dining',
@@ -312,8 +312,8 @@ export function ModernItineraryBuilder({
           time: '15:00',
           duration: 30,
           location: {
-            lat: accommodation.coordinates?.lat || 48.8566,
-            lng: accommodation.coordinates?.lng || 2.3522,
+            lat: accommodation.coordinates?.lat || 0,
+            lng: accommodation.coordinates?.lng || 0,
             address: accommodation.address
           },
           category: 'accommodation',
@@ -341,8 +341,9 @@ export function ModernItineraryBuilder({
   
   // Get map center
   const getMapCenter = (): [number, number] => {
+    // First try current day activities
     if (currentDay && currentDay.activities.length > 0) {
-      const validActivities = currentDay.activities.filter(a => a.location.lat && a.location.lng)
+      const validActivities = currentDay.activities.filter(a => a.location.lat !== 0 && a.location.lng !== 0)
       if (validActivities.length > 0) {
         const avgLat = validActivities.reduce((sum, a) => sum + a.location.lat, 0) / validActivities.length
         const avgLng = validActivities.reduce((sum, a) => sum + a.location.lng, 0) / validActivities.length
@@ -350,7 +351,21 @@ export function ModernItineraryBuilder({
       }
     }
     
-    return [48.8566, 2.3522]
+    // If no valid activities in current day, try to find any valid coordinates in any day
+    if (currentDestination) {
+      for (const day of currentDestination.days) {
+        const validActivities = day.activities.filter(a => a.location.lat !== 0 && a.location.lng !== 0)
+        if (validActivities.length > 0) {
+          const avgLat = validActivities.reduce((sum, a) => sum + a.location.lat, 0) / validActivities.length
+          const avgLng = validActivities.reduce((sum, a) => sum + a.location.lng, 0) / validActivities.length
+          return [avgLat, avgLng]
+        }
+      }
+    }
+    
+    // Last resort: return a default that will prompt user to check their data
+    console.warn('[ModernItineraryBuilder] No valid coordinates found in itinerary')
+    return [0, 0]
   }
   
   const handleAddDay = (destinationId: string) => {

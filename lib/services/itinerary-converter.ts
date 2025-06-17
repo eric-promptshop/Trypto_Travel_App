@@ -1,5 +1,6 @@
 import { Itinerary, DayPlan, TimeSlot, POI } from '@/store/planStore'
 import { v4 as uuidv4 } from 'uuid'
+import { GeocodingService } from './geocoding-service'
 
 interface AIActivity {
   time: string
@@ -96,46 +97,49 @@ function calculateEndTime(startTime: string, durationMinutes: number): string {
   return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`
 }
 
-// Extract coordinates from location string or generate mock ones
-function extractCoordinates(location: string, destination: string): { lat: number, lng: number } {
-  // In a real implementation, you would use a geocoding service
-  // For now, we'll use approximate coordinates based on popular destinations
-  const cityCoordinates: Record<string, { lat: number, lng: number }> = {
-    'paris': { lat: 48.8566, lng: 2.3522 },
-    'london': { lat: 51.5074, lng: -0.1278 },
-    'new york': { lat: 40.7128, lng: -74.0060 },
-    'tokyo': { lat: 35.6762, lng: 139.6503 },
-    'rome': { lat: 41.9028, lng: 12.4964 },
-    'barcelona': { lat: 41.3851, lng: 2.1734 },
-    'amsterdam': { lat: 52.3676, lng: 4.9041 },
-    'dubai': { lat: 25.2048, lng: 55.2708 },
-    'singapore': { lat: 1.3521, lng: 103.8198 },
-    'sydney': { lat: -33.8688, lng: 151.2093 },
-    'san francisco': { lat: 37.7749, lng: -122.4194 },
-    'los angeles': { lat: 34.0522, lng: -118.2437 },
-    'miami': { lat: 25.7617, lng: -80.1918 },
-    'bangkok': { lat: 13.7563, lng: 100.5018 },
-    'berlin': { lat: 52.5200, lng: 13.4050 },
-    'madrid': { lat: 40.4168, lng: -3.7038 },
-    'vienna': { lat: 48.2082, lng: 16.3738 },
-    'prague': { lat: 50.0755, lng: 14.4378 },
-    'budapest': { lat: 47.4979, lng: 19.0402 },
-    'lisbon': { lat: 38.7223, lng: -9.1393 }
-  }
-  
-  const destLower = destination.toLowerCase()
-  for (const [city, coords] of Object.entries(cityCoordinates)) {
-    if (destLower.includes(city)) {
-      // Add small random offset for different locations within the city
-      return {
-        lat: coords.lat + (Math.random() - 0.5) * 0.05,
-        lng: coords.lng + (Math.random() - 0.5) * 0.05
-      }
+// Extract coordinates from location string or use destination coordinates
+async function extractCoordinates(location: string, destination: string, destinationCoords?: { lat: number, lng: number }): Promise<{ lat: number, lng: number }> {
+  // If we already have destination coordinates, use them with a small offset
+  if (destinationCoords && destinationCoords.lat && destinationCoords.lng) {
+    return {
+      lat: destinationCoords.lat + (Math.random() - 0.5) * 0.02,
+      lng: destinationCoords.lng + (Math.random() - 0.5) * 0.02
     }
   }
   
-  // Default coordinates if destination not found
-  return { lat: 48.8566, lng: 2.3522 } // Paris as default
+  // Try to geocode the specific location
+  try {
+    const searchQuery = `${location}, ${destination}`
+    const results = await GeocodingService.searchLocations(searchQuery)
+    
+    if (results.length > 0 && results[0].lat && results[0].lng) {
+      return {
+        lat: results[0].lat,
+        lng: results[0].lng
+      }
+    }
+  } catch (error) {
+    console.error('Geocoding error for location:', location, error)
+  }
+  
+  // Fallback to searching just the destination
+  try {
+    const results = await GeocodingService.searchLocations(destination)
+    
+    if (results.length > 0 && results[0].lat && results[0].lng) {
+      // Add small random offset for different locations within the city
+      return {
+        lat: results[0].lat + (Math.random() - 0.5) * 0.02,
+        lng: results[0].lng + (Math.random() - 0.5) * 0.02
+      }
+    }
+  } catch (error) {
+    console.error('Geocoding error for destination:', destination, error)
+  }
+  
+  // Last resort: return a default (we should rarely get here)
+  console.warn('Could not geocode location, using default coordinates')
+  return { lat: 0, lng: 0 }
 }
 
 // Determine price level from price number
@@ -148,20 +152,35 @@ function getPriceLevel(price?: number): POI['price'] {
 }
 
 // Convert AI-generated itinerary to our store format
-export function convertAIItineraryToStoreFormat(
+export async function convertAIItineraryToStoreFormat(
   aiItinerary: AIItinerary,
   tripId: string
-): Itinerary {
+): Promise<Itinerary> {
   const pois: POI[] = []
   const days: DayPlan[] = []
   
+  // First, geocode the destination to get base coordinates
+  let destinationCoords: { lat: number, lng: number } | undefined
+  try {
+    const destResults = await GeocodingService.searchLocations(aiItinerary.destination)
+    if (destResults.length > 0 && destResults[0].lat && destResults[0].lng) {
+      destinationCoords = {
+        lat: destResults[0].lat,
+        lng: destResults[0].lng
+      }
+      console.log(`[Itinerary Converter] Geocoded destination ${aiItinerary.destination}:`, destinationCoords)
+    }
+  } catch (error) {
+    console.error('[Itinerary Converter] Failed to geocode destination:', aiItinerary.destination, error)
+  }
+  
   // Process each day
-  aiItinerary.days.forEach((aiDay) => {
+  for (const aiDay of aiItinerary.days) {
     const dayId = `day-${aiDay.day}`
     const slots: TimeSlot[] = []
     
     // Convert activities to POIs and time slots
-    aiDay.activities.forEach((activity, index) => {
+    for (const [index, activity] of aiDay.activities.entries()) {
       const poiId = uuidv4()
       const duration = parseDuration(activity.duration)
       const category = typeToCategory[activity.type.toLowerCase()] || 'attraction'
@@ -192,7 +211,7 @@ export function convertAIItineraryToStoreFormat(
       }
       
       // Get coordinates based on location and destination
-      const coords = extractCoordinates(activity.location, aiItinerary.destination)
+      const coords = await extractCoordinates(activity.location, aiItinerary.destination, destinationCoords)
       poi.location.lat = coords.lat
       poi.location.lng = coords.lng
       
@@ -229,7 +248,7 @@ export function convertAIItineraryToStoreFormat(
         image: undefined
       }
       
-      const coords = extractCoordinates(aiDay.accommodation.location, aiItinerary.destination)
+      const coords = await extractCoordinates(aiDay.accommodation.location, aiItinerary.destination, destinationCoords)
       accommodationPoi.location.lat = coords.lat
       accommodationPoi.location.lng = coords.lng
       
@@ -237,7 +256,7 @@ export function convertAIItineraryToStoreFormat(
     }
     
     // Add meals as POIs
-    aiDay.meals.forEach((meal) => {
+    for (const meal of aiDay.meals) {
       const mealId = uuidv4()
       const mealPoi: POI = {
         id: mealId,
@@ -254,7 +273,7 @@ export function convertAIItineraryToStoreFormat(
         image: undefined
       }
       
-      const coords = extractCoordinates(meal.venue, aiItinerary.destination)
+      const coords = await extractCoordinates(meal.venue, aiItinerary.destination, destinationCoords)
       mealPoi.location.lat = coords.lat
       mealPoi.location.lng = coords.lng
       

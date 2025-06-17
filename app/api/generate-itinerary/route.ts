@@ -10,6 +10,7 @@ import {
   ItineraryDay,
   Meal
 } from '@/lib/types/itinerary'
+import { GeocodingService } from '@/lib/services/geocoding-service'
 
 import { DefaultPreferenceMatchingService } from '@/lib/itinerary-engine/services/preference-matching-service'
 import { DefaultDestinationSequencingService } from '@/lib/itinerary-engine/services/destination-sequencing-service'
@@ -99,12 +100,26 @@ function generateCacheKey(preferences: UserPreferences): string {
  * Create sample content for demonstration
  * In production, this would come from the content processing system
  */
-function createSampleContent(destination: string): {
+async function createSampleContent(destination: string): Promise<{
   activities: Activity[]
   accommodations: Accommodation[]
   transportation: Transportation[]
   destinations: Destination[]
-} {
+}> {
+  // Get real coordinates for the destination
+  let destinationCoords = { latitude: 0, longitude: 0 }
+  try {
+    const geoResults = await GeocodingService.searchLocations(destination)
+    if (geoResults.length > 0 && geoResults[0].lat && geoResults[0].lng) {
+      destinationCoords = {
+        latitude: geoResults[0].lat,
+        longitude: geoResults[0].lng
+      }
+      console.log(`[Generate Itinerary] Geocoded ${destination}:`, destinationCoords)
+    }
+  } catch (error) {
+    console.error(`[Generate Itinerary] Failed to geocode ${destination}:`, error)
+  }
   // Sample activities
   const activities: Activity[] = [
     {
@@ -113,7 +128,7 @@ function createSampleContent(destination: string): {
       description: `Comprehensive guided tour of ${destination}'s main attractions`,
       category: 'sightseeing',
       location: destination,
-      coordinates: { latitude: 48.8566, longitude: 2.3522 },
+      coordinates: destinationCoords,
       timeSlot: { startTime: '09:00', endTime: '17:00', duration: 480 },
       difficulty: 'easy',
       indoorOutdoor: 'both',
@@ -189,7 +204,7 @@ function createSampleContent(destination: string): {
       description: `5-star luxury hotel in the heart of ${destination}`,
       type: 'hotel',
       location: destination,
-      coordinates: { latitude: 48.8566, longitude: 2.3522 },
+      coordinates: destinationCoords,
       starRating: 5,
       amenities: ['wifi', 'pool', 'spa', 'restaurant', 'gym', 'concierge'],
       roomTypes: [
@@ -247,7 +262,7 @@ function createSampleContent(destination: string): {
       title: destination,
       description: `Beautiful city of ${destination} with rich history and culture`,
       location: destination,
-      coordinates: { latitude: 48.8566, longitude: 2.3522 },
+      coordinates: destinationCoords,
       countryCode: 'FR',
       timezone: 'Europe/Paris',
       weatherInfo: {
@@ -279,7 +294,7 @@ async function generateCompleteItinerary(
 ): Promise<GeneratedItinerary> {
   // Step 1: Load content (normally from content processing system)
   const contentTimer = performanceTracker.start('contentLoading')
-  const availableContent = createSampleContent(preferences.primaryDestination || 'Paris')
+  const availableContent = await createSampleContent(preferences.primaryDestination || 'Paris')
   performanceTracker.end(contentTimer)
 
   // Step 2: Parallel content matching by type
