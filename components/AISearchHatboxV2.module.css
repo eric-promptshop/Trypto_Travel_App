@@ -4,6 +4,7 @@
 .chat-bubble {
   font-size: 16px;
   line-height: 1.6;
+  text-align: left;
 }
 
 .chat-bubble p {
@@ -35,6 +36,7 @@
   border-radius: 16px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  text-align: left;
 }
 
 /* Dark mode support */
@@ -75,6 +77,33 @@
   
   .chat-messages {
     height: calc(100vh - 180px) !important;
+  }
+  
+  /* Fix mobile input text alignment */
+  input[type="text"],
+  input[type="search"] {
+    text-align: left !important;
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+  }
+  
+  /* Ensure proper cursor positioning */
+  .chat-input,
+  input {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    text-indent: 0 !important;
+    direction: ltr !important;
+  }
+  
+  /* Fix text rendering on mobile */
+  * {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 }
 

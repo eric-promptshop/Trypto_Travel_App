@@ -28,6 +28,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import TourUploadModal from './TourUploadModal'
 import TourDetailModal from './TourDetailModal'
+import TourUrlImportModal from './TourUrlImportModal'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,6 +85,7 @@ export default function TourOperatorDashboard() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'draft' | 'archived'>('all')
   const [isLoading, setIsLoading] = useState(true)
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [showUrlImportModal, setShowUrlImportModal] = useState(false)
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
   const [tourModalMode, setTourModalMode] = useState<'view' | 'edit'>('view')
   const [tourToDelete, setTourToDelete] = useState<string | null>(null)
@@ -174,6 +176,15 @@ export default function TourOperatorDashboard() {
     }
   }
 
+  const handleCreateFromUrl = () => {
+    setShowUrlImportModal(true)
+  }
+
+  const handleCreateManually = () => {
+    // TODO: Implement manual tour creation
+    toast.info('Manual tour creation coming soon!')
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
@@ -255,28 +266,25 @@ export default function TourOperatorDashboard() {
                   <CardDescription>Manage your tour offerings</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                  <Button 
-                    variant="outline"
-                    onClick={() => setShowUploadModal(true)}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Tours
-                  </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button className="bg-accent-orange hover:bg-orange-600">
+                      <Button className="bg-brand-orange-500 hover:bg-brand-orange-600 text-white">
                         <Plus className="h-4 w-4 mr-2" />
                         Add New Tour
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>Create Tour</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => setShowUploadModal(true)}>
                         <FileUp className="h-4 w-4 mr-2" />
                         Upload from Document
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleCreateFromUrl()}>
+                        <Globe className="h-4 w-4 mr-2" />
+                        Import from URL
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleCreateManually()}>
                         <Edit className="h-4 w-4 mr-2" />
                         Create Manually
                       </DropdownMenuItem>
@@ -475,6 +483,16 @@ export default function TourOperatorDashboard() {
         onClose={() => setShowUploadModal(false)}
         onTourCreated={() => {
           setShowUploadModal(false)
+          fetchDashboardData() // Refresh tours list
+        }}
+      />
+
+      {/* Tour URL Import Modal */}
+      <TourUrlImportModal
+        isOpen={showUrlImportModal}
+        onClose={() => setShowUrlImportModal(false)}
+        onTourCreated={() => {
+          setShowUrlImportModal(false)
           fetchDashboardData() // Refresh tours list
         }}
       />

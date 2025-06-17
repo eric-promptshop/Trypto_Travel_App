@@ -458,10 +458,14 @@ export function AISearchHatboxV2() {
               placeholder="Ask TripNav AI about any destination..."
               className={cn(
                 "pl-10 pr-24 h-11 bg-white border-gray-200 transition-all",
-                "placeholder:text-gray-400",
+                "placeholder:text-gray-400 text-left",
                 (isFocused || isExpanded) && "ring-2 ring-blue-500 border-blue-500",
                 isExpanded && !isMobile && "rounded-b-none"
               )}
+              style={{
+                fontSize: '16px',
+                textAlign: 'left'
+              }}
               autoComplete="off"
             />
             
@@ -511,16 +515,28 @@ export function AISearchHatboxV2() {
       {/* Chat Hatbox */}
       <AnimatePresence>
         {isExpanded && (
+          <>
+            {/* Mobile backdrop */}
+            {isMobile && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 z-40"
+                onClick={() => setIsExpanded(false)}
+              />
+            )}
+            
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: isMobile ? 100 : -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, y: isMobile ? 100 : -10 }}
+            transition={{ duration: 0.2, type: "spring", damping: 25 }}
             className={cn(
-              "absolute bg-white border border-gray-200 shadow-lg",
+              "bg-white border border-gray-200 shadow-lg",
               isMobile 
-                ? "fixed inset-0 top-0 z-50" 
-                : "top-full left-0 right-0 rounded-b-lg z-40 mt-[-1px] border-t-0"
+                ? "fixed inset-x-0 bottom-0 z-50 rounded-t-2xl max-h-[80vh]" 
+                : "absolute top-full left-0 right-0 rounded-b-lg z-40 mt-[-1px] border-t-0"
             )}
           >
             {/* Header */}
@@ -544,7 +560,7 @@ export function AISearchHatboxV2() {
               ref={scrollRef}
               className={cn(
                 "px-4 py-3",
-                isMobile ? "h-[calc(100vh-180px)]" : "max-h-[70vh]"
+                isMobile ? "h-[calc(80vh-120px)]" : "max-h-[70vh]"
               )}
               style={{ overscrollBehavior: 'contain' }}
             >
@@ -555,7 +571,7 @@ export function AISearchHatboxV2() {
                 {messages.length === 0 ? (
                   <div className="text-center py-8">
                     <Sparkles className="h-12 w-12 text-blue-200 mx-auto mb-3" />
-                    <p className="text-gray-600 mb-2">Hi! I'm your AI travel guide.</p>
+                    <p className="text-gray-600 mb-2 text-base">Hi! I'm your AI travel guide.</p>
                     <p className="text-sm text-gray-500">Ask me anything about {itinerary?.destination || 'your destination'}!</p>
                   </div>
                 ) : (
@@ -674,8 +690,62 @@ export function AISearchHatboxV2() {
               </div>
             </ScrollArea>
 
-            {/* Quick reply chips */}
-            {quickReplies.length > 0 && !isLoading && messages.length > 0 && (
+            {/* Mobile input area */}
+            {isMobile && (
+              <div className="border-t bg-white p-4">
+                <form onSubmit={handleSubmit} className="flex gap-2">
+                  <Input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Type your question..."
+                    className="flex-1 text-left text-base px-4 h-12"
+                    style={{ 
+                      fontSize: '16px',
+                      lineHeight: '1.5',
+                      textAlign: 'left',
+                      WebkitAppearance: 'none',
+                      appearance: 'none'
+                    }}
+                    autoFocus
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    className="bg-blue-600 hover:bg-blue-700 h-12 w-12"
+                    disabled={isLoading || !query.trim()}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </form>
+                
+                {/* Quick reply chips */}
+                {quickReplies.length > 0 && !isLoading && (
+                  <div className="mt-3">
+                    <p className="text-xs text-gray-500 mb-2">Suggested:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {quickReplies.slice(0, 3).map((chip, idx) => (
+                        <Button
+                          key={idx}
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs"
+                          onClick={() => handleAIQuery(chip.text)}
+                        >
+                          {chip.text}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Desktop quick reply chips */}
+            {!isMobile && quickReplies.length > 0 && !isLoading && messages.length > 0 && (
               <div className="px-4 py-4 border-t bg-white">
                 <p className="text-xs text-gray-500 mb-2">Suggested questions:</p>
                 <div className="flex flex-wrap gap-2">
@@ -707,6 +777,7 @@ export function AISearchHatboxV2() {
               </Button>
             )}
           </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>
