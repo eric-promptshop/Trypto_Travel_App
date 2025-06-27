@@ -427,15 +427,13 @@ async function handleItineraryGeneration(request: NextRequest) {
     
     const cached = await getCachedItinerary(cacheKey)
     if (cached) {
-      return createSuccessResponse(
-        {
-          itinerary: cached,
-          cached: true
-        },
-        {
-          generationTime: Date.now() - startTime
-        }
-      )
+      // Return in the expected format for the client
+      return NextResponse.json({
+        success: true,
+        itinerary: cached,
+        cached: true,
+        generationTime: Date.now() - startTime
+      })
     }
     
     let itinerary: GeneratedItinerary
@@ -451,7 +449,7 @@ async function handleItineraryGeneration(request: NextRequest) {
         
         // Call OpenAI API with timeout
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 20000) // 20 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
         
         const completion = await openai.chat.completions.create({
           model: process.env.MODEL || 'gpt-4o-mini',
@@ -459,9 +457,10 @@ async function handleItineraryGeneration(request: NextRequest) {
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: prompt }
           ],
-          max_tokens: 4000,
+          max_tokens: 2000, // Reduced for faster response
           temperature: 0.7,
-          response_format: { type: 'json_object' }
+          response_format: { type: 'json_object' },
+          signal: controller.signal
         })
         
         clearTimeout(timeoutId)
@@ -488,22 +487,23 @@ async function handleItineraryGeneration(request: NextRequest) {
     
     const generationTime = Date.now() - startTime
     
-    return createSuccessResponse(
-      {
-        itinerary,
-        cached: false
-      },
-      {
-        generationTime
-      }
-    )
+    // Return in the expected format for the client
+    return NextResponse.json({
+      success: true,
+      itinerary,
+      cached: false,
+      generationTime
+    })
     
   } catch (error) {
     console.error('Itinerary generation error:', error)
-    return createErrorResponse(
-      'Failed to generate itinerary',
-      error instanceof Error ? { message: error.message } : undefined,
-      500
+    // Return error in the expected format
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate itinerary'
+      },
+      { status: 500 }
     )
   }
 }

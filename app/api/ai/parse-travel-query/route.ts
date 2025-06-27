@@ -70,36 +70,50 @@ Examples:
 "Family trip to Costa Rica" -> {"destination": "Costa Rica", "travelStyle": "family"}
 "2 week adventure in Peru for 4 people" -> {"destination": "Peru", "duration": 14, "travelers": 4, "travelStyle": "adventure"}`
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: query }
-      ],
-      max_tokens: 500,
-      temperature: 0.1,
-      response_format: { type: "json_object" }
-    })
-  })
-
-  if (!response.ok) {
-    throw new Error('OpenAI API request failed')
-  }
-
-  const data = await response.json()
-  const content = data.choices[0]?.message?.content
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
   
-  if (!content) {
-    throw new Error('No response from OpenAI')
-  }
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: query }
+        ],
+        max_tokens: 200, // Reduced for faster parsing
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      }),
+      signal: controller.signal
+    })
+    
+    clearTimeout(timeoutId)
 
-  return JSON.parse(content)
+    if (!response.ok) {
+      throw new Error('OpenAI API request failed')
+    }
+
+    const data = await response.json()
+    const content = data.choices[0]?.message?.content
+    
+    if (!content) {
+      throw new Error('No response from OpenAI')
+    }
+
+    return JSON.parse(content)
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout')
+    }
+    throw error
+  }
 }
 
 function parseWithPatterns(query: string): any {
