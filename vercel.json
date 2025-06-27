@@ -1,8 +1,8 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "NODE_OPTIONS='--max-old-space-size=4096' npm run build",
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
-  "installCommand": "npm install --legacy-peer-deps",
+  "installCommand": "npm install",
   "framework": "nextjs",
   "functions": {
     "app/api/generate-itinerary/route.ts": {
