@@ -185,10 +185,34 @@ function PlanPageContent() {
         throw new Error(`Failed to generate itinerary: ${generateResponse.status} - ${errorText}`)
       }
       
-      const generateResult = await generateResponse.json()
+      let generateResult = await generateResponse.json()
       
       if (!generateResult.success || !generateResult.itinerary) {
-        throw new Error(generateResult.error || 'Failed to generate itinerary')
+        console.log('Main itinerary generation failed, trying fallback...')
+        
+        // Try fallback endpoint
+        const fallbackResponse = await fetch('/api/itinerary/fallback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            destination: parsedData.destination || 'Unknown Destination',
+            startDate: parsedData.startDate || new Date().toISOString().split('T')[0],
+            endDate: parsedData.endDate || new Date(Date.now() + (parsedData.duration || 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            travelers: { adults: parsedData.travelers || 2, children: 0 }
+          })
+        })
+        
+        if (!fallbackResponse.ok) {
+          throw new Error(generateResult.error || 'Failed to generate itinerary')
+        }
+        
+        generateResult = await fallbackResponse.json()
+        
+        if (!generateResult.success || !generateResult.itinerary) {
+          throw new Error('Both main and fallback generation failed')
+        }
+        
+        toast.info('Using simplified itinerary due to service issues')
       }
       
       const itinerary = generateResult.itinerary
