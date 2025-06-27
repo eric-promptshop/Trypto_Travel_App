@@ -152,7 +152,7 @@ async function createSampleContent(destination: string): Promise<{
       bookingRequired: true,
       estimatedCost: { amount: 45, currency: 'USD' },
       tags: ['guided', 'history', 'culture'],
-      images: [`https://images.unsplash.com/photo-city-tour`],
+      images: [`https://images.unsplash.com/photo-1533929736458-ca588d08c8be?w=800&q=80`], // London city tour
       createdAt: new Date(),
       updatedAt: new Date()
     },
@@ -176,7 +176,7 @@ async function createSampleContent(destination: string): Promise<{
       bookingRequired: false,
       estimatedCost: { amount: 25, currency: 'USD' },
       tags: ['food', 'local', 'market'],
-      images: [`https://images.unsplash.com/photo-food-market`],
+      images: [`https://images.unsplash.com/photo-1559818454-1b46997bfe30?w=800&q=80`], // Food market
       createdAt: new Date(),
       updatedAt: new Date()
     },
@@ -200,7 +200,7 @@ async function createSampleContent(destination: string): Promise<{
       bookingRequired: true,
       estimatedCost: { amount: 15, currency: 'USD' },
       tags: ['museum', 'art', 'culture', 'indoor'],
-      images: [`https://images.unsplash.com/photo-museum`],
+      images: [`https://images.unsplash.com/photo-1554907984-15263bfd63bd?w=800&q=80`], // Museum interior
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -237,7 +237,7 @@ async function createSampleContent(destination: string): Promise<{
       },
       estimatedCost: { amount: 300, currency: 'USD' },
       tags: ['luxury', 'central', '5-star'],
-      images: [`https://images.unsplash.com/photo-luxury-hotel`],
+      images: [`https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&q=80`], // Luxury hotel
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -259,7 +259,7 @@ async function createSampleContent(destination: string): Promise<{
       duration: 60,
       estimatedCost: { amount: 55, currency: 'USD' },
       tags: ['private', 'comfortable', 'direct'],
-      images: [`https://images.unsplash.com/photo-car-rental`],
+      images: [`https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&q=80`], // Car/transport
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -285,7 +285,7 @@ async function createSampleContent(destination: string): Promise<{
       languages: ['French', 'English'],
       safetyRating: 9,
       touristSeason: 'shoulder',
-      images: [`https://images.unsplash.com/photo-${destination.toLowerCase()}`],
+      images: [`https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80`], // Paris default
       tags: ['historic', 'romantic', 'cultural', 'gastronomy'],
       createdAt: new Date(),
       updatedAt: new Date()

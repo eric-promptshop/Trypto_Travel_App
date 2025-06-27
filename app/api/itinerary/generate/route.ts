@@ -8,9 +8,10 @@ import { createSuccessResponse, createErrorResponse, createValidationErrorRespon
 import { withRateLimit, rateLimitConfigs } from '@/lib/middleware/rate-limit'
 
 // Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '',
-})
+const openaiApiKey = process.env.OPENAI_API_KEY
+const openai = openaiApiKey ? new OpenAI({
+  apiKey: openaiApiKey,
+}) : null
 
 // Request validation schema
 const generateRequestSchema = z.object({
@@ -263,7 +264,8 @@ function generateFallbackItinerary(
         duration: '2 hours',
         location: data.destination,
         category: 'transport',
-        price: 50
+        price: 50,
+        imageUrl: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&q=80'
       })
       
       activities.push({
@@ -274,7 +276,8 @@ function generateFallbackItinerary(
         duration: '2 hours',
         location: data.destination,
         category: 'dining',
-        price: 40
+        price: 40,
+        imageUrl: 'https://images.unsplash.com/photo-1559818454-1b46997bfe30?w=800&q=80'
       })
     } else if (i === duration - 1) {
       // Departure day
@@ -309,7 +312,8 @@ function generateFallbackItinerary(
           duration: '3 hours',
           location: data.destination,
           category: 'activity',
-          price: 30
+          price: 30,
+          imageUrl: 'https://images.unsplash.com/photo-1533929736458-ca588d08c8be?w=800&q=80'
         },
         {
           id: `day-${i}-lunch`,
@@ -319,7 +323,8 @@ function generateFallbackItinerary(
           duration: '1.5 hours',
           location: data.destination,
           category: 'dining',
-          price: 25
+          price: 25,
+          imageUrl: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&q=80'
         },
         {
           id: `day-${i}-afternoon`,
@@ -329,7 +334,8 @@ function generateFallbackItinerary(
           duration: '3 hours',
           location: data.destination,
           category: 'activity',
-          price: 40
+          price: 40,
+          imageUrl: 'https://images.unsplash.com/photo-1554907984-15263bfd63bd?w=800&q=80'
         },
         {
           id: `day-${i}-dinner`,
@@ -339,7 +345,8 @@ function generateFallbackItinerary(
           duration: '2 hours',
           location: data.destination,
           category: 'dining',
-          price: 35
+          price: 35,
+          imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80'
         }
       )
     }
@@ -433,41 +440,47 @@ async function handleItineraryGeneration(request: NextRequest) {
     
     let itinerary: GeneratedItinerary
     
-    try {
-      // Generate prompt
-      const prompt = generatePrompt(data)
-      
-      // Call OpenAI API with timeout
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 20000) // 20 second timeout
-      
-      const completion = await openai.chat.completions.create({
-        model: process.env.MODEL || 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 4000,
-        temperature: 0.7,
-        response_format: { type: 'json_object' }
-      })
-      
-      clearTimeout(timeoutId)
-      
-      // Parse AI response
-      const content = completion.choices[0]?.message?.content
-      if (!content) {
-        throw new Error('No response from AI')
-      }
-      
-      itinerary = JSON.parse(content) as GeneratedItinerary
-      
-      // Enrich with Google Places data
-      itinerary = await enrichWithPlacesData(itinerary)
-      
-    } catch (error) {
-      console.error('AI generation failed, using fallback:', error)
+    // Check if OpenAI is available
+    if (!openai) {
+      console.log('OpenAI API key not configured, using fallback itinerary generator')
       itinerary = generateFallbackItinerary(data)
+    } else {
+      try {
+        // Generate prompt
+        const prompt = generatePrompt(data)
+        
+        // Call OpenAI API with timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 20000) // 20 second timeout
+        
+        const completion = await openai.chat.completions.create({
+          model: process.env.MODEL || 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: 4000,
+          temperature: 0.7,
+          response_format: { type: 'json_object' }
+        })
+        
+        clearTimeout(timeoutId)
+        
+        // Parse AI response
+        const content = completion.choices[0]?.message?.content
+        if (!content) {
+          throw new Error('No response from AI')
+        }
+        
+        itinerary = JSON.parse(content) as GeneratedItinerary
+        
+        // Enrich with Google Places data
+        itinerary = await enrichWithPlacesData(itinerary)
+        
+      } catch (error) {
+        console.error('AI generation failed, using fallback:', error)
+        itinerary = generateFallbackItinerary(data)
+      }
     }
     
     // Cache the result
