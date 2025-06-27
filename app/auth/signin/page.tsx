@@ -62,13 +62,10 @@ export default function SignInPage() {
         const sessionData = await response.json()
         
         if (sessionData?.user?.role === 'TOUR_OPERATOR' || sessionData?.user?.role === 'AGENT') {
-          console.log('Tour operator login successful, redirecting to /tour-operator')
           router.push('/tour-operator')
         } else if (sessionData?.user?.role === 'ADMIN' || sessionData?.user?.role === 'SUPER_ADMIN') {
-          console.log('Admin login successful, redirecting to /admin')
           router.push('/admin')
         } else {
-          console.log('Login successful, redirecting to', callbackUrl)
           router.push(callbackUrl)
         }
       }
@@ -96,7 +93,6 @@ export default function SignInPage() {
         setError('Demo traveler login failed. Please ensure the demo user exists in the database.')
       } else if (result?.ok) {
         // Successful demo login - directly redirect to trips page
-        console.log('Demo traveler login successful, redirecting to /trips')
         router.push('/trips')
       }
     } catch (error) {
@@ -123,7 +119,6 @@ export default function SignInPage() {
         setError('Demo tour operator login failed. Please ensure the demo user exists in the database.')
       } else if (result?.ok) {
         // Successful demo login - directly redirect to tour operator dashboard
-        console.log('Demo tour operator login successful, redirecting to /tour-operator')
         router.push('/tour-operator')
       }
     } catch (error) {

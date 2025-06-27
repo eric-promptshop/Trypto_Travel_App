@@ -128,7 +128,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
   // Wrapper for setValue that handles any necessary field transformations
   const setValueWrapper = useCallback(async (name: string, value: any, options?: any) => {
-    console.log(`[Form] Setting ${name} to:`, value, 'type:', typeof value);
     
     // The form expects specific types for certain fields
     if (name === 'travelers' && typeof value === 'string') {
@@ -143,7 +142,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     
     // Special handling for arrays
     if ((name === 'interests' || name === 'transportation') && Array.isArray(value)) {
-      console.log(`[Form] Setting array field ${name}:`, value);
     }
     
     try {
@@ -156,7 +154,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
       
       // Force a re-render to ensure the UI updates
       if (name === 'destination' || name === 'startDate' || name === 'endDate' || name === 'travelers') {
-        console.log(`[Form] Critical field ${name} set, triggering validation`);
         setTimeout(() => {
           trigger(name);
         }, 50);
@@ -170,11 +167,9 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
   }, [setValue, trigger]);
 
   const navigateToReview = useCallback(async () => {
-    console.log('[Form] Navigating to review, current values:', getValues());
     
     // Validate basic fields before navigating
     const basicFieldsValid = await trigger(['destination', 'startDate', 'endDate', 'travelers'])
-    console.log('[Form] Basic fields validation result:', basicFieldsValid);
     
     if (basicFieldsValid) {
       // Clear any focus to prevent accidental submission
@@ -191,20 +186,17 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
         const form = document.querySelector('form');
         if (form) {
           form.addEventListener('submit', (e) => {
-            console.log('[Form] Preventing immediate submission after voice input');
             e.preventDefault();
             e.stopPropagation();
           }, { once: true, capture: true });
           
           // Remove the prevention after a delay
           setTimeout(() => {
-            console.log('[Form] Re-enabling form submission');
           }, 1000);
         }
       }, 100);
     } else {
       // Log which fields failed validation
-      console.log('[Form] Validation errors:', errors);
       
       // If basic fields aren't filled, just show what we parsed
       toast.success('Voice input processed. Please complete any missing fields.', { duration: 4000 })
@@ -213,7 +205,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
 
 
   const handleNext = async () => {
-    console.log('[Form] handleNext called, currentStep:', currentStep);
     
     // Validate current step fields
     let fieldsToValidate: (keyof TravelFormData)[] = []
@@ -225,11 +216,9 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     }
     
     const isStepValid = await trigger(fieldsToValidate)
-    console.log('[Form] Validation result:', isStepValid);
     
     if (isStepValid) {
       const nextStep = Math.min(currentStep + 1, 3);
-      console.log('[Form] Moving to step:', nextStep);
       setCurrentStep(nextStep);
     }
   }
@@ -239,9 +228,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
   }
 
   const onFormSubmit = handleSubmit(async (data) => {
-    console.log('[Form] onFormSubmit called, currentStep:', currentStep);
-    console.log('[Form] Submitting form with data:', data);
-    console.trace('[Form] Submit call stack');
     
     // Only submit if we're on step 3
     if (currentStep !== 3) {
@@ -253,7 +239,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
     const submitButton = document.activeElement as HTMLElement;
     if (!submitButton || submitButton.getAttribute('type') !== 'submit' || 
         !(submitButton as any).dataset?.userClicked) {
-      console.log('[Form] Form submission not triggered by explicit user click on Generate Trip button, ignoring');
       return;
     }
     
@@ -359,7 +344,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
             variant="ghost"
             size="sm"
             onClick={async () => {
-              console.log('[Debug] Testing form setValue...');
               const testDate = new Date();
               testDate.setDate(testDate.getDate() + 7);
               const endDate = new Date(testDate);
@@ -371,7 +355,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
               await setValueWrapper('travelers', 2);
               
               setTimeout(() => {
-                console.log('[Debug] Form values after test:', getValues());
               }, 500);
             }}
             className="text-xs"
@@ -388,7 +371,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
             // Prevent Enter key from submitting form except on step 3
             if (e.key === 'Enter' && currentStep !== 3) {
               e.preventDefault();
-              console.log('[Form] Prevented Enter key submission on step', currentStep);
             }
           }}>
             <AnimatePresence mode="wait">
@@ -870,7 +852,6 @@ export function AITravelFormWizard({ onSubmit, isGenerating = false }: AITravelF
                   disabled={isGenerating || !isValid}
                   className="gap-2 bg-gradient-to-r from-[#ff6b35] to-[#ff8759] hover:from-[#ff5525] hover:to-[#ff7649] text-white font-medium px-8 shadow-lg hover:shadow-xl transition-all duration-300"
                   onClick={(e) => {
-                    console.log('[Form] Generate Trip button clicked');
                     // Mark this as an explicit user action
                     (e.currentTarget as any).dataset.userClicked = 'true';
                   }}

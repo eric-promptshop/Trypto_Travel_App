@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
 
     // Store metric (in production, you'd send to monitoring service)
     if (process.env.NODE_ENV === 'development') {
-      console.log('Performance Metric:', metric)
     }
 
     // Send to external monitoring services

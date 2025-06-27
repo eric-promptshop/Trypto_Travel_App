@@ -15,7 +15,8 @@ import {
   Sparkles,
   Car,
   Plus,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
@@ -63,7 +64,6 @@ async function fetchPlaces(
   lat?: number,
   lng?: number
 ): Promise<POI[]> {
-  console.log('[fetchPlaces] Called with:', { searchQuery, category, lat, lng });
   
   try {
     const params = new URLSearchParams()
@@ -80,7 +80,6 @@ async function fetchPlaces(
     }
     params.append('limit', '20')
     
-    console.log('[fetchPlaces] Fetching from:', `/api/places/search?${params}`);
     const response = await fetch(`/api/places/search?${params}`)
     
     if (!response.ok) {
@@ -90,7 +89,6 @@ async function fetchPlaces(
     }
     
     const data = await response.json()
-    console.log('[fetchPlaces] Received data:', data);
     return data.places || []
   } catch (error) {
     console.error('[fetchPlaces] Error:', error)
@@ -170,16 +168,27 @@ export function ModernExploreSidebar() {
   // Load places when category or search changes
   useEffect(() => {
     const loadPlaces = async () => {
-      console.log('[ModernExploreSidebar] loadPlaces called:', {
-        selectedCategory,
-        debouncedSearchQuery,
-        mapCenter
-      });
-      
+      // Show default results if no search or category is selected
       if (!selectedCategory && !debouncedSearchQuery) {
-        setPois([])
-        setPage(1)
-        setHasMore(true)
+        // Load popular attractions by default
+        setLoading(true)
+        setError(null)
+        try {
+          const defaultLocation = itinerary?.destination || 'New York'
+          
+          const places = await fetchPlaces(
+            defaultLocation,
+            'attractions',
+            mapCenter[0],
+            mapCenter[1]
+          )
+          setPois(places)
+          setHasMore(places.length >= 20)
+        } catch (err) {
+          setPois([])
+        } finally {
+          setLoading(false)
+        }
         return
       }
       
@@ -189,8 +198,11 @@ export function ModernExploreSidebar() {
       setHasMore(true)
       
       try {
+        // Use search query if provided, otherwise use destination
+        const searchLocation = debouncedSearchQuery || itinerary?.destination || 'New York'
+        
         const places = await fetchPlaces(
-          debouncedSearchQuery,
+          searchLocation,
           selectedCategory,
           mapCenter[0],
           mapCenter[1]
@@ -206,7 +218,7 @@ export function ModernExploreSidebar() {
     }
     
     loadPlaces()
-  }, [selectedCategory, debouncedSearchQuery, mapCenter])
+  }, [selectedCategory, debouncedSearchQuery, mapCenter, itinerary])
   
   // Apply filters to POIs
   useEffect(() => {
@@ -258,8 +270,9 @@ export function ModernExploreSidebar() {
         return
       }
       
+      const searchLocation = searchQuery || itinerary?.destination || 'New York'
       const morePlaces = await fetchPlaces(
-        searchQuery,
+        searchLocation,
         selectedCategory,
         mapCenter[0],
         mapCenter[1]
@@ -317,6 +330,52 @@ export function ModernExploreSidebar() {
             filters={filters}
             onFiltersChange={setFilters}
           />
+        </div>
+        
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search places..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 pr-4"
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+              onClick={() => setSearchQuery('')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        
+        {/* Category chips */}
+        <div className="flex gap-2 flex-wrap">
+          {CATEGORIES.map((category) => {
+            const Icon = category.icon
+            return (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "gap-1.5 text-xs",
+                  selectedCategory === category.id && "bg-indigo-600 hover:bg-indigo-700"
+                )}
+                onClick={() => setSelectedCategory(
+                  selectedCategory === category.id ? null : category.id
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {category.label}
+              </Button>
+            )
+          })}
         </div>
         
         {/* AI Search Hatbox */}

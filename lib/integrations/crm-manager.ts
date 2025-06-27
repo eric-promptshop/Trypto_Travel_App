@@ -414,7 +414,6 @@ export class CRMManager {
     // 2. Updating local records based on the changes
     // 3. Triggering any necessary business logic
     
-    console.log('Processing webhook data:', webhookData)
     
     // Example: Log webhook activity
     // In a real implementation, you'd update your local database

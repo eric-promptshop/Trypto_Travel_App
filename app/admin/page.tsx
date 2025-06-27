@@ -3,6 +3,8 @@ import { authOptions } from '@/lib/auth/config'
 import { redirect } from 'next/navigation'
 import AdminDashboard from '@/components/admin/AdminDashboard'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminPage() {
   const session = await getServerSession(authOptions)
   
@@ -15,7 +17,6 @@ export default async function AdminPage() {
   // TODO: Add proper role-based access control
   if (session.user?.role !== 'ADMIN' && session.user?.role !== 'SUPER_ADMIN') {
     // For development, allow access but show warning
-    console.warn(`User ${session.user?.email} accessed admin without admin role`)
   }
 
   return (

@@ -90,7 +90,6 @@ export function useGeolocation(options: GeolocationOptions = {}) {
           cityName = data.address?.city || data.address?.town || data.address?.village || null
         }
       } catch (reverseGeoError) {
-        console.warn('Reverse geocoding failed:', reverseGeoError)
       }
 
       return {
@@ -101,7 +100,6 @@ export function useGeolocation(options: GeolocationOptions = {}) {
         localTime
       }
     } catch (error) {
-      console.warn('Location context detection failed:', error)
       // Return minimal context
       return {
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -128,7 +126,6 @@ export function useGeolocation(options: GeolocationOptions = {}) {
       const context = await getLocationContext(newCoords.latitude, newCoords.longitude)
       setLocationContext(context)
     } catch (contextError) {
-      console.warn('Failed to get location context:', contextError)
     }
   }, [getLocationContext])
 

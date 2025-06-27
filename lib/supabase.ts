@@ -152,7 +152,6 @@ export async function setupTenantRLSPolicies(tenantId: string) {
     try {
       await supabaseAdmin.rpc('exec_sql', { sql: policy })
     } catch (error) {
-      console.warn(`Policy creation warning for tenant ${tenantId}:`, error)
       // Continue with other policies even if one fails
     }
   }

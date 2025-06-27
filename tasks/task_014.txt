@@ -1,0 +1,239 @@
+# Task ID: 14
+# Title: Modernize ThreeColumnItineraryBuilder UI with 21stdev Components
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Redesign and implement the main itinerary builder interface using modern 21stdev UI components and interaction patterns to create a more fluid, responsive user experience.
+# Details:
+This task involves a comprehensive UI modernization of the ThreeColumnItineraryBuilder component:
+
+1. Replace the current day timeline with a modern interactive Gantt/timeline component that:
+   - Shows activities with proper time scaling
+   - Supports drag-and-drop for rescheduling
+   - Provides visual indicators for activity duration
+   - Includes smooth animations when adding/removing items
+
+2. Update all UI elements to use 21stdev primitives:
+   - Convert all cards to use the modern Card component with proper spacing and shadows
+   - Replace badges with the new Badge component supporting appropriate status colors
+   - Update all buttons to use the Button component with proper variants (primary, secondary, text)
+   - Implement consistent hover and active states across all interactive elements
+
+3. Make key actions visually prominent:
+   - Redesign 'Add Day' button as a prominent floating action button or highlighted button
+   - Create a visually distinct 'Make Changes' action with animation feedback
+   - Add micro-interactions (subtle animations) for all primary actions
+
+4. Ensure responsive layout:
+   - Implement proper grid-based layout that adapts to different screen sizes
+   - Ensure column widths adjust appropriately on smaller screens
+   - Maintain usability on tablet-sized devices
+   - Consider collapsible panels for mobile views
+
+5. Implement smooth transitions:
+   - Add entrance/exit animations when adding or removing days
+   - Include loading states and transitions between major UI changes
+   - Ensure all interactions have appropriate feedback animations
+
+The implementation should follow the 21stdev design system documentation for spacing, typography, color usage, and interaction patterns. Ensure accessibility standards are maintained throughout the redesign.
+
+# Test Strategy:
+Testing should verify both the visual modernization and functional improvements:
+
+1. Visual Regression Testing:
+   - Capture screenshots of the old UI and compare with new implementation
+   - Verify all components match 21stdev design specifications (spacing, colors, typography)
+   - Test across multiple viewport sizes (desktop, tablet, mobile)
+
+2. Interaction Testing:
+   - Verify all animations work smoothly (add day, make changes, timeline updates)
+   - Test drag-and-drop functionality in the timeline component
+   - Ensure hover and active states appear correctly on all interactive elements
+   - Validate that all micro-interactions trigger appropriately
+
+3. Responsive Testing:
+   - Test layout at standard breakpoints (320px, 768px, 1024px, 1440px)
+   - Verify content remains accessible and usable at all sizes
+   - Ensure no horizontal scrolling occurs on standard device sizes
+
+4. Accessibility Testing:
+   - Verify proper contrast ratios are maintained
+   - Test keyboard navigation through all interactive elements
+   - Ensure screen readers can properly interpret all UI elements
+   - Validate that animations respect reduced motion preferences
+
+5. Performance Testing:
+   - Measure and compare render times before and after changes
+   - Verify smooth performance when adding/removing multiple days
+   - Test animation performance on lower-end devices
+
+Create a test plan document with before/after screenshots and results of all test categories.
+
+# Subtasks:
+## 1. Implement Modern Interactive Gantt/Timeline Component [in-progress]
+### Dependencies: None
+### Description: Replace the current day timeline with a modern interactive Gantt/timeline component that supports proper time scaling, drag-and-drop functionality, visual duration indicators, and smooth animations.
+### Details:
+Implementation details:
+1. Create a new TimelineComponent using 21stdev design patterns
+2. Implement time scaling functionality that properly represents activity durations
+3. Add drag-and-drop capability for rescheduling activities with proper snap-to-grid behavior
+4. Design and implement visual indicators for activity duration (bars with appropriate colors from the design system)
+5. Add smooth entrance/exit animations when adding/removing timeline items
+6. Ensure the timeline responds to data changes with appropriate transitions
+7. Include hover states that reveal additional action buttons
+
+Testing approach:
+- Verify timeline renders activities with correct time scaling
+- Test drag-and-drop functionality with various activity durations
+- Confirm animations work smoothly when adding/removing items
+- Validate that the component maintains performance with 20+ activities
+- Test keyboard accessibility for timeline interactions
+
+<info added on 2025-06-16T04:07:27.547Z>
+# Component Exploration and Implementation Strategy
+
+## Existing Component Analysis
+- `DayTimeline.tsx` has robust functionality but outdated visuals
+- `ModernDayTimeline.tsx` has better aesthetics but lacks full data integration
+- Other timeline implementations exist but serve different purposes
+
+## Technical Implementation Approach
+1. **Component Architecture**:
+   - Create a composable pattern with `TimelineContainer`, `TimelineTrack`, `TimelineItem`, and `TimelineMarker` components
+   - Implement context provider for timeline configuration and state management
+   - Use compound component pattern for flexible composition
+
+2. **Time Scaling Algorithm**:
+   ```typescript
+   const calculateTimePosition = (time: string, scale: number): number => {
+     const [hours, minutes] = time.split(':').map(Number);
+     const totalMinutes = hours * 60 + minutes;
+     return (totalMinutes / 1440) * scale; // 1440 = minutes in day
+   };
+   ```
+
+3. **Performance Optimization**:
+   - Implement virtualization for large datasets using `react-window` or `react-virtualized`
+   - Use `React.memo` for timeline items to prevent unnecessary re-renders
+   - Batch updates for drag operations to maintain 60fps
+
+4. **Accessibility Enhancements**:
+   - Implement ARIA roles: `grid` for timeline, `row`/`gridcell` for items
+   - Add keyboard shortcuts: arrow keys for navigation, space/enter for selection
+   - Include screen reader announcements for timeline changes
+
+5. **Animation Strategy**:
+   - Use CSS transitions for position changes during drag
+   - Implement Framer Motion's `AnimatePresence` for add/remove animations
+   - Create staggered animations for initial timeline load
+
+## Integration Plan
+1. Create new component in isolation with storybook examples
+2. Implement core functionality with mock data
+3. Gradually replace existing timeline while maintaining feature parity
+4. Add new capabilities once base functionality is stable
+</info added on 2025-06-16T04:07:27.547Z>
+
+## 2. Update UI Elements with 21stdev Primitives [pending]
+### Dependencies: None
+### Description: Convert all existing UI elements to use the modern 21stdev component library, including cards, badges, buttons, and other interactive elements.
+### Details:
+Implementation details:
+1. Replace all card containers with the 21stdev Card component, ensuring proper spacing, padding, and shadow styles
+2. Convert all status indicators to use the Badge component with appropriate status colors from the design system
+3. Update all buttons to use the Button component with correct variants (primary, secondary, text) based on their importance
+4. Implement consistent hover, focus, and active states for all interactive elements
+5. Replace any custom form elements with 21stdev equivalents (inputs, selects, checkboxes)
+6. Update typography to use the design system's text components and styles
+7. Ensure color usage follows the 21stdev palette for backgrounds, text, and accents
+
+Testing approach:
+- Verify all components render correctly across browsers
+- Confirm hover/focus states work as expected
+- Test that all interactive elements maintain proper contrast ratios
+- Validate that component spacing matches design specifications
+- Ensure all components are properly themed according to the design system
+
+## 3. Enhance Key Action Visibility and Interactions [pending]
+### Dependencies: 14.2
+### Description: Redesign primary actions to be more visually prominent and implement micro-interactions for better user feedback.
+### Details:
+Implementation details:
+1. Redesign the 'Add Day' button as a prominent floating action button with the appropriate 21stdev styling
+2. Create a visually distinct 'Make Changes' action with animation feedback when clicked
+3. Add micro-interactions (subtle animations) for all primary actions including hover effects and click responses
+4. Implement toast notifications or other feedback mechanisms for action confirmations
+5. Design and implement loading states for actions that require processing time
+6. Ensure all interactive elements have appropriate cursor indicators
+7. Add ripple effects or other visual feedback for touch/click interactions
+
+Testing approach:
+- Verify all animations run smoothly at 60fps
+- Test that feedback is provided for all user interactions
+- Confirm loading states display appropriately during async operations
+- Validate that primary actions stand out visually from secondary actions
+- Ensure animations don't interfere with usability or accessibility
+
+## 4. Implement Responsive Layout with Grid System [pending]
+### Dependencies: 14.1, 14.2
+### Description: Redesign the three-column layout using a modern grid system that adapts appropriately to different screen sizes while maintaining usability.
+### Details:
+Implementation details:
+1. Implement a responsive grid-based layout using 21stdev grid components
+2. Define appropriate breakpoints for different screen sizes (desktop, tablet, mobile)
+3. Ensure column widths adjust appropriately on smaller screens
+4. Create collapsible panels for the sidebar columns on mobile views
+5. Implement a responsive navigation system for accessing different columns on smaller screens
+6. Ensure touch targets are appropriately sized on mobile devices
+7. Maintain proper spacing and alignment across all viewport sizes
+
+Testing approach:
+- Test layout at various screen widths from 320px to 1920px
+- Verify that all content remains accessible on mobile devices
+- Confirm that touch interactions work properly on tablet-sized screens
+- Validate that collapsible panels function correctly
+- Ensure no horizontal scrolling occurs at supported viewport sizes
+
+## 5. Add Smooth Transitions and Animation States [pending]
+### Dependencies: 14.1, 14.3, 14.4
+### Description: Implement smooth transitions and animations throughout the interface to create a more fluid, responsive user experience.
+### Details:
+Implementation details:
+1. Add entrance/exit animations when adding or removing days from the itinerary
+2. Implement transition animations between different views or states
+3. Create loading states with appropriate animations for asynchronous operations
+4. Design and implement skeleton loading screens for initial data fetching
+5. Add subtle animations for expanding/collapsing sections
+6. Ensure all animations follow the 21stdev timing and easing specifications
+7. Implement proper animation sequences for multi-step interactions
+
+Testing approach:
+- Verify animations work smoothly across different browsers
+- Test performance impact of animations on lower-end devices
+- Confirm that animations respect user preferences for reduced motion
+- Validate that loading states accurately reflect backend operations
+- Ensure animations don't cause layout shifts or visual glitches
+
+## 6. Conduct Accessibility Review and Create Documentation [pending]
+### Dependencies: 14.1, 14.2, 14.3, 14.4, 14.5
+### Description: Ensure the modernized UI meets accessibility standards and create comprehensive documentation of the new UI patterns for future reference.
+### Details:
+Implementation details:
+1. Audit all components for WCAG 2.1 AA compliance
+2. Ensure proper keyboard navigation throughout the interface
+3. Verify appropriate contrast ratios for all text and interactive elements
+4. Add proper ARIA attributes to custom interactive components
+5. Test with screen readers to ensure all content is accessible
+6. Create comprehensive documentation of all new UI components and patterns
+7. Document animation patterns and interaction guidelines
+8. Provide examples of component usage for future development
+
+Testing approach:
+- Run automated accessibility tests using tools like Axe or Lighthouse
+- Conduct manual testing with keyboard-only navigation
+- Test with screen readers (NVDA, VoiceOver, JAWS)
+- Verify color contrast meets WCAG AA standards
+- Validate that all interactive elements have appropriate focus indicators
+- Review documentation with team members to ensure clarity and completeness
+

@@ -107,21 +107,18 @@ export function LeafletMapLoader({
 
     // Check if Leaflet is already available
     if ((window as any).L && typeof (window as any).L.map === "function") {
-      console.log("Leaflet already available")
       setIsScriptsLoaded(true)
       return
     }
 
     if (isScriptsLoaded) return
 
-    console.log("Loading Leaflet scripts...")
 
     const loadCSS = (href: string): Promise<void> => {
       return new Promise((resolve, reject) => {
         // Check if CSS already exists
         const existingLink = document.querySelector(`link[href="${href}"]`)
         if (existingLink) {
-          console.log("Leaflet CSS already loaded")
           resolve()
           return
         }
@@ -130,7 +127,6 @@ export function LeafletMapLoader({
         link.rel = "stylesheet"
         link.href = href
         link.onload = () => {
-          console.log("Leaflet CSS loaded successfully")
           resolve()
         }
         link.onerror = () => {
@@ -147,7 +143,6 @@ export function LeafletMapLoader({
         // Check if script already exists
         const existingScript = document.querySelector(`script[src="${src}"]`)
         if (existingScript) {
-          console.log("Leaflet script already loaded")
           // Wait a bit and check if L is available
           setTimeout(() => {
             if ((window as any).L && typeof (window as any).L.map === "function") {
@@ -163,11 +158,9 @@ export function LeafletMapLoader({
         script.src = src
         script.async = false // Ensure synchronous loading
         script.onload = () => {
-          console.log("Leaflet script loaded successfully")
           // Wait a moment for the script to initialize
           setTimeout(() => {
             if ((window as any).L && typeof (window as any).L.map === "function") {
-              console.log("Leaflet L object is available")
               resolve()
             } else {
               const error = "Leaflet script loaded but L object not available"
@@ -198,7 +191,6 @@ export function LeafletMapLoader({
 
         // Final verification
         if ((window as any).L && typeof (window as any).L.map === "function") {
-          console.log("Leaflet fully loaded and ready")
           if (isMountedRef.current) {
             setIsScriptsLoaded(true)
           }
@@ -243,7 +235,6 @@ export function LeafletMapLoader({
       return
     }
 
-    console.log("Initializing map...")
 
     // Clear any existing timeout
     if (initTimeoutRef.current) {
@@ -277,7 +268,6 @@ export function LeafletMapLoader({
       }
 
       try {
-        console.log("Creating Leaflet map instance...")
 
         // Initialize map with error handling
         const map = L.map(mapContainer, {
@@ -287,7 +277,6 @@ export function LeafletMapLoader({
         }).setView([-15, -60], 4)
 
         mapInstanceRef.current = map
-        console.log("Map instance created successfully")
 
         // Add tile layer
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -297,7 +286,6 @@ export function LeafletMapLoader({
 
         // Wait for the map to be fully loaded
         map.whenReady(() => {
-          console.log("Map is ready")
           if (isMountedRef.current && mapInstanceRef.current === map) {
             setIsMapReady(true)
             setIsInitializing(false)
@@ -483,7 +471,6 @@ export function LeafletMapLoader({
             e.stopPropagation()
 
             if (onMarkerClick && isMountedRef.current) {
-              console.log("Explore link clicked for day:", location.day)
               onMarkerClick(location.day)
               closeAllPopups(map)
             }
@@ -510,7 +497,6 @@ export function LeafletMapLoader({
           marker.addTo(map)
 
           marker.on("click", function (this: any, e: any) {
-            console.log("Marker clicked for day:", location.day)
             L.DomEvent.stopPropagation(e)
 
             if (isMountedRef.current) {

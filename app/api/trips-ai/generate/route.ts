@@ -130,7 +130,6 @@ Return ONLY valid JSON (no extra text):
 Keep realistic prices, stay within budget.`
 
   try {
-    console.log(`🤖 Starting AI generation for ${tripData.destination} with ${tripData.travelers} travelers`)
     
     // Add a timeout for the OpenAI API call
     const timeoutPromise = new Promise((_, reject) => 
@@ -271,11 +270,9 @@ function createFallbackItinerary(
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
-  console.log('🚀 API route /api/trips-ai/generate called at', new Date().toISOString())
   
   try {
     const body = await request.json()
-    console.log('📥 Received body:', JSON.stringify(body, null, 2))
     
     // Handle both wrapped and unwrapped formats
     const tripData = (body.tripData || body) as TripFormData
@@ -317,13 +314,11 @@ export async function POST(request: NextRequest) {
         excluded: content.excluded ? JSON.parse(content.excluded) : []
       }))
     } catch (dbError) {
-      console.warn('Database connection failed, continuing without content data:', dbError)
       // Continue with empty content - AI will generate generic itinerary
     }
 
     // Use ultra-fast generator for sub-10 second performance
-    console.log('⚡ Starting ultra-fast AI generator...')
-    console.log('Trip data being sent:', {
+    console.log('🚀 [Generate Itinerary] Starting ultra-fast generation:', {
       destination: tripData.destination,
       dates: tripData.dates,
       travelers: tripData.travelers,
@@ -335,7 +330,7 @@ export async function POST(request: NextRequest) {
     try {
       // Try ultra-fast generator first (target: <10s)
       enhancedResult = await generateUltraFastItinerary(tripData)
-      console.log('✅ Ultra-fast result received:', {
+      console.log('✅ [Generate Itinerary] Ultra-fast generation complete:', {
         hasDestination: !!enhancedResult.destination,
         dayCount: enhancedResult.days?.length || 0,
         hasTourOffers: !!(enhancedResult.tourOperatorOffers?.length),
@@ -424,7 +419,6 @@ export async function POST(request: NextRequest) {
 
       savedItinerary = await prisma.itinerary.create({ data: itineraryData })
     } catch (dbError) {
-      console.warn('Failed to save to database, but continuing with generated itinerary:', dbError)
       // Continue without database saves - user still gets their itinerary
     }
 
@@ -434,7 +428,6 @@ export async function POST(request: NextRequest) {
     // })
 
     const generationTime = Date.now() - startTime
-    console.log(`✅ API route completed in ${generationTime}ms`)
 
     const response = {
       success: true,
@@ -445,7 +438,7 @@ export async function POST(request: NextRequest) {
       performanceTarget: generationTime < 3000
     }
     
-    console.log('📤 Sending response:', {
+    console.log('🏁 [Generate Itinerary] Request completed:', {
       success: response.success,
       hasItinerary: !!response.itinerary,
       dayCount: response.itinerary?.days?.length || 0

@@ -250,7 +250,6 @@ export const useVoiceInput = ({
             try {
               recognitionRef.current.start()
             } catch (e) {
-              console.warn('Failed to restart recognition:', e)
               setIsListening(false)
               isListeningRef.current = false
             }
@@ -336,7 +335,6 @@ export const useVoiceInput = ({
     try {
       recognitionRef.current.stop()
     } catch (error) {
-      console.warn('Error stopping speech recognition:', error)
     }
   }, [onTranscript])
 
@@ -359,7 +357,6 @@ export const useVoiceInput = ({
     try {
       recognitionRef.current.abort()
     } catch (error) {
-      console.warn('Error aborting speech recognition:', error)
     }
   }, [])
 

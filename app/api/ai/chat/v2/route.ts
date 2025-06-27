@@ -7,7 +7,6 @@ try {
   const openaiModule = require('@/lib/openai')
   openai = openaiModule.openai
 } catch (error) {
-  console.warn('OpenAI not configured:', error)
 }
 
 const chatRequestSchema = z.object({

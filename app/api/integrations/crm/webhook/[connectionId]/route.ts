@@ -16,14 +16,6 @@ export async function POST(
     
     // Process the webhook
     const webhookData = await crmManager.processWebhook(connectionId, payload)
-    
-    console.log('Processed webhook:', {
-      provider: webhookData.provider,
-      eventType: webhookData.eventType,
-      objectType: webhookData.objectType,
-      objectId: webhookData.objectId,
-      changeType: webhookData.changeType
-    })
 
     return NextResponse.json({ 
       success: true, 

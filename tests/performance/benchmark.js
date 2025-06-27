@@ -19,7 +19,6 @@ class PerformanceBenchmark {
   }
 
   async runBenchmark() {
-    console.log('⚡ Starting performance benchmark...\n');
 
     await this.analyzeBuildPerformance();
     await this.analyzeBundleSize();
@@ -29,18 +28,14 @@ class PerformanceBenchmark {
     await this.generateOptimizationRecommendations();
     await this.saveReport();
 
-    console.log('\n✅ Performance benchmark completed!');
-    console.log(`📊 Report saved to: ${path.join(__dirname, 'performance-report.json')}`);
   }
 
   async analyzeBuildPerformance() {
-    console.log('🏗️  Analyzing build performance...');
     
     try {
       const startTime = Date.now();
       
       // Build the application and measure time
-      console.log('   Building application...');
       execSync('npm run build', { stdio: 'inherit' });
       
       const buildTime = Date.now() - startTime;
@@ -50,7 +45,6 @@ class PerformanceBenchmark {
         buildTimeFormatted: `${(buildTime / 1000).toFixed(2)}s`
       };
 
-      console.log(`   Build completed in ${this.results.buildMetrics.buildTimeFormatted}`);
       
       // Check if build output exists
       const buildDir = path.join(process.cwd(), '.next');
@@ -60,7 +54,6 @@ class PerformanceBenchmark {
       }
       
     } catch (error) {
-      console.log('   ⚠️  Build failed:', error.message);
       this.results.buildMetrics.error = error.message;
     }
   }
@@ -93,7 +86,6 @@ class PerformanceBenchmark {
   }
 
   async analyzeBundleSize() {
-    console.log('📦 Analyzing bundle size...');
     
     const buildManifest = path.join(process.cwd(), '.next', 'build-manifest.json');
     const pagesManifest = path.join(process.cwd(), '.next', 'server', 'pages-manifest.json');
@@ -117,12 +109,10 @@ class PerformanceBenchmark {
       });
       
       this.results.bundleAnalysis = bundleAnalysis;
-      console.log(`   Found ${bundleAnalysis.totalBundles} bundle files across ${Object.keys(bundleAnalysis.pages).length} pages`);
     }
   }
 
   async checkDependencySizes() {
-    console.log('📚 Analyzing dependency sizes...');
     
     try {
       // Analyze package.json dependencies
@@ -155,10 +145,8 @@ class PerformanceBenchmark {
       heavyDependencies.sort((a, b) => b.size - a.size);
       
       this.results.bundleAnalysis.heavyDependencies = heavyDependencies.slice(0, 10);
-      console.log(`   Found ${heavyDependencies.length} dependencies over 1MB`);
       
     } catch (error) {
-      console.log('   ⚠️  Could not analyze dependencies:', error.message);
     }
   }
 
@@ -185,7 +173,6 @@ class PerformanceBenchmark {
   }
 
   async analyzeCodeSplitting() {
-    console.log('✂️  Analyzing code splitting...');
     
     const issues = [];
     
@@ -221,7 +208,6 @@ class PerformanceBenchmark {
     }
     
     this.results.bundleAnalysis.codeSplittingIssues = issues;
-    console.log(`   Found ${issues.length} code splitting opportunities`);
   }
 
   findDynamicImports(directories) {
@@ -277,7 +263,6 @@ class PerformanceBenchmark {
   }
 
   async checkImageOptimization() {
-    console.log('🖼️  Checking image optimization...');
     
     const publicDir = path.join(process.cwd(), 'public');
     const imageIssues = [];
@@ -296,7 +281,6 @@ class PerformanceBenchmark {
       )
     };
     
-    console.log(`   Found ${imageIssues.length} images, ${this.results.bundleAnalysis.imageOptimization.largeImages.length} over 500KB`);
   }
 
   scanForImages(dir, results) {
@@ -319,7 +303,6 @@ class PerformanceBenchmark {
   }
 
   generateOptimizationRecommendations() {
-    console.log('💡 Generating optimization recommendations...');
     
     const recommendations = [];
     
@@ -389,7 +372,6 @@ class PerformanceBenchmark {
     );
     
     this.results.recommendations = recommendations;
-    console.log(`   Generated ${recommendations.length} optimization recommendations`);
   }
 
   async saveReport() {
@@ -410,11 +392,6 @@ class PerformanceBenchmark {
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
     
     // Print summary
-    console.log('\n📋 Performance Benchmark Summary:');
-    console.log(`   Build Time: ${summary.buildTime}`);
-    console.log(`   Total Recommendations: ${summary.totalRecommendations}`);
-    console.log(`   High Priority Issues: ${summary.highPriorityIssues}`);
-    console.log(`   Bundle Issues: ${summary.bundleIssues}`);
   }
 }
 

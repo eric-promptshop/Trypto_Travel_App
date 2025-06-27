@@ -8,6 +8,8 @@ declare module 'next-auth' {
       name: string;
       role: string;
       tenantId: string;
+      operatorId?: string;
+      operatorStatus?: string;
     } & DefaultSession['user'];
   }
 
@@ -17,6 +19,8 @@ declare module 'next-auth' {
     name: string;
     role: string;
     tenantId: string;
+    operatorId?: string;
+    operatorStatus?: string;
   }
 }
 
@@ -24,5 +28,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     role: string;
     tenantId: string;
+    operatorId?: string;
+    operatorStatus?: string;
   }
 } 

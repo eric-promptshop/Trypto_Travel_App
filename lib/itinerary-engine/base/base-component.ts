@@ -291,7 +291,6 @@ export class ComponentUtils {
     }
 
     if (hasIncompatibleCurrency) {
-      console.warn('Some components have different currencies. Consider implementing currency conversion.')
     }
 
     return { amount: total, currency }

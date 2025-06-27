@@ -169,7 +169,6 @@ export default function WhiteLabelDashboard() {
       }
 
       // TODO: Replace with actual API call
-      console.log('Saving configuration for:', selectedClient.id, selectedTheme);
       
       // Update local state
       setClients(prev => prev.map(client => 
@@ -193,7 +192,6 @@ export default function WhiteLabelDashboard() {
     setLoading(true);
     try {
       // TODO: Replace with actual API call to deploy theme
-      console.log('Publishing configuration for:', selectedClient.id);
       
       alert('Configuration published successfully!');
     } catch (error) {
@@ -444,11 +442,9 @@ export default function WhiteLabelDashboard() {
                 <OnboardingWorkflow 
                   tenantId={selectedClient.id}
                   onComplete={(workflow) => {
-                    console.log('Onboarding completed for client:', selectedClient.name, workflow);
                     // TODO: Update client status or trigger post-onboarding actions
                   }}
                   onStepComplete={(stepId, data) => {
-                    console.log('Step completed:', stepId, data);
                     // TODO: Save step progress
                   }}
                 />

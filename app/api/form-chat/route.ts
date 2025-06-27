@@ -23,18 +23,9 @@ export async function POST(request: NextRequest) {
     message = body.message || ''
     conversationHistory = body.conversationHistory || []
     extractedData = body.extractedData || {}
-    
-    console.log('API Request received:', {
-      message,
-      historyLength: conversationHistory.length,
-      extractedData,
-      hasApiKey: !!process.env.OPENAI_API_KEY,
-      apiKeyPrefix: process.env.OPENAI_API_KEY?.substring(0, 10)
-    })
 
     // Check if OpenAI API key is configured
     if (!process.env.OPENAI_API_KEY) {
-      console.warn('OpenAI API key not configured, using smart fallback responses')
       return NextResponse.json({
         response: getSmartFallbackResponse(message, conversationHistory, extractedData),
         isAI: false,
@@ -61,7 +52,6 @@ export async function POST(request: NextRequest) {
       content: msg.content
     }))
     
-    console.log('Processing messages:', messages.length, 'Extracted data:', extractedData)
 
     // Add current message to the conversation before sending to OpenAI
     messages.push({
@@ -101,7 +91,6 @@ export async function POST(request: NextRequest) {
 
     // Call OpenAI API
     const modelToUse = process.env.MODEL || 'gpt-3.5-turbo' // Use gpt-3.5-turbo as fallback
-    console.log('Using model:', modelToUse)
     
     const completion = await openai.chat.completions.create({
       model: modelToUse,
@@ -112,7 +101,6 @@ export async function POST(request: NextRequest) {
 
     const response = completion.choices[0]?.message?.content || ''
     
-    console.log('OpenAI response:', response)
 
     return NextResponse.json({
       response,

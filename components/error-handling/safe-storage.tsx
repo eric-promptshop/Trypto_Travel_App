@@ -43,7 +43,6 @@ class SafeStorage {
       this.isLocalStorageAvailable = true;
       return true;
     } catch (error) {
-      console.warn('localStorage not available:', error);
       this.isLocalStorageAvailable = false;
       return false;
     }
@@ -124,7 +123,6 @@ class SafeStorage {
       
       return false;
     } catch (error) {
-      console.warn(`Failed to store ${key}:`, error);
       return false;
     }
   }
@@ -161,7 +159,6 @@ class SafeStorage {
 
       return defaultValue;
     } catch (error) {
-      console.warn(`Failed to retrieve ${key}:`, error);
       return defaultValue;
     }
   }
@@ -176,7 +173,6 @@ class SafeStorage {
       this.memoryStorage.delete(storageKey);
       return true;
     } catch (error) {
-      console.warn(`Failed to remove ${key}:`, error);
       return false;
     }
   }
@@ -199,7 +195,6 @@ class SafeStorage {
       this.memoryStorage.clear();
       return true;
     } catch (error) {
-      console.warn('Failed to clear storage:', error);
       return false;
     }
   }
@@ -245,7 +240,6 @@ class SafeStorage {
 
       return clearedCount;
     } catch (error) {
-      console.warn('Failed to clear expired items:', error);
       return clearedCount;
     }
   }

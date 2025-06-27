@@ -41,7 +41,6 @@ export async function getCachedItinerary(tripData: any): Promise<any | null> {
     const cached = await redis.get(key);
     
     if (cached) {
-      console.log('✅ Redis cache hit for:', key);
       // Update access time for LRU
       await redis.expire(key, DEFAULT_TTL);
       return cached;
@@ -85,7 +84,6 @@ export async function cacheItinerary(
       }
     }
     
-    console.log('✅ Cached itinerary in Redis:', key);
   } catch (error) {
     console.error('Redis set error:', error);
     // Fail gracefully - caching is not critical
@@ -147,7 +145,6 @@ export async function clearAllCache(): Promise<void> {
       await redis.del(...keys);
     }
     await redis.del('cache:access');
-    console.log('✅ Cleared all cache entries');
   } catch (error) {
     console.error('Redis clear error:', error);
   }
@@ -166,7 +163,6 @@ export async function warmUpCache(): Promise<void> {
     { destination: 'New York, USA', duration: 5 }
   ];
   
-  console.log('🔥 Warming up cache with popular destinations...');
   
   // This would be called during app initialization
   // Actual implementation would generate itineraries for these

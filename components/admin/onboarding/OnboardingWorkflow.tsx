@@ -68,7 +68,6 @@ export function OnboardingWorkflow({
       }
 
       // TODO: Save workflow to backend
-      console.log('Step completed:', stepId, data);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to complete step';

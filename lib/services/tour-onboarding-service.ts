@@ -42,7 +42,6 @@ export class TourOnboardingService {
    */
   static async extractTourFromDocument(content: string): Promise<ExtractedTourData> {
     try {
-      console.log('[TourOnboardingService] Extracting tour data from document...')
       
       const systemPrompt = `You are an expert at extracting structured tour information from tour operator documents.
       Extract all relevant information about the tour and format it as structured JSON data.
@@ -86,7 +85,6 @@ export class TourOnboardingService {
       }
 
       const extractedData = JSON.parse(result) as ExtractedTourData
-      console.log('[TourOnboardingService] Successfully extracted tour data:', extractedData.name)
       
       return extractedData
     } catch (error) {
@@ -100,7 +98,6 @@ export class TourOnboardingService {
    */
   static async extractTourFromImage(imageBase64: string): Promise<ExtractedTourData> {
     try {
-      console.log('[TourOnboardingService] Extracting tour data from image...')
       
       const response = await openai.chat.completions.create({
         model: 'gpt-4-vision-preview',
@@ -150,7 +147,6 @@ export class TourOnboardingService {
       }
 
       const extractedData = JSON.parse(result) as ExtractedTourData
-      console.log('[TourOnboardingService] Successfully extracted tour data from image:', extractedData.name)
       
       return extractedData
     } catch (error) {

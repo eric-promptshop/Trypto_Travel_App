@@ -76,7 +76,6 @@ function loadAnalyticsData(): ShareEvent[] {
     const data = localStorage.getItem(ANALYTICS_STORAGE_KEY);
     return data ? JSON.parse(data) : [];
   } catch (error) {
-    console.warn('Failed to load share analytics:', error);
     return [];
   }
 }
@@ -90,7 +89,6 @@ function saveAnalyticsData(events: ShareEvent[]): void {
     const limitedEvents = events.slice(-1000);
     localStorage.setItem(ANALYTICS_STORAGE_KEY, JSON.stringify(limitedEvents));
   } catch (error) {
-    console.warn('Failed to save share analytics:', error);
   }
 }
 
@@ -137,13 +135,11 @@ export function useShareAnalytics(): ShareAnalyticsContextType {
           }
         });
       } catch (error) {
-        console.warn('Failed to send to Google Analytics:', error);
       }
     }
 
     // Debug logging in development
     if (process.env.NODE_ENV === 'development') {
-      console.log('Share event tracked:', event);
     }
   }, []);
 

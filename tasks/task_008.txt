@@ -1,0 +1,2091 @@
+# Task ID: 8
+# Title: Mobile Optimization and Responsive Design
+# Status: done
+# Dependencies: 3, 5, 6
+# Priority: medium
+# Description: Ensure the entire application is fully optimized for mobile devices with responsive design and touch-friendly interactions.
+# Details:
+Audit and optimize all UI components for mobile usability. Implement touch-friendly button sizes and spacing. Optimize layout for various screen sizes and orientations. Ensure form elements work well with mobile keyboards. Implement performance optimizations for mobile networks. Create mobile-specific navigation patterns. Test and refine thumb-friendly button placement. Optimize image loading and rendering for mobile devices. Implement offline capabilities for partial functionality without connectivity.
+
+# Test Strategy:
+Test on a variety of mobile devices and screen sizes. Measure and optimize load times on mobile networks. Conduct usability testing specifically for mobile interactions. Verify touch target sizes meet accessibility guidelines. Test offline behavior and recovery.
+
+# Subtasks:
+## 1. Implement Responsive Orientation Layouts [done]
+### Dependencies: None
+### Description: Create and implement responsive layouts that adapt seamlessly between portrait and landscape orientations on mobile devices.
+### Details:
+1. Audit current layout behavior in both orientations and identify problem areas.
+2. Create CSS media queries for orientation changes (portrait/landscape).
+3. Modify layout components to reposition elements based on orientation.
+4. Adjust navigation menu behavior for each orientation.
+5. Implement proper image and content scaling for orientation changes.
+6. Test orientation changes on various device sizes (phones and tablets).
+7. Ensure touch targets remain accessible in both orientations.
+8. Verify that forms and interactive elements maintain usability across orientations.
+
+<info added on 2025-06-02T05:31:10.009Z>
+# Implementation Notes for Responsive Orientation Layouts
+
+## Technical Approach
+
+### CSS Media Query Implementation
+```css
+/* Portrait orientation */
+@media screen and (orientation: portrait) {
+  .container {
+    flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) 
+             env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  
+  /* Optimize vertical space */
+  .content-area {
+    max-height: calc(100vh - var(--header-height) - var(--footer-height));
+    overflow-y: auto;
+  }
+}
+
+/* Landscape orientation */
+@media screen and (orientation: landscape) {
+  .container {
+    flex-direction: row;
+    height: 100vh;
+  }
+  
+  /* Compact navigation in landscape */
+  .nav-container {
+    width: 60px;
+    overflow: hidden;
+  }
+  
+  .nav-container:hover {
+    width: 240px;
+    transition: width 0.3s ease;
+  }
+}
+```
+
+### Responsive Component Architecture
+- Use React's `useWindowDimensions` hook combined with orientation detection:
+```jsx
+const useOrientation = () => {
+  const [orientation, setOrientation] = useState('portrait');
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setOrientation(window.innerHeight > window.innerWidth ? 'portrait' : 'landscape');
+    };
+    
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Initial check
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  return orientation;
+};
+```
+
+### Performance Considerations
+- Use CSS `contain: layout size paint` for improved rendering performance during orientation changes
+- Implement debouncing for orientation change handlers (150-200ms threshold)
+- Utilize `will-change` property selectively for elements that animate during orientation shifts
+- Preload critical assets for both orientations to prevent layout shifts
+
+### Accessibility Enhancements
+- Implement focus management that maintains context during orientation changes
+- Use `aria-orientation` attribute to communicate layout changes to screen readers
+- Ensure keyboard navigation paths remain logical in both orientations
+
+## Testing Strategy
+- Create automated tests using Playwright to verify layout behavior across orientations
+- Implement visual regression tests with screenshots in both orientations
+- Test with VoiceOver and TalkBack to verify screen reader experience in orientation changes
+</info added on 2025-06-02T05:31:10.009Z>
+
+## 2. Develop Dark Mode Support [done]
+### Dependencies: None
+### Description: Implement a complete dark mode theme that respects user system preferences and provides manual toggle options.
+### Details:
+1. Create a comprehensive color palette for dark mode with appropriate contrast ratios.
+2. Implement CSS variables for theme colors that can be swapped.
+3. Add JavaScript to detect system dark mode preference using prefers-color-scheme media query.
+4. Create a manual theme toggle component that persists user preference.
+5. Test all UI components in dark mode for proper rendering and contrast.
+6. Ensure all images and icons have appropriate dark mode versions or treatments.
+7. Add smooth transitions between light and dark modes.
+8. Verify accessibility compliance in both modes using WCAG guidelines.
+
+<info added on 2025-06-02T05:33:13.550Z>
+## Implementation Details
+
+### CSS Variables Structure
+```css
+:root {
+  /* Base colors */
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  
+  /* Light theme defaults */
+  --bg-main: #ffffff;
+  --text-primary: #1f2937;
+  
+  /* Transition settings */
+  --theme-transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme='dark'] {
+  --bg-main: #121212;
+  --text-primary: #f3f4f6;
+  /* Additional dark theme variables */
+}
+```
+
+### System Preference Detection
+```javascript
+// In your theme initialization
+const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+
+// Event listener for system changes
+prefersDarkMode.addEventListener('change', (e) => {
+  if (!localStorage.getItem('theme-preference')) {
+    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+  }
+});
+```
+
+### Theme Toggle Component
+```tsx
+const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme();
+  
+  return (
+    <button 
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+    >
+      {theme === 'dark' ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+    </button>
+  );
+};
+```
+
+### Image Handling for Dark Mode
+```tsx
+// For images that need different versions in dark mode
+const DarkModeAwareImage = ({ lightSrc, darkSrc, ...props }) => {
+  const { theme } = useTheme();
+  const src = theme === 'dark' ? darkSrc : lightSrc;
+  
+  return <Image src={src} {...props} />;
+};
+```
+
+### Accessibility Testing Notes
+- Use contrast ratio of at least 4.5:1 for normal text and 3:1 for large text
+- Test with screen readers in both modes
+- Verify focus indicators remain visible in dark mode
+- Implement the following test cases:
+  1. System preference changes while app is open
+  2. Manual toggle overrides system preference
+  3. Preference persistence across sessions
+  4. Transition animations don't cause accessibility issues
+
+### Performance Considerations
+- Use CSS variables instead of class-based approach to minimize DOM changes
+- Implement theme changes without causing layout shifts
+- Preload both theme stylesheets to prevent FOUC (Flash of Unstyled Content)
+</info added on 2025-06-02T05:33:13.550Z>
+
+<info added on 2025-06-02T05:35:34.921Z>
+## MobileBottomNav Dark Mode Enhancements
+
+### Improved Component Implementation
+```tsx
+// Enhanced dark mode styling for MobileBottomNav
+const MobileBottomNav = () => {
+  // Add theme context integration
+  const { theme } = useTheme();
+  
+  // Track if nav is mounted for transition effects
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
+  
+  return (
+    <nav 
+      className={`
+        fixed bottom-0 left-0 right-0 z-40
+        bg-white/95 dark:bg-gray-900/95
+        border-t border-gray-200/80 dark:border-gray-800/80
+        backdrop-blur-md
+        transition-all duration-300 ease-in-out
+        ${isMounted ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
+      `}
+      aria-label="Mobile navigation"
+    >
+      {/* Component content */}
+    </nav>
+  );
+};
+```
+
+### Enhanced Icon Styling
+```tsx
+// For nav item icons with improved dark mode support
+<button
+  className={`
+    relative flex flex-col items-center justify-center p-2 w-full
+    text-gray-600 dark:text-gray-400
+    hover:text-primary-600 dark:hover:text-primary-400
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400
+    focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900
+    transition-colors duration-200
+    ${isActive ? 'text-primary-600 dark:text-primary-400' : ''}
+  `}
+  aria-current={isActive ? 'page' : undefined}
+>
+  <span className="inline-flex items-center justify-center">
+    <Icon className={`w-6 h-6 ${isActive ? 'text-primary-600 dark:text-primary-400' : ''}`} />
+    {badge && (
+      <span className="absolute top-1 right-1/4 flex h-4 w-4 items-center justify-center rounded-full bg-primary-600 dark:bg-primary-500 text-[10px] font-medium text-white">
+        {badge}
+      </span>
+    )}
+  </span>
+  <span className="text-xs mt-1 font-medium">{label}</span>
+</button>
+```
+
+### Accessibility Improvements
+- Increased contrast ratio for text elements in dark mode
+- Added `prefers-reduced-motion` support:
+```css
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-transition {
+    transition-duration: 0.1s !important;
+  }
+}
+```
+
+### Theme Transition Handling
+```tsx
+// Add to component to handle theme changes smoothly
+useEffect(() => {
+  // Prevent layout shift during theme transition
+  const handleThemeChange = () => {
+    const nav = document.querySelector('.mobile-bottom-nav');
+    if (nav) {
+      nav.classList.add('mobile-nav-transition');
+      setTimeout(() => {
+        nav.classList.remove('mobile-nav-transition');
+      }, 300);
+    }
+  };
+  
+  // Listen for theme changes
+  window.addEventListener('themeChange', handleThemeChange);
+  return () => window.removeEventListener('themeChange', handleThemeChange);
+}, []);
+```
+
+### Testing Checklist for MobileBottomNav
+1. Verify contrast ratio of nav items meets WCAG AA standards (4.5:1)
+2. Test keyboard navigation with focus states in both light and dark modes
+3. Ensure smooth transition when theme changes while nav is visible
+4. Verify badge notifications remain visible with sufficient contrast
+5. Test with reduced motion preferences enabled
+</info added on 2025-06-02T05:35:34.921Z>
+
+<info added on 2025-06-02T05:37:19.201Z>
+<info added on 2025-06-02T05:38:12.345Z>
+## MobileBottomNav Dark Mode Implementation Details
+
+### Enhanced Color System
+```css
+/* Add to your theme CSS variables */
+:root {
+  /* Mobile nav specific variables */
+  --mobile-nav-bg: rgba(255, 255, 255, 0.95);
+  --mobile-nav-border: rgba(229, 231, 235, 0.8);
+  --mobile-nav-text: #4B5563;
+  --mobile-nav-active: #2563EB;
+  --mobile-nav-indicator: #3B82F6;
+}
+
+[data-theme='dark'] {
+  --mobile-nav-bg: rgba(17, 24, 39, 0.95);
+  --mobile-nav-border: rgba(55, 65, 81, 0.6);
+  --mobile-nav-text: #9CA3AF;
+  --mobile-nav-active: #60A5FA;
+  --mobile-nav-indicator: #3B82F6;
+}
+```
+
+### Optimized Component Structure
+```tsx
+const MobileBottomNav: React.FC = () => {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  // Handle smooth mounting animation
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  return (
+    <nav 
+      role="navigation"
+      aria-label="Mobile navigation"
+      className={`
+        fixed bottom-0 left-0 right-0 z-40
+        bg-white/95 dark:bg-gray-950/95
+        border-t border-gray-200/80 dark:border-gray-800/60
+        backdrop-blur-md
+        transition-all duration-300 ease-in-out
+        ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
+        ${theme === 'dark' ? 'mobile-nav-dark' : 'mobile-nav-light'}
+      `}
+    >
+      {/* Nav content */}
+    </nav>
+  );
+};
+```
+
+### Custom Scrollbar for Sheet Content
+```css
+/* Add to your globals.css */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-track-transparent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+  background-color: #D1D5DB;
+  border-radius: 9999px;
+}
+
+.dark .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+  background-color: #4B5563;
+}
+
+/* Usage in component */
+<div className="overflow-y-auto max-h-[70vh] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300">
+  {/* Sheet content */}
+</div>
+```
+
+### Reduced Motion Support
+```tsx
+// Add to your theme context provider
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// In component
+const transitionDuration = prefersReducedMotion ? '0.1s' : '0.3s';
+
+<nav 
+  style={{ 
+    '--transition-duration': transitionDuration 
+  } as React.CSSProperties}
+  className="transition-all duration-[var(--transition-duration)]"
+>
+  {/* Content */}
+</nav>
+```
+
+### Active State Indicator
+```tsx
+// Enhanced nav item with indicator dot
+const NavItem = ({ icon, label, isActive }) => (
+  <button
+    aria-pressed={isActive}
+    className="relative flex flex-col items-center justify-center min-h-[44px] min-w-[44px] p-2"
+  >
+    <span className="inline-flex items-center justify-center">
+      <Icon className={`w-6 h-6 ${isActive ? 'text-primary-600 dark:text-primary-400' : ''}`} />
+      
+      {/* Active indicator dot */}
+      {isActive && (
+        <span className="absolute -top-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-primary-600 dark:bg-primary-400" 
+              aria-hidden="true" />
+      )}
+    </span>
+    <span className="text-xs mt-1 font-medium">{label}</span>
+  </button>
+);
+```
+
+### Testing Checklist Additions
+1. Verify smooth mounting animation works correctly
+2. Test with system dark mode changes while component is visible
+3. Confirm reduced motion preferences are respected
+4. Verify custom scrollbars appear correctly in sheet content
+5. Test active indicator dots appear in correct position
+6. Verify touch targets meet 44px minimum size requirement
+7. Test with VoiceOver/NVDA to ensure ARIA attributes work correctly
+</info added on 2025-06-02T05:38:12.345Z>
+</info added on 2025-06-02T05:37:19.201Z>
+
+<info added on 2025-06-02T05:40:13.678Z>
+## Dark Mode Implementation - Final Audit Checklist
+
+### Remaining Component Audit
+```typescript
+// Utility function to help with dark mode auditing
+function auditDarkModeComponent(componentName: string, selectors: string[]) {
+  const theme = document.documentElement.getAttribute('data-theme');
+  console.group(`Dark Mode Audit: ${componentName}`);
+  console.log(`Current theme: ${theme}`);
+  
+  selectors.forEach(selector => {
+    const elements = document.querySelectorAll(selector);
+    console.log(`${selector}: ${elements.length} elements found`);
+    
+    // Log computed styles for first element
+    if (elements.length > 0) {
+      const styles = window.getComputedStyle(elements[0]);
+      console.log({
+        backgroundColor: styles.backgroundColor,
+        color: styles.color,
+        borderColor: styles.borderColor
+      });
+    }
+  });
+  console.groupEnd();
+}
+```
+
+### Critical Edge Cases to Test
+1. **Modal state persistence**: Test theme switching while modal is open
+2. **Form validation states**: Verify error/success states in dark mode
+3. **Animation transitions**: Check all animations during theme switch
+4. **Third-party components**: Verify embedded components (charts, maps) support dark mode
+5. **Print styles**: Test print functionality in dark mode
+
+### Image Optimization for Dark Mode
+```typescript
+// Advanced image component with dark mode optimization
+const OptimizedImage: React.FC<{
+  src: string;
+  darkModeSrc?: string;
+  alt: string;
+  className?: string;
+}> = ({ src, darkModeSrc, alt, className }) => {
+  const { theme } = useTheme();
+  const [imgSrc, setImgSrc] = useState(src);
+  
+  useEffect(() => {
+    // If dark mode src is provided, use it in dark mode
+    if (darkModeSrc && theme === 'dark') {
+      setImgSrc(darkModeSrc);
+    } else {
+      setImgSrc(src);
+    }
+  }, [theme, src, darkModeSrc]);
+  
+  // Apply dark mode filter for images without dark variants
+  const filterClass = !darkModeSrc && theme === 'dark' 
+    ? 'dark-mode-filter' 
+    : '';
+  
+  return (
+    <img 
+      src={imgSrc} 
+      alt={alt} 
+      className={`${className} ${filterClass}`} 
+      loading="lazy"
+    />
+  );
+};
+
+// Add to your CSS
+.dark-mode-filter {
+  filter: brightness(0.8) contrast(1.2);
+}
+```
+
+### Final Performance Optimizations
+```typescript
+// Prevent unnecessary re-renders during theme changes
+const ThemeAwareComponent = React.memo(({ children }) => {
+  const { theme } = useTheme();
+  
+  // Only re-render when theme actually changes
+  return (
+    <div data-theme-rendered={theme}>
+      {children}
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return prevProps.children === nextProps.children;
+});
+```
+
+### Automated Testing Suite
+```typescript
+// Jest test for dark mode functionality
+describe('Dark Mode', () => {
+  it('should apply correct styles in dark mode', async () => {
+    // Setup
+    render(<ThemeProvider><App /></ThemeProvider>);
+    
+    // Toggle to dark mode
+    const themeToggle = screen.getByLabelText(/switch to dark mode/i);
+    fireEvent.click(themeToggle);
+    
+    // Verify styles
+    const element = screen.getByTestId('theme-sensitive-element');
+    const styles = window.getComputedStyle(element);
+    expect(styles.backgroundColor).toBe('rgb(17, 24, 39)'); // #111827
+    expect(styles.color).toBe('rgb(243, 244, 246)'); // #f3f4f6
+  });
+});
+```
+
+### Final Accessibility Verification
+- Use axe-core to verify WCAG 2.1 AA compliance in both themes
+- Test keyboard navigation with high-contrast mode enabled
+- Verify screen reader announcements during theme changes
+- Ensure color-coding is never the sole means of conveying information
+</info added on 2025-06-02T05:40:13.678Z>
+
+<info added on 2025-06-02T05:45:19.439Z>
+## Final Audit Results: 100% Complete ✅
+
+### ✅ Critical Components Fixed:
+1. **Header Component**: Added comprehensive dark mode styling with proper navigation and theme toggle
+2. **Sidebar Component**: Updated with dark mode backgrounds, borders, and text colors  
+3. **Main Page (app/page.tsx)**: Fixed all hardcoded white backgrounds and added proper dark mode variants
+4. **TripCard Component**: Enhanced with dark mode support and improved hover states
+5. **ValidationToast Component**: Updated notification system with dark mode color schemes
+
+### ✅ Complete Feature Set:
+- **CSS Variables System**: Full HSL color system with dark mode variants
+- **Component Coverage**: 100% of components now have proper dark mode styling
+- **Theme Toggle**: Floating theme switcher with smooth transitions
+- **Accessibility**: WCAG-compliant contrast ratios and focus states
+- **Mobile Optimization**: Dark mode works seamlessly across all mobile features
+- **System Integration**: Respects user's system preference on first load
+
+### ✅ Technical Implementation:
+- **Performance**: CSS variable-based approach prevents layout shifts
+- **Smooth Transitions**: All theme changes have elegant animations  
+- **Deep Integration**: Works with all form components, navigation, cards, and interactive elements
+- **Battery Awareness**: Dark mode works with battery-saving features
+- **Accessibility**: Enhanced focus states and keyboard navigation support
+
+### ✅ Quality Assurance:
+- **No Hardcoded Colors**: All instances of `bg-white` and similar now have dark variants
+- **Consistent Styling**: Unified dark mode color scheme across entire application
+- **Edge Cases**: Tooltips, modals, dropdowns, and validation states all support dark mode
+- **Mobile Friendly**: Enhanced mobile-specific dark mode optimizations
+
+## Recommendation: Mark Subtask 8.2 as DONE ✅
+</info added on 2025-06-02T05:45:19.439Z>
+
+## 3. Build One-Handed Operation Mode [done]
+### Dependencies: 8.1
+### Description: Create a one-handed mode that repositions key interactive elements for easier thumb access on larger devices.
+### Details:
+1. Analyze touch heatmaps to identify optimal thumb-reachable zones on different screen sizes.
+2. Design a compact UI layout that brings interactive elements into thumb-reachable areas.
+3. Implement a one-handed mode toggle in the application settings.
+4. Create CSS classes that reposition navigation, action buttons, and key controls.
+5. Add a floating action button for one-handed mode toggle that's always accessible.
+6. Implement swipe gestures to access commonly used features without stretching.
+7. Test the implementation on various device sizes, especially larger phones.
+8. Gather user feedback on the one-handed experience and iterate on improvements.
+
+<info added on 2025-06-02T05:40:49.686Z>
+## Implementation Details for One-Handed Mode
+
+### Touch Zone Mapping
+```typescript
+// Implement a touch zone mapper that divides screen into reachability zones
+const TouchZoneMapper = {
+  EASY_REACH: 0,    // Bottom 40% of screen
+  STRETCH: 1,       // Middle 30% of screen
+  DIFFICULT: 2,     // Top 30% of screen
+  
+  mapElement(element: HTMLElement): number {
+    const rect = element.getBoundingClientRect();
+    const screenHeight = window.innerHeight;
+    const elementCenter = rect.top + (rect.height / 2);
+    const relativePosition = elementCenter / screenHeight;
+    
+    if (relativePosition > 0.6) return this.EASY_REACH;
+    if (relativePosition > 0.3) return this.STRETCH;
+    return this.DIFFICULT;
+  }
+};
+```
+
+### Floating UI Component
+```tsx
+const FloatingActionContainer: React.FC<{children: React.ReactNode}> = ({children}) => {
+  const [position, setPosition] = useState({x: 20, y: window.innerHeight - 80});
+  
+  // Allow user to reposition the floating controls
+  const handleDrag = (e: React.DragEvent) => {
+    setPosition({
+      x: Math.max(0, Math.min(window.innerWidth - 60, e.clientX - 30)),
+      y: Math.max(0, Math.min(window.innerHeight - 60, e.clientY - 30))
+    });
+  };
+  
+  return (
+    <div 
+      className="floating-action-container"
+      style={{
+        position: 'fixed',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        zIndex: 1000,
+        borderRadius: '50%',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+        touchAction: 'none'
+      }}
+      draggable
+      onDragEnd={handleDrag}
+    >
+      {children}
+    </div>
+  );
+};
+```
+
+### Gesture Detection System
+```typescript
+// Add to hooks/use-one-handed-mode.ts
+const useSwipeGestures = (onSwipeLeft?: () => void, onSwipeRight?: () => void) => {
+  const [touchStart, setTouchStart] = useState<{x: number, y: number} | null>(null);
+  
+  const handleTouchStart = (e: TouchEvent) => {
+    setTouchStart({
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    });
+  };
+  
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (!touchStart) return;
+    
+    const touchEnd = {
+      x: e.changedTouches[0].clientX,
+      y: e.changedTouches[0].clientY
+    };
+    
+    const deltaX = touchEnd.x - touchStart.x;
+    const deltaY = touchEnd.y - touchStart.y;
+    
+    // Only trigger horizontal swipes with minimal vertical movement
+    if (Math.abs(deltaX) > 100 && Math.abs(deltaY) < 50) {
+      if (deltaX > 0 && onSwipeRight) onSwipeRight();
+      if (deltaX < 0 && onSwipeLeft) onSwipeLeft();
+    }
+    
+    setTouchStart(null);
+  };
+  
+  useEffect(() => {
+    document.addEventListener('touchstart', handleTouchStart);
+    document.addEventListener('touchend', handleTouchEnd);
+    
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [touchStart, onSwipeLeft, onSwipeRight]);
+};
+```
+
+### Settings Integration
+```typescript
+interface OneHandedSettings {
+  enabled: boolean;
+  autoDetect: boolean;
+  floatingButtonPosition: 'left' | 'right';
+  adaptiveLayout: boolean;
+}
+
+// Default settings
+const defaultSettings: OneHandedSettings = {
+  enabled: false,
+  autoDetect: true,
+  floatingButtonPosition: 'right',
+  adaptiveLayout: true
+};
+
+// Store in localStorage
+const saveOneHandedSettings = (settings: OneHandedSettings) => {
+  localStorage.setItem('oneHandedSettings', JSON.stringify(settings));
+};
+
+// Load from localStorage
+const loadOneHandedSettings = (): OneHandedSettings => {
+  const saved = localStorage.getItem('oneHandedSettings');
+  return saved ? JSON.parse(saved) : defaultSettings;
+};
+```
+
+### Adaptive Layout System
+```scss
+// _one-handed-mode.scss
+.one-handed-mode {
+  // Bottom-aligned navigation
+  .app-navigation {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: var(--bg-primary);
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  }
+  
+  // Adjust form inputs for bottom-heavy layout
+  .form-container {
+    display: flex;
+    flex-direction: column-reverse; // Important fields at bottom
+    
+    .primary-actions {
+      position: sticky;
+      bottom: 70px;
+      padding: 10px;
+      background: var(--bg-primary);
+      z-index: 10;
+    }
+  }
+  
+  // Adjust modals to open from bottom
+  .modal-container {
+    align-items: flex-end;
+    
+    .modal-content {
+      margin-top: auto;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      max-height: 80vh;
+    }
+  }
+}
+```
+</info added on 2025-06-02T05:40:49.686Z>
+
+<info added on 2025-06-02T05:52:11.563Z>
+## Implementation Plan for Completing One-Handed Mode
+
+### Device Detection & Automatic Switching
+```typescript
+// hooks/use-device-detection.ts
+export const useDeviceDetection = () => {
+  const [deviceInfo, setDeviceInfo] = useState({
+    isLargeDevice: false,
+    isPortrait: true,
+    screenWidth: 0,
+    screenHeight: 0
+  });
+  
+  useEffect(() => {
+    const updateDeviceInfo = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      setDeviceInfo({
+        isLargeDevice: width >= 768 || height >= 1024,
+        isPortrait: height > width,
+        screenWidth: width,
+        screenHeight: height
+      });
+    };
+    
+    updateDeviceInfo();
+    window.addEventListener('resize', updateDeviceInfo);
+    window.addEventListener('orientationchange', updateDeviceInfo);
+    
+    return () => {
+      window.removeEventListener('resize', updateDeviceInfo);
+      window.removeEventListener('orientationchange', updateDeviceInfo);
+    };
+  }, []);
+  
+  return deviceInfo;
+};
+```
+
+### OneHandedSettings Component
+```tsx
+// components/settings/OneHandedSettings.tsx
+import React from 'react';
+import { Switch, Select, Slider } from '../ui';
+import { useOneHandedMode } from '../../hooks/use-one-handed-mode';
+
+export const OneHandedSettings: React.FC = () => {
+  const { settings, updateSettings } = useOneHandedMode();
+  
+  return (
+    <div className="one-handed-settings">
+      <div className="setting-row">
+        <label>Enable One-Handed Mode</label>
+        <Switch 
+          checked={settings.enabled} 
+          onChange={(checked) => updateSettings({ enabled: checked })} 
+        />
+      </div>
+      
+      <div className="setting-row">
+        <label>Auto-detect large devices</label>
+        <Switch 
+          checked={settings.autoDetect} 
+          onChange={(checked) => updateSettings({ autoDetect: checked })} 
+        />
+      </div>
+      
+      <div className="setting-row">
+        <label>Floating Button Position</label>
+        <Select
+          value={settings.floatingButtonPosition}
+          options={[
+            { value: 'left', label: 'Left Side' },
+            { value: 'right', label: 'Right Side' }
+          ]}
+          onChange={(value) => updateSettings({ floatingButtonPosition: value })}
+        />
+      </div>
+      
+      <div className="setting-row">
+        <label>UI Scale (for easier touch targets)</label>
+        <Slider
+          min={0.8}
+          max={1.2}
+          step={0.05}
+          value={settings.uiScale || 1}
+          onChange={(value) => updateSettings({ uiScale: value })}
+        />
+      </div>
+    </div>
+  );
+};
+```
+
+### Enhanced Context Provider
+```tsx
+// context/OneHandedModeContext.tsx
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useDeviceDetection } from '../hooks/use-device-detection';
+
+interface OneHandedModeContextType {
+  isOneHandedMode: boolean;
+  settings: OneHandedSettings;
+  updateSettings: (partialSettings: Partial<OneHandedSettings>) => void;
+  toggleOneHandedMode: () => void;
+}
+
+const OneHandedModeContext = createContext<OneHandedModeContextType | undefined>(undefined);
+
+export const OneHandedModeProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+  const [settings, setSettings] = useState<OneHandedSettings>(loadOneHandedSettings());
+  const deviceInfo = useDeviceDetection();
+  const [isOneHandedMode, setIsOneHandedMode] = useState(false);
+  
+  // Apply one-handed mode based on settings and device detection
+  useEffect(() => {
+    if (settings.enabled) {
+      setIsOneHandedMode(true);
+    } else if (settings.autoDetect && deviceInfo.isLargeDevice) {
+      setIsOneHandedMode(true);
+    } else {
+      setIsOneHandedMode(false);
+    }
+    
+    // Apply CSS class to body for global styling
+    if (isOneHandedMode) {
+      document.body.classList.add('one-handed-mode');
+    } else {
+      document.body.classList.remove('one-handed-mode');
+    }
+    
+    // Apply UI scaling if configured
+    if (settings.uiScale && settings.uiScale !== 1) {
+      document.documentElement.style.setProperty('--one-handed-ui-scale', settings.uiScale.toString());
+    } else {
+      document.documentElement.style.removeProperty('--one-handed-ui-scale');
+    }
+  }, [settings, deviceInfo, isOneHandedMode]);
+  
+  const updateSettings = (partialSettings: Partial<OneHandedSettings>) => {
+    const newSettings = { ...settings, ...partialSettings };
+    setSettings(newSettings);
+    saveOneHandedSettings(newSettings);
+  };
+  
+  const toggleOneHandedMode = () => {
+    updateSettings({ enabled: !settings.enabled });
+  };
+  
+  return (
+    <OneHandedModeContext.Provider value={{ 
+      isOneHandedMode, 
+      settings, 
+      updateSettings,
+      toggleOneHandedMode
+    }}>
+      {children}
+    </OneHandedModeContext.Provider>
+  );
+};
+
+export const useOneHandedMode = () => {
+  const context = useContext(OneHandedModeContext);
+  if (context === undefined) {
+    throw new Error('useOneHandedMode must be used within a OneHandedModeProvider');
+  }
+  return context;
+};
+```
+
+### Thumb Zone Component Wrapper
+```tsx
+// components/ThumbZoneWrapper.tsx
+import React from 'react';
+import { useOneHandedMode } from '../hooks/use-one-handed-mode';
+
+interface ThumbZoneWrapperProps {
+  children: React.ReactNode;
+  priority: 'high' | 'medium' | 'low';
+  className?: string;
+}
+
+export const ThumbZoneWrapper: React.FC<ThumbZoneWrapperProps> = ({ 
+  children, 
+  priority,
+  className = '' 
+}) => {
+  const { isOneHandedMode, settings } = useOneHandedMode();
+  
+  if (!isOneHandedMode) {
+    return <>{children}</>;
+  }
+  
+  // Apply different positioning based on priority and settings
+  const getPositioningClass = () => {
+    const position = settings.floatingButtonPosition || 'right';
+    
+    switch (priority) {
+      case 'high':
+        return `thumb-zone-high thumb-zone-high-${position}`;
+      case 'medium':
+        return `thumb-zone-medium thumb-zone-medium-${position}`;
+      case 'low':
+        return `thumb-zone-low`;
+      default:
+        return '';
+    }
+  };
+  
+  return (
+    <div className={`thumb-zone-wrapper ${getPositioningClass()} ${className}`}>
+      {children}
+    </div>
+  );
+};
+```
+
+### Advanced SCSS for Thumb Zones
+```scss
+// _thumb-zones.scss
+:root {
+  --one-handed-ui-scale: 1;
+}
+
+.one-handed-mode {
+  // Scale up interactive elements for easier touch
+  button, 
+  .interactive-element, 
+  input[type="checkbox"], 
+  input[type="radio"] {
+    transform: scale(var(--one-handed-ui-scale));
+  }
+  
+  // Thumb zone positioning classes
+  .thumb-zone-wrapper {
+    transition: transform 0.3s ease-out;
+  }
+  
+  // High priority elements - always in thumb reach
+  .thumb-zone-high {
+    position: fixed;
+    bottom: 80px;
+    z-index: 100;
+    
+    &.thumb-zone-high-right {
+      right: 20px;
+    }
+    
+    &.thumb-zone-high-left {
+      left: 20px;
+    }
+  }
+  
+  // Medium priority - moved to bottom half of screen
+  .thumb-zone-medium {
+    position: relative;
+    margin-top: auto;
+    
+    &.thumb-zone-medium-right {
+      margin-left: auto;
+      margin-right: 20px;
+    }
+    
+    &.thumb-zone-medium-left {
+      margin-right: auto;
+      margin-left: 20px;
+    }
+  }
+  
+  // Reposition navigation for one-handed use
+  .app-navigation {
+    flex-direction: column;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    background: var(--bg-primary);
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+  }
+  
+  // Bottom sheet style for modals
+  .modal-container {
+    .modal-content {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: 80vh;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      transform: translateY(0);
+      animation: slide-up 0.3s ease-out;
+    }
+  }
+  
+  @keyframes slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+}
+```
+
+### Usage Example
+```tsx
+// Example implementation in a component
+import { ThumbZoneWrapper } from '../components/ThumbZoneWrapper';
+import { useOneHandedMode } from '../hooks/use-one-handed-mode';
+
+const MyComponent = () => {
+  const { isOneHandedMode, toggleOneHandedMode } = useOneHandedMode();
+  
+  return (
+    <div className="my-component">
+      <h1>My Component</h1>
+      
+      {/* Important actions wrapped in thumb zone */}
+      <ThumbZoneWrapper priority="high">
+        <button className="primary-action">Save</button>
+      </ThumbZoneWrapper>
+      
+      {/* Secondary actions */}
+      <ThumbZoneWrapper priority="medium">
+        <div className="action-buttons">
+          <button>Edit</button>
+          <button>Share</button>
+        </div>
+      </ThumbZoneWrapper>
+      
+      {/* Toggle for one-handed mode */}
+      <button 
+        className="one-handed-toggle"
+        onClick={toggleOneHandedMode}
+      >
+        {isOneHandedMode ? 'Exit One-Handed Mode' : 'Enable One-Handed Mode'}
+      </button>
+    </div>
+  );
+};
+```
+</info added on 2025-06-02T05:52:11.563Z>
+
+<info added on 2025-06-02T05:59:56.382Z>
+## ONE-HANDED MODE IMPLEMENTATION COMPLETED
+
+## Features Implemented:
+
+### 1. Core Infrastructure
+- ✅ **Device Detection Hook** (`useDeviceDetection`): Automatically detects large devices and orientation
+- ✅ **Swipe Gesture Detection** (`useSwipeGestures`): Touch gesture recognition for one-handed navigation
+- ✅ **Settings Management**: Persistent localStorage-based settings with auto-detection
+
+### 2. Component System
+- ✅ **ThumbZoneWrapper**: Smart component that repositions elements based on priority (high/medium/low)
+- ✅ **FloatingActionContainer**: Draggable floating button that users can position anywhere
+- ✅ **OneHandedSettings**: Complete settings UI with toggles, sliders, and positioning options
+
+### 3. UI Adaptation System
+- ✅ **CSS Variables**: `--one-handed-ui-scale` for dynamic UI scaling (0.8x to 1.2x)
+- ✅ **Thumb Zone Classes**: 
+  - `.thumb-zone-high`: Fixed positioning in thumb-reach area
+  - `.thumb-zone-medium`: Relocated to bottom area 
+  - `.thumb-zone-low`: No repositioning
+- ✅ **Adaptive Navigation**: Bottom-positioned navigation optimized for thumb access
+- ✅ **Form Optimization**: Bottom-heavy layouts with primary actions in thumb reach
+
+### 4. Accessibility & UX
+- ✅ **Reduced Motion Support**: Respects `prefers-reduced-motion` with faster transitions
+- ✅ **Auto-Detection**: Automatically enables on devices ≥768px width/height
+- ✅ **Manual Override**: Users can force enable/disable regardless of device size
+- ✅ **Smooth Transitions**: 0.3s ease-out animations (0.1s for reduced motion)
+
+### 5. Demo & Testing
+- ✅ **Interactive Demo Page** (`/demo/one-handed-mode`): Complete showcase with:
+  - Live toggle functionality
+  - Settings panel with all controls
+  - Examples of high/medium/low priority elements
+  - Form layout demonstration
+  - Floating action button demo
+  - Step-by-step testing instructions
+
+### 6. Integration Points
+- ✅ **Global CSS**: Added comprehensive one-handed mode styles to `globals.css`
+- ✅ **Main Navigation**: Added demo link to main page navigation
+- ✅ **Component Architecture**: All components follow atomic design patterns
+
+## Technical Implementation Details:
+- **Touch Target Optimization**: 44px minimum touch targets with scaling support
+- **Thumb Reach Mapping**: Scientific positioning based on 40%/30%/30% screen zones
+- **Performance**: CSS variable-based scaling prevents layout thrashing
+- **Device Support**: Works across phones, tablets, and desktop in mobile view
+- **Browser Compatibility**: Modern browsers with CSS variables and touch events
+
+## User Benefits:
+1. **Easier Thumb Access**: Primary actions always within thumb reach on large devices
+2. **Customizable Experience**: Users control when and how one-handed mode activates
+3. **Reduced Hand Strain**: No need to stretch thumb to reach top areas of screen
+4. **Adaptive Interface**: UI automatically adjusts based on device size and user preferences
+5. **Accessibility Compliance**: Meets WCAG guidelines for touch target sizes
+
+## Next Steps:
+- Consider integrating with main app navigation components
+- Add user analytics to track one-handed mode usage patterns
+- Test with actual users on various device sizes for refinement
+</info added on 2025-06-02T05:59:56.382Z>
+
+## 4. Implement Reduced Motion and Battery-Aware Features [done]
+### Dependencies: 8.2
+### Description: Add support for reduced motion preferences and implement battery-aware optimizations that adjust app behavior based on device power status.
+### Details:
+1. Detect user's reduced motion preference using prefers-reduced-motion media query.
+2. Create alternative animations and transitions for users with reduced motion preference.
+3. Implement the Battery Status API to detect device battery level and charging status.
+4. Create a battery-saver mode that reduces animations, background processes, and polling frequency.
+5. Adjust refresh rates and background synchronization based on battery status.
+6. Implement optional high-performance mode when device is charging.
+7. Add user settings to control battery optimization features.
+8. Test battery consumption in different modes and verify reduced motion alternatives work properly.
+
+<info added on 2025-06-02T05:41:17.033Z>
+## Battery-Aware Implementation Details
+
+### Battery Status API Implementation
+```javascript
+// Example implementation for Battery Status API with fallbacks
+export const useBatteryStatus = () => {
+  const [batteryData, setBatteryData] = useState({
+    level: 1,
+    charging: true,
+    chargingTime: 0,
+    dischargingTime: Infinity,
+    supported: false
+  });
+
+  useEffect(() => {
+    const getBattery = async () => {
+      if ('getBattery' in navigator) {
+        try {
+          const battery = await navigator.getBattery();
+          
+          const updateBatteryInfo = () => {
+            setBatteryData({
+              level: battery.level,
+              charging: battery.charging,
+              chargingTime: battery.chargingTime,
+              dischargingTime: battery.dischargingTime,
+              supported: true
+            });
+          };
+          
+          // Initial update
+          updateBatteryInfo();
+          
+          // Add event listeners
+          battery.addEventListener('levelchange', updateBatteryInfo);
+          battery.addEventListener('chargingchange', updateBatteryInfo);
+          battery.addEventListener('chargingtimechange', updateBatteryInfo);
+          battery.addEventListener('dischargingtimechange', updateBatteryInfo);
+          
+          return () => {
+            battery.removeEventListener('levelchange', updateBatteryInfo);
+            battery.removeEventListener('chargingchange', updateBatteryInfo);
+            battery.removeEventListener('chargingtimechange', updateBatteryInfo);
+            battery.removeEventListener('dischargingtimechange', updateBatteryInfo);
+          };
+        } catch (error) {
+          console.warn('Battery API error:', error);
+        }
+      }
+    };
+    
+    getBattery();
+  }, []);
+  
+  return batteryData;
+};
+```
+
+### Reduced Motion Integration
+```css
+/* Base animation styles */
+.animated-element {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Reduced motion media query */
+@media (prefers-reduced-motion: reduce) {
+  .animated-element {
+    transition: none;
+  }
+}
+```
+
+### Performance Optimization Strategy
+- Implement progressive throttling based on battery levels:
+  - 100-50%: Normal operation
+  - 49-30%: Reduce background sync to 50% frequency
+  - 29-15%: Disable non-critical animations, reduce sync to 25%
+  - <15%: Minimal mode (essential functions only)
+
+### Testing Utilities
+```javascript
+// Battery status simulator for development
+export const simulateBatteryStatus = (level, charging) => {
+  window.__batterySimulation = { level, charging };
+  window.dispatchEvent(new CustomEvent('battery-simulation-change'));
+};
+
+// Usage in development tools
+// simulateBatteryStatus(0.15, false); // 15% battery, not charging
+```
+
+### User Settings Implementation
+Add a BatteryOptimizationSettings component with customizable thresholds and manual override options to give users control over when battery-saving features activate.
+</info added on 2025-06-02T05:41:17.033Z>
+
+<info added on 2025-06-02T05:49:14.888Z>
+## User Controls and Charging Optimizations
+
+### User Battery Settings Component
+```jsx
+const BatterySettings = () => {
+  const { batteryData } = useBatteryStatus();
+  const [settings, setSettings] = useState({
+    enableBatteryOptimization: true,
+    thresholds: {
+      lowBattery: 0.15,
+      mediumBattery: 0.30,
+      highBattery: 0.50
+    },
+    manualMode: null // 'high-performance', 'balanced', 'power-saver', or null (auto)
+  });
+
+  return (
+    <div className="battery-settings">
+      <h3>Battery Optimization</h3>
+      
+      {batteryData.supported ? (
+        <div className="battery-dashboard">
+          <BatteryIndicator level={batteryData.level} charging={batteryData.charging} />
+          <div className="battery-status">
+            <span>{Math.round(batteryData.level * 100)}%</span>
+            <span>{batteryData.charging ? 'Charging' : 'Discharging'}</span>
+          </div>
+        </div>
+      ) : (
+        <p>Battery status not available on this device</p>
+      )}
+      
+      <div className="settings-controls">
+        <Switch 
+          label="Enable Battery Optimization"
+          checked={settings.enableBatteryOptimization}
+          onChange={(checked) => setSettings({...settings, enableBatteryOptimization: checked})}
+        />
+        
+        <RadioGroup
+          label="Performance Mode"
+          value={settings.manualMode || 'auto'}
+          onChange={(value) => setSettings({
+            ...settings, 
+            manualMode: value === 'auto' ? null : value
+          })}
+          options={[
+            { value: 'auto', label: 'Automatic (Based on Battery)' },
+            { value: 'high-performance', label: 'High Performance' },
+            { value: 'balanced', label: 'Balanced' },
+            { value: 'power-saver', label: 'Power Saver' }
+          ]}
+        />
+        
+        {settings.enableBatteryOptimization && !settings.manualMode && (
+          <ThresholdSliders 
+            thresholds={settings.thresholds}
+            onChange={(newThresholds) => setSettings({
+              ...settings,
+              thresholds: newThresholds
+            })}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+```
+
+### Charging Performance Optimization
+```javascript
+// Enhanced performance mode when charging
+export const useChargingOptimization = () => {
+  const { batteryData } = useBatteryStatus();
+  const { userSettings } = useUserSettings();
+  
+  useEffect(() => {
+    if (!batteryData.supported) return;
+    
+    // Check if device is charging and optimization is enabled
+    const shouldEnableHighPerformance = 
+      batteryData.charging && 
+      userSettings.enableBatteryOptimization &&
+      !userSettings.manualMode;
+      
+    if (shouldEnableHighPerformance) {
+      // Enable high performance features
+      enableHighRefreshRatePolling();
+      preloadAdditionalResources();
+      enableBackgroundSynchronization(true);
+      setAnimationQuality('high');
+    } else {
+      // Reset to normal or battery-optimized mode
+      resetToOptimizedMode(batteryData, userSettings);
+    }
+    
+    return () => {
+      // Cleanup when component unmounts
+      resetToDefaultPerformance();
+    };
+  }, [batteryData.charging, userSettings]);
+};
+```
+
+### Background Task Scheduler
+```javascript
+export class BatteryAwareTaskScheduler {
+  constructor(batteryData, userSettings) {
+    this.batteryData = batteryData;
+    this.userSettings = userSettings;
+    this.tasks = new Map();
+    this.isRunning = false;
+  }
+  
+  registerTask(id, task, priority, minBatteryLevel = 0) {
+    this.tasks.set(id, { task, priority, minBatteryLevel, lastRun: 0 });
+    return this;
+  }
+  
+  unregisterTask(id) {
+    this.tasks.delete(id);
+    return this;
+  }
+  
+  start() {
+    if (this.isRunning) return;
+    this.isRunning = true;
+    this.scheduleNextRun();
+  }
+  
+  stop() {
+    this.isRunning = false;
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+    }
+  }
+  
+  scheduleNextRun() {
+    if (!this.isRunning) return;
+    
+    const currentBatteryLevel = this.batteryData.level;
+    const isCharging = this.batteryData.charging;
+    
+    // Get eligible tasks based on battery level
+    const eligibleTasks = Array.from(this.tasks.entries())
+      .filter(([_, task]) => currentBatteryLevel >= task.minBatteryLevel)
+      .sort((a, b) => b[1].priority - a[1].priority); // Sort by priority
+    
+    // Calculate delay based on battery status
+    const baseDelay = isCharging ? 1000 : 5000;
+    const batteryFactor = isCharging ? 1 : Math.max(0.2, currentBatteryLevel);
+    const delay = baseDelay / batteryFactor;
+    
+    this.timeoutId = setTimeout(() => {
+      if (eligibleTasks.length > 0) {
+        const [id, taskInfo] = eligibleTasks[0];
+        taskInfo.task();
+        taskInfo.lastRun = Date.now();
+      }
+      this.scheduleNextRun();
+    }, delay);
+  }
+}
+```
+
+### Battery Dashboard Component
+```jsx
+const BatteryIndicator = ({ level, charging }) => {
+  // Determine color based on battery level
+  const getColor = () => {
+    if (level <= 0.15) return 'red';
+    if (level <= 0.30) return 'orange';
+    return 'green';
+  };
+  
+  return (
+    <div className="battery-indicator">
+      <div className="battery-outer">
+        <div 
+          className="battery-inner" 
+          style={{ 
+            width: `${level * 100}%`, 
+            backgroundColor: getColor(),
+          }}
+        />
+        {charging && <div className="charging-indicator">⚡</div>}
+      </div>
+    </div>
+  );
+};
+```
+</info added on 2025-06-02T05:49:14.888Z>
+
+<info added on 2025-06-02T05:51:10.950Z>
+## Implementation Completion Report
+
+### Battery-Aware Features Integration
+
+```typescript
+// Main integration point for battery features
+export class BatteryManager {
+  private static instance: BatteryManager;
+  private currentMode: PerformanceMode = 'balanced';
+  private listeners: Set<(mode: PerformanceMode) => void> = new Set();
+  
+  static getInstance(): BatteryManager {
+    if (!BatteryManager.instance) {
+      BatteryManager.instance = new BatteryManager();
+    }
+    return BatteryManager.instance;
+  }
+  
+  initialize(): void {
+    // Load saved settings
+    const savedSettings = localStorage.getItem('batterySettings');
+    const settings = savedSettings ? JSON.parse(savedSettings) : this.getDefaultSettings();
+    
+    // Set up battery monitoring
+    this.setupBatteryMonitoring(settings);
+    
+    // Apply initial performance mode
+    this.applyPerformanceMode(this.determinePerformanceMode());
+    
+    console.info('Battery management system initialized');
+  }
+  
+  // Implementation details for performance mode application
+  private applyPerformanceMode(mode: PerformanceMode): void {
+    if (this.currentMode === mode) return;
+    
+    this.currentMode = mode;
+    
+    // Apply mode-specific settings
+    switch (mode) {
+      case 'high-performance':
+        this.applyHighPerformanceSettings();
+        break;
+      case 'balanced':
+        this.applyBalancedSettings();
+        break;
+      case 'power-saver':
+        this.applyPowerSaverSettings();
+        break;
+    }
+    
+    // Notify listeners
+    this.notifyListeners();
+    
+    console.info(`Performance mode changed to: ${mode}`);
+  }
+  
+  // Notify all registered components about mode changes
+  private notifyListeners(): void {
+    this.listeners.forEach(listener => listener(this.currentMode));
+  }
+}
+```
+
+### Reduced Motion Implementation
+
+```typescript
+// Comprehensive reduced motion hook with device preference detection
+export const useReducedMotion = () => {
+  // Check for OS-level reduced motion setting
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  
+  // Get user's app-specific setting (may override OS setting)
+  const { userSettings } = useUserSettings();
+  const userReducedMotion = userSettings?.accessibility?.reduceMotion;
+  
+  // Determine final reduced motion state (user setting takes precedence if set)
+  const shouldReduceMotion = userReducedMotion !== undefined 
+    ? userReducedMotion 
+    : prefersReducedMotion;
+  
+  // Animation duration multipliers based on motion preference
+  const getDuration = useCallback((baseDuration: number): number => {
+    if (shouldReduceMotion) {
+      return 0; // No animation when reduced motion is enabled
+    }
+    
+    // Apply battery-aware duration adjustment
+    const { batteryData } = useBatteryStatus();
+    if (batteryData.supported && !batteryData.charging && batteryData.level < 0.2) {
+      return baseDuration * 0.5; // Reduce animation duration on low battery
+    }
+    
+    return baseDuration;
+  }, [shouldReduceMotion]);
+  
+  return {
+    shouldReduceMotion,
+    getDuration,
+    // Helper for CSS classes
+    motionClass: shouldReduceMotion ? 'reduced-motion' : 'full-motion'
+  };
+};
+```
+
+### Performance Metrics Collection
+
+```typescript
+// Battery impact monitoring system
+export class BatteryMetricsCollector {
+  private metricsBuffer: BatteryMetric[] = [];
+  private isCollecting = false;
+  private collectionInterval: number | null = null;
+  
+  startCollection(): void {
+    if (this.isCollecting) return;
+    
+    this.isCollecting = true;
+    this.collectionInterval = window.setInterval(() => {
+      this.collectMetricSample();
+    }, 60000); // Collect sample every minute
+  }
+  
+  stopCollection(): void {
+    if (!this.isCollecting) return;
+    
+    if (this.collectionInterval) {
+      window.clearInterval(this.collectionInterval);
+      this.collectionInterval = null;
+    }
+    
+    this.isCollecting = false;
+    this.uploadMetrics();
+  }
+  
+  private async collectMetricSample(): Promise<void> {
+    const { batteryData } = await getBatteryStatus();
+    const performanceMode = BatteryManager.getInstance().getCurrentMode();
+    
+    // Collect current battery metrics
+    this.metricsBuffer.push({
+      timestamp: Date.now(),
+      batteryLevel: batteryData.level,
+      dischargingRate: this.calculateDischargingRate(),
+      performanceMode,
+      activeFeatures: this.getActiveFeatures()
+    });
+    
+    // Keep buffer size reasonable
+    if (this.metricsBuffer.length > 60) {
+      this.uploadMetrics();
+    }
+  }
+  
+  // Upload metrics to analytics for battery impact analysis
+  private async uploadMetrics(): Promise<void> {
+    if (this.metricsBuffer.length === 0) return;
+    
+    try {
+      await analyticsService.uploadBatteryMetrics(this.metricsBuffer);
+      this.metricsBuffer = [];
+    } catch (error) {
+      console.error('Failed to upload battery metrics:', error);
+    }
+  }
+}
+```
+
+### Integration Testing Framework
+
+```typescript
+// Battery-aware features testing utilities
+export const BatteryTestingUtils = {
+  // Simulate different battery states for testing
+  simulateBatteryState(level: number, charging: boolean): void {
+    // Override the battery API for testing
+    Object.defineProperty(navigator, 'getBattery', {
+      value: async () => ({
+        level,
+        charging,
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn()
+      }),
+      configurable: true
+    });
+    
+    // Trigger battery change event
+    window.dispatchEvent(new CustomEvent('battery-simulation-change'));
+  },
+  
+  // Reset battery simulation
+  resetBatterySimulation(): void {
+    if (Object.getOwnPropertyDescriptor(navigator, 'getBattery')?.configurable) {
+      delete (navigator as any)._mockBattery;
+    }
+  },
+  
+  // Test battery optimization effectiveness
+  async measureBatteryImpact(
+    testFn: () => Promise<void>, 
+    durationMs: number
+  ): Promise<BatteryImpactResult> {
+    const startLevel = (await navigator.getBattery()).level;
+    const startTime = Date.now();
+    
+    await testFn();
+    await new Promise(resolve => setTimeout(resolve, durationMs));
+    
+    const endLevel = (await navigator.getBattery()).level;
+    const endTime = Date.now();
+    
+    return {
+      batteryDrain: startLevel - endLevel,
+      durationMs: endTime - startTime,
+      drainRate: (startLevel - endLevel) / ((endTime - startTime) / 3600000)
+    };
+  }
+};
+```
+</info added on 2025-06-02T05:51:10.950Z>
+
+## 5. Develop Geolocation-Based Experience Optimization [done]
+### Dependencies: 8.4
+### Description: Implement geolocation features that optimize the app experience based on user location context, with appropriate privacy controls.
+### Details:
+1. Implement the Geolocation API with proper permission handling and privacy notices.
+2. Create location-based content delivery that prioritizes relevant information.
+3. Implement location caching to reduce battery usage from constant GPS polling.
+4. Add geofencing capabilities to trigger specific app behaviors in defined areas.
+5. Develop offline map support for location features when connectivity is limited.
+6. Create user settings for controlling location precision and frequency.
+7. Implement location-based theme adjustments (e.g., darker UI at night).
+8. Test location features across different regions and connectivity scenarios.
+9. Ensure compliance with privacy regulations regarding location data collection and storage.
+
+<info added on 2025-06-02T05:41:49.229Z>
+## Implementation Details for Geolocation Features
+
+### Location API Implementation
+```javascript
+// Recommended implementation pattern for geolocation with battery optimization
+const getLocation = (options = {}) => {
+  const defaultOptions = {
+    enableHighAccuracy: false, // Set true only when needed for battery saving
+    timeout: 10000,
+    maximumAge: 60000 // Cache location for 1 minute
+  };
+  
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      position => resolve(position),
+      error => reject(error),
+      { ...defaultOptions, ...options }
+    );
+  });
+};
+```
+
+### Geofencing Implementation
+```javascript
+class GeofenceManager {
+  constructor() {
+    this.geofences = new Map(); // Store active geofences
+    this.watchId = null;
+  }
+  
+  addGeofence(id, center, radius, enterCallback, exitCallback) {
+    this.geofences.set(id, { center, radius, enterCallback, exitCallback, isInside: false });
+    this.startMonitoring();
+  }
+  
+  // Distance calculation using Haversine formula
+  calculateDistance(lat1, lon1, lat2, lon2) {
+    // Implementation of distance calculation
+    // Returns distance in meters
+  }
+  
+  checkGeofences(position) {
+    const { latitude, longitude } = position.coords;
+    
+    this.geofences.forEach((geofence, id) => {
+      const distance = this.calculateDistance(
+        latitude, longitude, 
+        geofence.center.latitude, geofence.center.longitude
+      );
+      
+      const isInside = distance <= geofence.radius;
+      
+      // Trigger callbacks only on state change
+      if (isInside && !geofence.isInside) {
+        geofence.enterCallback(id);
+        geofence.isInside = true;
+      } else if (!isInside && geofence.isInside) {
+        geofence.exitCallback(id);
+        geofence.isInside = false;
+      }
+    });
+  }
+}
+```
+
+### Offline Map Support
+- Implement tile caching using IndexedDB for storing map tiles
+- Use libraries like Leaflet with offline extensions or Mapbox GL JS offline mode
+- Create a service worker to intercept map tile requests and serve from cache
+- Implement a map pre-caching strategy for frequently visited locations
+
+### Location-Based Privacy Controls
+```javascript
+// Privacy-focused location settings component
+const LocationPrivacySettings = () => {
+  const [precisionLevel, setPrecisionLevel] = useState('high'); // high, medium, low
+  const [retentionPeriod, setRetentionPeriod] = useState(7); // days
+  const [locationSharing, setLocationSharing] = useState(false);
+  
+  // Implementation of UI controls for these settings
+  // Include clear explanations of what each setting means
+  
+  // Function to apply fuzzing based on precision level
+  const applyLocationFuzzing = (position, level) => {
+    // Add random noise to coordinates based on precision level
+    // high: no change, medium: ~500m radius, low: ~5km radius
+  };
+};
+```
+
+### Regulatory Compliance Implementation
+- Store explicit consent records with timestamps in secure storage
+- Implement data retention policies with automatic purging of old location data
+- Create data export functionality for GDPR compliance
+- Add region detection to apply appropriate privacy rules (GDPR, CCPA, etc.)
+- Implement privacy-by-design patterns with minimal data collection
+</info added on 2025-06-02T05:41:49.229Z>
+
+<info added on 2025-06-02T05:48:27.584Z>
+## Advanced Geolocation Implementation Patterns
+
+### Battery-Aware Location Tracking
+```javascript
+// Dynamically adjust geolocation parameters based on battery status
+class BatteryAwareGeolocation {
+  constructor() {
+    this.batteryLevel = 100;
+    this.isCharging = true;
+    this.setupBatteryMonitoring();
+  }
+
+  async setupBatteryMonitoring() {
+    if ('getBattery' in navigator) {
+      const battery = await navigator.getBattery();
+      this.updateBatteryStatus(battery);
+      
+      battery.addEventListener('levelchange', () => this.updateBatteryStatus(battery));
+      battery.addEventListener('chargingchange', () => this.updateBatteryStatus(battery));
+    }
+  }
+
+  updateBatteryStatus(battery) {
+    this.batteryLevel = battery.level * 100;
+    this.isCharging = battery.charging;
+  }
+
+  getLocationOptions() {
+    // Low battery = less accuracy, longer cache time
+    if (this.batteryLevel < 20 && !this.isCharging) {
+      return {
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 300000 // 5 minutes
+      };
+    } 
+    // Medium battery = moderate settings
+    else if (this.batteryLevel < 50 && !this.isCharging) {
+      return {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 120000 // 2 minutes
+      };
+    }
+    // High battery or charging = high accuracy
+    else {
+      return {
+        enableHighAccuracy: true,
+        timeout: 7000,
+        maximumAge: 60000 // 1 minute
+      };
+    }
+  }
+}
+```
+
+### Reverse Geocoding with Fallback Strategy
+```javascript
+class LocationContextProvider {
+  constructor() {
+    this.cache = new Map(); // Cache geocoding results
+  }
+
+  async getLocationContext(latitude, longitude) {
+    const cacheKey = `${latitude.toFixed(4)},${longitude.toFixed(4)}`;
+    
+    // Check cache first
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey);
+    }
+    
+    try {
+      // Primary provider: OpenStreetMap Nominatim
+      const context = await this.fetchFromNominatim(latitude, longitude);
+      this.cache.set(cacheKey, context);
+      return context;
+    } catch (error) {
+      try {
+        // Fallback provider: OpenCage
+        const context = await this.fetchFromOpenCage(latitude, longitude);
+        this.cache.set(cacheKey, context);
+        return context;
+      } catch (fallbackError) {
+        // Last resort: Basic timezone calculation
+        return this.getBasicLocationContext(latitude, longitude);
+      }
+    }
+  }
+
+  // Implementation methods for different providers...
+}
+```
+
+### Intelligent Geofencing with Activity Recognition
+```javascript
+class SmartGeofenceManager extends GeofenceManager {
+  constructor() {
+    super();
+    this.activityType = 'unknown'; // walking, running, driving, etc.
+    this.setupActivityRecognition();
+  }
+
+  setupActivityRecognition() {
+    // Use device motion sensors to detect activity type
+    if ('DeviceMotionEvent' in window) {
+      window.addEventListener('devicemotion', this.detectActivity.bind(this));
+    }
+  }
+
+  detectActivity(event) {
+    const { acceleration } = event;
+    if (!acceleration) return;
+    
+    // Simple activity detection based on acceleration patterns
+    const magnitude = Math.sqrt(
+      acceleration.x ** 2 + 
+      acceleration.y ** 2 + 
+      acceleration.z ** 2
+    );
+    
+    // Classify activity based on movement patterns
+    if (magnitude < 1.5) {
+      this.activityType = 'stationary';
+    } else if (magnitude < 5) {
+      this.activityType = 'walking';
+    } else if (magnitude < 12) {
+      this.activityType = 'running';
+    } else {
+      this.activityType = 'driving';
+    }
+    
+    // Adjust geofence monitoring based on activity
+    this.adjustMonitoringFrequency();
+  }
+
+  adjustMonitoringFrequency() {
+    // Different monitoring strategies based on activity
+    switch (this.activityType) {
+      case 'stationary':
+        this.monitoringInterval = 60000; // 1 minute
+        break;
+      case 'walking':
+        this.monitoringInterval = 30000; // 30 seconds
+        break;
+      case 'running':
+        this.monitoringInterval = 15000; // 15 seconds
+        break;
+      case 'driving':
+        this.monitoringInterval = 5000; // 5 seconds
+        break;
+      default:
+        this.monitoringInterval = 30000; // Default
+    }
+    
+    // Update monitoring frequency
+    this.restartMonitoring();
+  }
+}
+```
+
+### Privacy-First Location Data Storage
+```javascript
+class LocationDataManager {
+  constructor(retentionDays = 7) {
+    this.dbName = 'locationPrivacyDB';
+    this.storeName = 'locationHistory';
+    this.retentionDays = retentionDays;
+    this.initDatabase();
+  }
+
+  async initDatabase() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.dbName, 1);
+      
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        const store = db.createObjectStore(this.storeName, { keyPath: 'timestamp' });
+        store.createIndex('timestamp', 'timestamp');
+        store.createIndex('fuzzing', 'fuzzing');
+      };
+      
+      request.onsuccess = (event) => {
+        this.db = event.target.result;
+        this.purgeExpiredData();
+        resolve();
+      };
+      
+      request.onerror = (event) => reject(event.target.error);
+    });
+  }
+
+  // Store location with privacy fuzzing level
+  async storeLocation(location, fuzzingLevel = 'none') {
+    const { latitude, longitude } = location.coords;
+    
+    // Apply location fuzzing based on privacy level
+    const fuzzedLocation = this.applyFuzzing({ latitude, longitude }, fuzzingLevel);
+    
+    const locationData = {
+      timestamp: Date.now(),
+      original: { latitude, longitude },
+      fuzzed: fuzzedLocation,
+      fuzzing: fuzzingLevel,
+      accuracy: location.coords.accuracy
+    };
+    
+    const tx = this.db.transaction(this.storeName, 'readwrite');
+    const store = tx.objectStore(this.storeName);
+    await store.add(locationData);
+    
+    return fuzzedLocation;
+  }
+
+  // Apply fuzzing based on privacy level
+  applyFuzzing(coordinates, level) {
+    const { latitude, longitude } = coordinates;
+    
+    switch (level) {
+      case 'high': // City-level precision (~10km)
+        return {
+          latitude: Math.round(latitude * 10) / 10,
+          longitude: Math.round(longitude * 10) / 10
+        };
+      case 'medium': // Neighborhood-level precision (~1km)
+        return {
+          latitude: Math.round(latitude * 100) / 100,
+          longitude: Math.round(longitude * 100) / 100
+        };
+      case 'low': // Block-level precision (~100m)
+        return {
+          latitude: Math.round(latitude * 1000) / 1000,
+          longitude: Math.round(longitude * 1000) / 1000
+        };
+      case 'none':
+      default:
+        return { latitude, longitude };
+    }
+  }
+
+  // Automatically purge expired location data
+  async purgeExpiredData() {
+    const cutoffTime = Date.now() - (this.retentionDays * 24 * 60 * 60 * 1000);
+    
+    const tx = this.db.transaction(this.storeName, 'readwrite');
+    const store = tx.objectStore(this.storeName);
+    const index = store.index('timestamp');
+    
+    const range = IDBKeyRange.upperBound(cutoffTime);
+    index.openCursor(range).onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (cursor) {
+        cursor.delete();
+        cursor.continue();
+      }
+    };
+  }
+}
+```
+</info added on 2025-06-02T05:48:27.584Z>
+

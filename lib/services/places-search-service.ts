@@ -139,10 +139,6 @@ function featureToPOI(feature: MapboxFeature): POI {
 export async function searchPlaces(options: SearchOptions): Promise<POI[]> {
   const MAPBOX_TOKEN = getMapboxToken();
   
-  console.log('[SearchPlaces] Called with options:', options);
-  console.log('[SearchPlaces] Mapbox token available:', !!MAPBOX_TOKEN);
-  console.log('[SearchPlaces] Token length:', MAPBOX_TOKEN?.length || 0);
-  console.log('[SearchPlaces] Token prefix:', MAPBOX_TOKEN?.substring(0, 10) || 'undefined');
   
   if (!MAPBOX_TOKEN) {
     console.error('[SearchPlaces] ERROR: Mapbox token not configured')
@@ -191,7 +187,6 @@ export async function searchPlaces(options: SearchOptions): Promise<POI[]> {
         }
         url.searchParams.set('types', types.join(','))
         
-        console.log('[SearchPlaces] Fetching from URL:', url.toString());
         const response = await fetch(url.toString())
         
         if (!response.ok) {
@@ -201,12 +196,10 @@ export async function searchPlaces(options: SearchOptions): Promise<POI[]> {
         }
         
         const data = await response.json()
-        console.log('[SearchPlaces] Mapbox response:', data);
         
         // Convert features to POIs with enhanced data
         const pois = data.features
           .map((feature: MapboxFeature) => {
-            console.log('[SearchPlaces] Processing feature:', {
               name: feature.text,
               place_type: feature.place_type,
               category: feature.properties.category
@@ -258,7 +251,6 @@ export async function searchByCategory(
   proximity?: [number, number],
   limit = 20
 ): Promise<POI[]> {
-  console.log('[SearchByCategory] Called with:', { category, proximity, limit });
   // Use cache for category search
   return withCache(
     { type: 'category', category, proximity, limit },

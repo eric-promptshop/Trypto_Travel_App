@@ -4,7 +4,6 @@ import { createApi } from 'unsplash-js'
 const accessKey = process.env.UNSPLASH_ACCESS_KEY || ''
 
 if (!accessKey) {
-  console.warn('Unsplash access key not found. Image fetching will use fallback URLs.')
 }
 
 const unsplash = accessKey ? createApi({ accessKey }) : null

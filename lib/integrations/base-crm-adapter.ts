@@ -198,7 +198,6 @@ export abstract class BaseCRMAdapter {
       const transformFunction = new Function('value', `return ${transformation}`)
       return transformFunction(value)
     } catch (error) {
-      console.warn('Field transformation failed:', error)
       return value
     }
   }

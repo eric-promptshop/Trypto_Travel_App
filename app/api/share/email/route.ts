@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 
 // Simulate email sending for development
 async function simulateEmailSend(emailData: any) {
-  console.log('Simulating email send:', emailData)
   
   // Simulate network delay
   await new Promise(resolve => setTimeout(resolve, 1000))
@@ -49,7 +48,6 @@ export async function POST(request: NextRequest) {
 
     // If Resend API key is not configured, use a fallback method
     if (!process.env.RESEND_API_KEY) {
-      console.log('Email sending simulated:', { email, tripTitle, shareableLink })
       
       // In development, we can open the user's email client
       if (process.env.NODE_ENV === 'development') {

@@ -44,7 +44,6 @@ export function usePerformanceTracker(componentName: string) {
 
   useEffect(() => {
     const renderTime = Date.now() - lastRenderTime.current;
-    console.log(`${componentName} rendered in ${renderTime}ms (render #${renderCount.current})`);
     lastRenderTime.current = Date.now();
   });
 
@@ -117,7 +116,6 @@ const HeavyComputationComponent = memo(({
   const performanceTracker = usePerformanceTracker('HeavyComputationComponent');
 
   const expensiveCalculation = useMemo(() => {
-    console.log('🔄 Running expensive calculation...');
     const start = Date.now();
     
     // Simulate heavy computation
@@ -132,7 +130,6 @@ const HeavyComputationComponent = memo(({
     }
     
     const duration = Date.now() - start;
-    console.log(`✅ Calculation completed in ${duration.toFixed(2)}ms`);
     
     return { value: result.toFixed(2), duration: Math.round(duration) };
   }, [data, multiplier]);

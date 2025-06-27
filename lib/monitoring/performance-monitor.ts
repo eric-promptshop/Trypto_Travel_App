@@ -82,6 +82,9 @@ export class PerformanceMonitor {
 
   private async sendMetricToService(metric: PerformanceMetric) {
     try {
+      // Only send metrics from client-side
+      if (typeof window === 'undefined') return
+      
       // Send to custom metrics endpoint
       await fetch('/api/monitoring/metrics', {
         method: 'POST',
@@ -89,7 +92,6 @@ export class PerformanceMonitor {
         body: JSON.stringify(metric)
       })
     } catch (error) {
-      console.warn('Failed to send metric to monitoring service:', error)
     }
   }
 
@@ -105,7 +107,6 @@ export class PerformanceMonitor {
       webVitals.onLCP(this.onLCP.bind(this))
       webVitals.onTTFB(this.onTTFB.bind(this))
     }).catch(error => {
-      console.warn('Failed to load web-vitals:', error)
     })
   }
 
@@ -203,19 +204,25 @@ export class PerformanceMonitor {
 
   // Memory usage monitoring
   recordMemoryUsage() {
-    if (typeof process !== 'undefined') {
+    if (typeof process !== 'undefined' && process.memoryUsage) {
       const memUsage = process.memoryUsage()
       
       this.recordMetric('memory_heap_used', memUsage.heapUsed, 'bytes')
       this.recordMetric('memory_heap_total', memUsage.heapTotal, 'bytes')
       this.recordMetric('memory_external', memUsage.external, 'bytes')
       this.recordMetric('memory_rss', memUsage.rss, 'bytes')
+    } else if (typeof performance !== 'undefined' && (performance as any).memory) {
+      // Browser-based memory monitoring (Chrome only)
+      const memory = (performance as any).memory
+      this.recordMetric('memory_heap_used', memory.usedJSHeapSize, 'bytes')
+      this.recordMetric('memory_heap_total', memory.totalJSHeapSize, 'bytes')
+      this.recordMetric('memory_limit', memory.jsHeapSizeLimit, 'bytes')
     }
   }
 
   // CPU usage monitoring (simplified)
   recordCPUUsage() {
-    if (typeof process !== 'undefined') {
+    if (typeof process !== 'undefined' && process.cpuUsage) {
       const usage = process.cpuUsage()
       
       this.recordMetric('cpu_user', usage.user, 'microseconds')
@@ -267,18 +274,33 @@ export class PerformanceMonitor {
 
   // Start automatic monitoring
   startAutomaticMonitoring() {
-    // Monitor memory and CPU every 30 seconds
-    setInterval(() => {
-      this.recordMemoryUsage()
-      this.recordCPUUsage()
-    }, 30000)
+    // Only monitor memory and CPU in Node.js environment
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      setInterval(() => {
+        this.recordMemoryUsage()
+        this.recordCPUUsage()
+      }, 30000)
+    }
 
     // Initialize web vitals tracking for client-side
-    this.initWebVitalsTracking()
+    if (typeof window !== 'undefined') {
+      this.initWebVitalsTracking()
+    }
   }
 }
 
-export const performanceMonitor = new PerformanceMonitor()
+// Create a safe singleton that handles browser/server differences
+class SafePerformanceMonitor extends PerformanceMonitor {
+  constructor() {
+    super()
+    // Prevent automatic initialization in browser
+    if (typeof window === 'undefined') {
+      this.startAutomaticMonitoring()
+    }
+  }
+}
+
+export const performanceMonitor = new SafePerformanceMonitor()
 
 // Middleware for automatic API monitoring
 export function withPerformanceMonitoring<T extends any[], R>(

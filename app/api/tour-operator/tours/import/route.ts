@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
     const { url } = validation.data
     const tenantId = session.user?.tenantId || 'default'
     
-    console.log('[Import Tour API] Importing from URL:', url)
     
     try {
       // Directly use simple fetch instead of scraper
@@ -40,7 +39,6 @@ export async function POST(request: NextRequest) {
       console.error('[Import Tour API] Scraping error:', scraperError)
       
       // Fallback to simple fetch if scraper fails
-      console.log('[Import Tour API] Falling back to simple fetch...')
       
       try {
         const response = await fetch(url)

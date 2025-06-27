@@ -105,7 +105,6 @@ export async function PATCH(
       data: validation.data
     })
     
-    console.log('[Update Tour API] Tour updated:', params.tourId)
     
     return NextResponse.json({ 
       tour: updatedTour,
@@ -155,7 +154,6 @@ export async function DELETE(
       }
     })
     
-    console.log('[Delete Tour API] Tour deleted:', params.tourId)
     
     return NextResponse.json({ 
       message: 'Tour deleted successfully' 

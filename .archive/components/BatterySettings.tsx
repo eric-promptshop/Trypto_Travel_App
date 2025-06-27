@@ -178,7 +178,6 @@ export function BatterySettings() {
         const parsed = JSON.parse(savedSettings)
         setSettings(prev => ({ ...prev, ...parsed }))
       } catch (error) {
-        console.warn('Failed to load battery settings:', error)
       }
     }
   }, [])

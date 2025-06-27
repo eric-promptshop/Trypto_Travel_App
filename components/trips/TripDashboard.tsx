@@ -145,7 +145,6 @@ export function TripDashboard({
 
   const handleDuplicateTrip = async (trip: Trip) => {
     // This would typically create a copy via API
-    console.log('Duplicating trip:', trip.id)
   }
 
   const formatTripDuration = (startDate: string, endDate: string) => {

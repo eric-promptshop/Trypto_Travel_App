@@ -116,9 +116,6 @@ export function MainContent({ activeTab, isMobile, formData }: MainContentProps)
           <div className={isMobile ? "p-4" : "p-6"}>
             <ModernItineraryViewer 
               {...(itinerary ? { itinerary } : {})}
-              onEdit={() => console.log('Edit itinerary')}
-              onShare={() => console.log('Share itinerary')}
-              onDownload={() => console.log('Download itinerary')}
             />
           </div>
         )
@@ -136,9 +133,6 @@ export function MainContent({ activeTab, isMobile, formData }: MainContentProps)
           <div className={isMobile ? "p-4" : "p-6"}>
             <ModernItineraryViewer 
               {...(defaultItinerary ? { itinerary: defaultItinerary } : {})}
-              onEdit={() => console.log('Edit itinerary')}
-              onShare={() => console.log('Share itinerary')}
-              onDownload={() => console.log('Download itinerary')}
             />
           </div>
         )

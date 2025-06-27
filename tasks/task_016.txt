@@ -1,0 +1,149 @@
+# Task ID: 16
+# Title: Implement Full-Screen Hero Section with Natural Language Input
+# Status: pending
+# Dependencies: None
+# Priority: high
+# Description: Transform the current homepage into an immersive full-screen experience featuring a background video/imagery and a prominent natural language input field with the prompt 'Where is your next story taking you?'
+# Details:
+Create a responsive full-screen hero section that replaces the current homepage layout. The implementation should include:
+
+1. A high-quality, auto-playing background video or dynamic imagery that evokes travel inspiration (ensure optimized loading and fallbacks for different devices)
+2. A centered, prominent natural language input field with the placeholder text 'Where is your next story taking you?'
+3. Voice input capability with a microphone icon that activates speech-to-text functionality
+4. Subtle animations for user interaction feedback (input field focus, typing effects)
+5. Smooth transitions when user submits input, transitioning to the planning interface
+6. Ensure the design maintains brand identity while creating an emotional, inspiring atmosphere
+7. Implement responsive design to ensure the experience works across desktop, tablet, and mobile devices
+8. Add subtle UI hints to guide users on how to interact with the natural language input
+9. Ensure accessibility compliance (keyboard navigation, screen reader support, appropriate contrast ratios)
+10. Implement analytics tracking to measure engagement with the new interface
+
+# Test Strategy:
+Testing should verify both technical functionality and user experience aspects:
+
+1. Cross-browser testing: Verify the hero section renders correctly in Chrome, Firefox, Safari, and Edge
+2. Responsive testing: Confirm proper display and functionality across desktop, tablet, and mobile viewports
+3. Performance testing: Measure and optimize load time, ensuring background video/imagery loads efficiently without impacting page performance (target First Contentful Paint under 1.5s)
+4. Natural language input testing:
+   - Test various input phrases and verify they correctly transition to the planning interface
+   - Verify placeholder text displays and clears appropriately
+   - Test edge cases like empty submissions and very long inputs
+5. Voice input testing:
+   - Verify microphone activation works across supported browsers
+   - Test voice recognition accuracy with different accents and background noise levels
+6. Accessibility testing:
+   - Verify screen reader compatibility
+   - Test keyboard navigation
+   - Ensure color contrast meets WCAG AA standards
+7. Animation and transition testing: Verify smooth animations at different frame rates and device capabilities
+8. A/B testing: Compare user engagement metrics between old and new homepage designs
+9. User testing: Conduct moderated sessions to gather qualitative feedback on the emotional impact and usability of the new design
+
+# Subtasks:
+## 1. Implement Full-Screen Hero Section with Background Media [pending]
+### Dependencies: None
+### Description: Create the responsive full-screen hero section with optimized background video/imagery that serves as the foundation for the new homepage experience.
+### Details:
+Implementation details:
+1. Create a new component for the full-screen hero section
+2. Implement responsive container that fills the viewport (100vh) with appropriate overflow handling
+3. Add background video component with:
+   - Auto-play, loop, and muted attributes
+   - Proper video format selection based on browser support (MP4, WebM)
+   - Optimized video loading with appropriate compression
+   - Fallback static image for mobile devices or when video fails to load
+4. Implement media loading states with placeholder/skeleton UI
+5. Add subtle overlay gradient to ensure text readability
+6. Ensure responsive behavior across desktop, tablet, and mobile breakpoints
+7. Implement lazy loading for background media
+8. Add basic layout structure for content positioning (centered content container)
+
+Testing approach:
+- Test across different browsers and devices to verify responsive behavior
+- Verify fallback mechanisms work when video cannot play
+- Measure and optimize loading performance
+- Ensure accessibility standards are met for background content
+
+## 2. Implement Natural Language Input Field with UI Feedback [pending]
+### Dependencies: 16.1
+### Description: Create the prominent natural language input field with placeholder text and interactive UI feedback animations.
+### Details:
+Implementation details:
+1. Design and implement the natural language input field:
+   - Create custom styled input component with the placeholder 'Where is your next story taking you?'
+   - Implement focus states with subtle animations (border glow, expansion)
+   - Add typing effect animations for user feedback
+   - Ensure proper sizing and prominence in the layout
+2. Implement subtle UI hints:
+   - Add tooltip or helper text to guide users
+   - Implement example suggestions that appear/disappear
+3. Style the submit button or enter key functionality
+4. Add keyboard event listeners for submission (Enter key)
+5. Implement form validation if needed
+6. Ensure proper z-indexing and positioning within the hero section
+7. Add appropriate ARIA attributes for accessibility
+8. Implement analytics tracking for input field interactions
+
+Testing approach:
+- Test input field behavior across devices and browsers
+- Verify keyboard navigation and screen reader compatibility
+- Test form submission and validation
+- Verify animations and transitions work correctly
+- Check contrast ratios and accessibility compliance
+
+## 3. Implement Voice Input Capability with Speech-to-Text [pending]
+### Dependencies: 16.2
+### Description: Add voice input functionality with microphone icon and speech-to-text integration for the natural language input field.
+### Details:
+Implementation details:
+1. Add microphone icon button adjacent to the text input field
+2. Implement speech recognition API integration:
+   - Use Web Speech API or appropriate speech recognition library
+   - Handle browser compatibility and fallbacks
+   - Implement permission request handling
+3. Create visual feedback for voice recording states:
+   - Inactive state (default)
+   - Listening state (animated microphone icon)
+   - Processing state
+   - Error state (when permission denied or not supported)
+4. Implement the logic to convert speech to text and populate the input field
+5. Add appropriate error handling and user feedback
+6. Ensure the voice input works seamlessly with the existing text input
+7. Add appropriate ARIA attributes and keyboard shortcuts
+8. Implement analytics events for voice input usage
+
+Testing approach:
+- Test speech recognition across supported browsers
+- Verify permission flows work correctly
+- Test with different accents and languages
+- Ensure proper error handling when speech recognition fails
+- Verify accessibility for voice input functionality
+
+## 4. Implement Smooth Transition to Planning Interface [pending]
+### Dependencies: 16.2, 16.3
+### Description: Create smooth animations and transitions that trigger when the user submits their input, seamlessly moving from the hero section to the planning interface.
+### Details:
+Implementation details:
+1. Design and implement transition animations:
+   - Fade-out animation for the hero section
+   - Subtle loading indicator or progress animation
+   - Smooth reveal animation for the planning interface
+2. Implement the submission handler logic:
+   - Capture and process the user input (text or voice)
+   - Trigger appropriate analytics events
+   - Handle the state transition between interfaces
+3. Create a transition controller to manage the animation sequence
+4. Implement loading states during API calls or data processing
+5. Add route transition handling if using client-side routing
+6. Ensure transitions are accessible (respecting reduced motion preferences)
+7. Implement error handling for failed submissions
+8. Add state persistence to maintain user input during transitions
+9. Ensure responsive behavior of transitions across device sizes
+
+Testing approach:
+- Test transitions across different devices and screen sizes
+- Verify animations work smoothly without performance issues
+- Test with reduced motion settings enabled
+- Ensure keyboard navigation works during transitions
+- Verify analytics events fire correctly during submission
+

@@ -15,7 +15,8 @@ import {
   BookOpen,
   BarChart3,
   Palette,
-  Building2
+  Building2,
+  Compass
 } from 'lucide-react'
 
 interface NavigationItem {
@@ -35,6 +36,12 @@ const navigationItems: NavigationItem[] = [
     description: 'Start planning your next adventure'
   },
   {
+    href: '/tours',
+    label: 'Explore Tours',
+    icon: Compass,
+    description: 'Browse amazing tours worldwide'
+  },
+  {
     href: '/plan',
     label: 'Plan Trip',
     icon: Plane,
@@ -45,13 +52,6 @@ const navigationItems: NavigationItem[] = [
     label: 'My Trips',
     icon: Map,
     description: 'View and manage your saved trips',
-    requiresAuth: true
-  },
-  {
-    href: '/itinerary-display',
-    label: 'Itinerary',
-    icon: Calendar,
-    description: 'View your current itinerary',
     requiresAuth: true
   },
   {

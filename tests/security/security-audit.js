@@ -20,7 +20,6 @@ class SecurityAuditor {
   }
 
   async runAudit() {
-    console.log('🔒 Starting comprehensive security audit...\n');
 
     await this.checkDependencyVulnerabilities();
     await this.analyzePrismaSchema();
@@ -30,12 +29,9 @@ class SecurityAuditor {
     await this.scanForSecrets();
     await this.generateReport();
 
-    console.log('\n✅ Security audit completed!');
-    console.log(`📊 Report saved to: ${path.join(__dirname, 'security-report.json')}`);
   }
 
   async checkDependencyVulnerabilities() {
-    console.log('🔍 Checking dependency vulnerabilities...');
     
     try {
       const auditOutput = execSync('npm audit --json', { encoding: 'utf8' });
@@ -53,14 +49,11 @@ class SecurityAuditor {
         });
       }
 
-      console.log(`   Found ${this.results.vulnerabilities.length} vulnerabilities`);
     } catch (error) {
-      console.log('   ⚠️  Could not run npm audit:', error.message);
     }
   }
 
   async analyzePrismaSchema() {
-    console.log('🗃️  Analyzing database schema security...');
     
     const schemaPath = path.join(process.cwd(), 'prisma', 'schema.prisma');
     
@@ -98,12 +91,10 @@ class SecurityAuditor {
       }
 
       this.results.codeAnalysis.push(...issues);
-      console.log(`   Found ${issues.length} potential schema issues`);
     }
   }
 
   async checkEnvironmentVariables() {
-    console.log('🔐 Checking environment variable security...');
     
     const requiredSecureVars = [
       'NEXTAUTH_SECRET',
@@ -154,11 +145,9 @@ class SecurityAuditor {
     });
 
     this.results.configurationIssues.push(...issues);
-    console.log(`   Found ${issues.length} configuration issues`);
   }
 
   async auditAPIEndpoints() {
-    console.log('🔌 Auditing API endpoint security...');
     
     const apiDir = path.join(process.cwd(), 'app', 'api');
     const issues = [];
@@ -213,11 +202,9 @@ class SecurityAuditor {
     }
 
     this.results.codeAnalysis.push(...issues);
-    console.log(`   Found ${issues.length} API security issues`);
   }
 
   async checkFilePermissions() {
-    console.log('📁 Checking file permissions...');
     
     const sensitiveFiles = [
       '.env',
@@ -252,11 +239,9 @@ class SecurityAuditor {
     });
 
     this.results.configurationIssues.push(...issues);
-    console.log(`   Found ${issues.length} file permission issues`);
   }
 
   async scanForSecrets() {
-    console.log('🔍 Scanning for exposed secrets...');
     
     const secretPatterns = [
       { name: 'API Key', pattern: /[Aa][Pp][Ii]_?[Kk][Ee][Yy].*['"][0-9a-zA-Z]{32,}['"]/ },
@@ -301,7 +286,6 @@ class SecurityAuditor {
     }
 
     this.results.codeAnalysis.push(...issues);
-    console.log(`   Found ${issues.length} potential exposed secrets`);
   }
 
   generateRecommendations() {
@@ -355,7 +339,6 @@ class SecurityAuditor {
   }
 
   async generateReport() {
-    console.log('📊 Generating security report...');
     
     this.generateRecommendations();
     
@@ -378,17 +361,10 @@ class SecurityAuditor {
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
     
     // Print summary
-    console.log('\n📋 Security Audit Summary:');
-    console.log(`   Total Issues: ${summary.total_issues}`);
-    console.log(`   High Severity: ${summary.high_severity}`);
-    console.log(`   Medium Severity: ${summary.medium_severity}`);
-    console.log(`   Low Severity: ${summary.low_severity}`);
     
     if (summary.high_severity > 0) {
-      console.log('\n⚠️  HIGH SEVERITY ISSUES FOUND - Immediate action required!');
       return 1;
     } else if (summary.medium_severity > 5) {
-      console.log('\n⚠️  Multiple medium severity issues found - Review recommended');
       return 1;
     }
     

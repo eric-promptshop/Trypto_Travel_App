@@ -72,12 +72,10 @@ interface EnhancedItineraryDay {
 }
 
 export async function generateEnhancedItinerary(tripData: any) {
-  console.log('🌍 Starting enhanced itinerary generation for:', tripData.destination);
   const genStart = Date.now();
   
   try {
     // 1. Fetch tour operator offerings for the destination
-    console.log('🔍 Fetching tour operator content...');
     let tourOperatorContent = [];
     
     try {
@@ -100,9 +98,7 @@ export async function generateEnhancedItinerary(tripData: any) {
       );
       
       tourOperatorContent = await Promise.race([dbPromise, dbTimeout]) as any[];
-      console.log(`✅ Found ${tourOperatorContent.length} tour offerings`);
     } catch (dbError) {
-      console.warn('⚠️ Failed to fetch tour content, continuing without tours:', dbError);
       // Continue without tour data
     }
 
@@ -140,7 +136,6 @@ export async function generateEnhancedItinerary(tripData: any) {
     const enhancedPrompt = createEnhancedPrompt(tripData, tourOfferings);
 
     // 4. Generate itinerary with OpenAI (with timeout)
-    console.log('🤖 Calling OpenAI API for enhanced itinerary generation...');
     const apiStart = Date.now();
     
     // Validate OpenAI key exists
@@ -175,7 +170,6 @@ Respond with valid JSON only.`
     
     // Race between API call and timeout
     const completion = await Promise.race([apiPromise, timeoutPromise]) as any;
-    console.log(`✅ OpenAI API responded in ${Date.now() - apiStart}ms`);
 
     // 5. Parse and enhance the response
     const aiResponse = completion.choices[0]?.message?.content || '';
@@ -190,7 +184,6 @@ Respond with valid JSON only.`
       tourOperatorOffers: tourOfferings.slice(0, 10) // Include top 10 relevant tours
     };
     
-    console.log(`✅ Enhanced itinerary generation completed in ${Date.now() - genStart}ms`);
     return result;
 
   } catch (error) {

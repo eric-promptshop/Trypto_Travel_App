@@ -149,7 +149,6 @@ export function createLazyComponent<T extends ComponentType<any>>(
         return result;
       } catch (error) {
         if (attemptCount < retries) {
-          console.warn(`Retrying component ${componentName} load (attempt ${attemptCount + 1})`);
           await new Promise(resolve => setTimeout(resolve, 1000 * attemptCount));
           return attemptLoad();
         }
@@ -289,7 +288,6 @@ const LazyHeavyComponent = createLazyComponent(
   { 
     priority: 'low',
     preload: false,
-    onLoad: (name, time) => console.log(`${name} loaded in ${time}ms`)
   }
 );
 
@@ -315,7 +313,6 @@ const LazyMapComponent = createLazyComponent(
   { 
     priority: 'medium',
     preload: true,
-    onLoad: (name, time) => console.log(`${name} loaded in ${time}ms`)
   }
 );
 
@@ -341,7 +338,6 @@ const LazyChartsComponent = createLazyComponent(
   { 
     priority: 'high',
     preload: true,
-    onLoad: (name, time) => console.log(`${name} loaded in ${time}ms`)
   }
 );
 

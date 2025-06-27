@@ -212,7 +212,6 @@ export default function DragDropTimelinePage() {
   }
 
   const handleAddActivity = (date: string) => {
-    console.log('Add activity for date:', date)
     // In a real app, this would open the activity selector
   }
 

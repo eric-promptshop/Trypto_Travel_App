@@ -101,7 +101,6 @@ export class CurrencyConverter {
       await this.fetchExchangeRates()
       this.lastUpdate = now
     } catch (error) {
-      console.warn('Failed to refresh exchange rates:', error)
       // Continue with cached rates
     }
   }
@@ -634,7 +633,6 @@ export class DefaultPricingCalculationService implements PricingCalculationServi
           }
         }
       } catch (error) {
-        console.warn(`Failed to get real-time pricing from ${providerName}:`, error)
         continue
       }
     }

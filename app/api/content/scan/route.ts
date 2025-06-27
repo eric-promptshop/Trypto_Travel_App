@@ -128,15 +128,13 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
   const scraper = getScraperForUrl(websiteUrl);
   
   try {
-    console.log(`Starting website scan for ${websiteUrl} with depth ${scanDepth}`);
-    console.log(`Scraper type: ${scraper.constructor.name}`);
     
     // Check if we're in a serverless environment where Puppeteer might not work
     const isVercel = process.env.VERCEL === '1';
     const useSimpleScraper = isVercel || process.env.USE_SIMPLE_SCRAPER === 'true';
     
     if (useSimpleScraper) {
-      console.warn('Using SimpleFetchScraper for serverless environment');
+      console.log('Using SimpleFetchScraper for serverless environment');
     }
     
     // Generate URLs to scan
@@ -180,25 +178,18 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
     // Scan multiple pages with progress tracking
     for (let i = 0; i < Math.min(urlsToScan.length, scanDepth); i++) {
       const url = urlsToScan[i];
-      console.log(`Scanning page ${i + 1}/${Math.min(urlsToScan.length, scanDepth)}: ${url}`);
       
       try {
         let result;
         
         // Use SimpleFetchScraper in serverless environment or as fallback
         if (useSimpleScraper || scraper instanceof TourOperatorScraper) {
-          console.log('Using SimpleFetchScraper for', url);
           const simpleScraper = new SimpleFetchScraper();
           
           try {
             result = await simpleScraper.scrapeUrl(url);
-            console.log(`SimpleFetchScraper result for ${url}:`, { 
-              success: result.success, 
-              dataLength: result.data?.length,
-              errors: result.errors
-            });
           } catch (fetchError) {
-            console.error('SimpleFetchScraper failed, trying Puppeteer:', fetchError);
+            // SimpleFetchScraper failed, trying Puppeteer
             
             // If simple scraper fails and we're not in Vercel, try Puppeteer
             if (!isVercel) {
@@ -212,18 +203,6 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
           result = await scraper.scrapeUrl(url);
         }
         
-        console.log(`Scan result for ${url}:`, { 
-          success: result.success, 
-          dataLength: result.data?.length,
-          errors: result.errors,
-          metadata: result.metadata
-        });
-        
-        // Log first item for debugging
-        if (result.data && result.data.length > 0) {
-          console.log('First tour found:', JSON.stringify(result.data[0], null, 2));
-        }
-        
         if (result.success && result.data) {
           results.push(result);
           
@@ -231,19 +210,12 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
           if (scraper instanceof TripAdvisorScraper || scraper instanceof GetYourGuideScraper || scraper instanceof TourOperatorScraper || useSimpleScraper) {
             // These return activities
             const activities = Array.isArray(result.data) ? result.data : [result.data];
-            console.log(`Processing ${activities.length} activities from ${url}`);
             activities.forEach((activity: any, idx: number) => {
               if (activity && activity.title) {
                 const tour = activityToTour(activity as Activity, url);
-                console.log(`Converted activity ${idx + 1} to tour:`, {
-                  name: tour.name,
-                  destination: tour.destination,
-                  duration: tour.duration,
-                  price: tour.price
-                });
                 processedTours.push(tour);
               } else {
-                console.log(`Skipping invalid activity ${idx + 1}:`, activity);
+                console.log(`Skipping invalid activity at index ${idx}`);
               }
             });
           } else if (scraper instanceof BookingComScraper) {
@@ -277,11 +249,10 @@ export const POST = withErrorHandling(async (request: NextRequest) => {
       ))
     );
     
-    console.log(`Filtered from ${processedTours.length} to ${uniqueTours.length} unique tours`);
     
     // If no tours found, provide helpful feedback
     if (uniqueTours.length === 0) {
-      console.warn('No tours found during scan', {
+      console.log('No tours found during scan', {
         websiteUrl,
         urlsScanned: Math.min(urlsToScan.length, scanDepth),
         scraper: useSimpleScraper ? 'SimpleFetchScraper' : scraper.constructor.name

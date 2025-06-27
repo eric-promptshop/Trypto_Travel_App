@@ -36,7 +36,12 @@
       "Bash(npx tsc:*)",
       "Bash(git rm:*)",
       "Bash(cp:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(./scripts/clean-console-logs.sh:*)",
+      "Bash(npx @sentry/wizard@latest:*)",
+      "Bash(source:*)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

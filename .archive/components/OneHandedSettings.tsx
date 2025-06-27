@@ -239,7 +239,6 @@ export function OneHandedSettings() {
         const parsed = JSON.parse(savedSettings)
         setSettings(prev => ({ ...prev, ...parsed }))
       } catch (error) {
-        console.warn('Failed to load one-handed settings:', error)
       }
     }
   }, [])

@@ -236,7 +236,6 @@ export const EdgeCaseDemo: React.FC = () => {
                 maxRetries={2}
                 showDetails={true}
                 onError={(error, errorInfo, errorId) => {
-                  console.log('Error caught by boundary:', { error, errorInfo, errorId });
                 }}
               >
                 <SafeProblematicComponent shouldError={shouldError} />

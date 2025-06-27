@@ -11,7 +11,6 @@ test.describe('Cross-Browser Compatibility Testing', () => {
 
   testPages.forEach(({ path, title }) => {
     test(`${title} loads correctly across browsers`, async ({ page, browserName }) => {
-      console.log(`Testing ${title} on ${browserName}`);
       
       await page.goto(path);
       
@@ -38,7 +37,6 @@ test.describe('Cross-Browser Compatibility Testing', () => {
         return window.console && (window as any).__errors || [];
       });
       
-      console.log(`${title} on ${browserName}: ${errors.length} page errors detected`);
       
       // Basic interactivity test
       const firstButton = page.locator('button, a[href]').first();
@@ -54,7 +52,6 @@ test.describe('Cross-Browser Compatibility Testing', () => {
   });
 
   test('Navigation works across browsers', async ({ page, browserName }) => {
-    console.log(`Testing navigation on ${browserName}`);
     
     await page.goto('/');
     
@@ -75,14 +72,12 @@ test.describe('Cross-Browser Compatibility Testing', () => {
           const currentUrl = page.url();
           expect(currentUrl).toContain(href);
           
-          console.log(`Navigation test on ${browserName}: Successfully navigated to ${href}`);
         }
       }
     }
   });
 
   test('Form elements work across browsers', async ({ page, browserName }) => {
-    console.log(`Testing form functionality on ${browserName}`);
     
     await page.goto('/plan');
     
@@ -99,7 +94,6 @@ test.describe('Cross-Browser Compatibility Testing', () => {
         const value = await firstInput.inputValue();
         expect(value).toBe('Test input');
         
-        console.log(`Form test on ${browserName}: Input functionality working`);
       }
     }
     
@@ -115,13 +109,11 @@ test.describe('Cross-Browser Compatibility Testing', () => {
         const isEnabled = await firstButton.isEnabled();
         expect(isEnabled).toBe(true);
         
-        console.log(`Button test on ${browserName}: Buttons are interactive`);
       }
     }
   });
 
   test('CSS rendering consistency across browsers', async ({ page, browserName }) => {
-    console.log(`Testing CSS rendering on ${browserName}`);
     
     await page.goto('/');
     
@@ -140,7 +132,6 @@ test.describe('Cross-Browser Compatibility Testing', () => {
       // Verify header has proper styling
       expect(headerStyles.display).not.toBe('none');
       
-      console.log(`CSS test on ${browserName}: Header styles applied correctly`);
     }
     
     // Test responsive grid/flex layouts
@@ -154,11 +145,9 @@ test.describe('Cross-Browser Compatibility Testing', () => {
       }
     }
     
-    console.log(`Layout test on ${browserName}: Responsive layouts rendering correctly`);
   });
 
   test('JavaScript functionality across browsers', async ({ page, browserName }) => {
-    console.log(`Testing JavaScript functionality on ${browserName}`);
     
     await page.goto('/ui-showcase');
     
@@ -179,7 +168,6 @@ test.describe('Cross-Browser Compatibility Testing', () => {
     expect(jsFeatures.fetchSupport).toBe(true);
     expect(jsFeatures.localStorageSupport).toBe(true);
     
-    console.log(`JavaScript test on ${browserName}:`, jsFeatures);
     
     // Test interactive components if available
     const interactiveElements = await page.locator('[data-testid], .interactive, button[onclick]').all();
@@ -191,13 +179,11 @@ test.describe('Cross-Browser Compatibility Testing', () => {
         await firstElement.click();
         await page.waitForTimeout(500); // Wait for any animations
         
-        console.log(`Interaction test on ${browserName}: Interactive elements responding`);
       }
     }
   });
 
   test('Error handling across browsers', async ({ page, browserName }) => {
-    console.log(`Testing error handling on ${browserName}`);
     
     // Test 404 page handling
     await page.goto('/non-existent-page');
@@ -213,7 +199,6 @@ test.describe('Cross-Browser Compatibility Testing', () => {
     
     expect(has404Content).toBeTruthy();
     
-    console.log(`Error handling test on ${browserName}: 404 handling working`);
     
     // Test back to valid page
     await page.goto('/');
@@ -241,7 +226,6 @@ test.describe('Device-Specific Testing', () => {
       await page.waitForTimeout(300); // Wait for hover effects
     }
     
-    console.log('Desktop layout test: Completed successfully');
   });
 
   test('Tablet layout and interactions', async ({ page }) => {
@@ -264,7 +248,6 @@ test.describe('Device-Specific Testing', () => {
       }
     }
     
-    console.log('Tablet layout test: Touch targets appropriately sized');
   });
 
   test('Mobile layout and interactions', async ({ page }) => {
@@ -294,7 +277,6 @@ test.describe('Device-Specific Testing', () => {
       }
     }
     
-    console.log('Mobile layout test: Touch targets meet 44px minimum requirement');
   });
 
   test('Landscape vs Portrait orientation', async ({ page }) => {
@@ -317,7 +299,6 @@ test.describe('Device-Specific Testing', () => {
     expect(portraitHeight).toBeTruthy();
     expect(landscapeHeight).toBeTruthy();
     
-    console.log('Orientation test: Layout adapts to portrait and landscape modes');
   });
 });
 
@@ -342,11 +323,9 @@ test.describe('Browser Feature Support', () => {
     expect(apiSupport.intersectionObserver).toBe(true);
     expect(apiSupport.flexboxSupport).toBe(true);
     
-    console.log(`API support on ${browserName}:`, apiSupport);
     
     // Service Worker support varies by browser/context
     if (apiSupport.serviceWorker) {
-      console.log(`${browserName} supports Service Workers`);
     }
   });
 
@@ -366,6 +345,5 @@ test.describe('Browser Feature Support', () => {
     // Basic performance API should be available
     expect(perfSupport.performanceAPI).toBe(true);
     
-    console.log(`Performance API support on ${browserName}:`, perfSupport);
   });
 }); 

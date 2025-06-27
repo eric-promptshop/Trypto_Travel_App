@@ -129,13 +129,11 @@ export default function AccommodationSelectionDemo() {
 
   const handleAccommodationSelect = (accommodation: Accommodation) => {
     setSelectedAccommodation(accommodation)
-    console.log('Selected accommodation:', accommodation)
   }
 
   const handleMapAccommodationSelect = (accommodation: any) => {
     // Find the full accommodation data from the selector
     // In a real app, this would be handled by a shared state or API
-    console.log('Selected from map:', accommodation)
   }
 
   const handleFiltersChange = (filters: any) => {

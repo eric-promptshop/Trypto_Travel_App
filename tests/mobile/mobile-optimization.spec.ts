@@ -256,7 +256,6 @@ test.describe('Mobile Optimization Testing', () => {
       // At least some images should be in WebP format if supported
       // This might not always be true, so we'll make it a soft assertion
       if (!hasWebP) {
-        console.log('Note: No WebP images detected. This may be expected if WebP is not supported or not implemented.');
       }
     });
 

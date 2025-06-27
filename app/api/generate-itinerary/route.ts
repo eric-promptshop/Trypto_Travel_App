@@ -106,19 +106,29 @@ async function createSampleContent(destination: string): Promise<{
   transportation: Transportation[]
   destinations: Destination[]
 }> {
-  // Get real coordinates for the destination
-  let destinationCoords = { latitude: 0, longitude: 0 }
-  try {
-    const geoResults = await GeocodingService.searchLocations(destination)
-    if (geoResults.length > 0 && geoResults[0].lat && geoResults[0].lng) {
-      destinationCoords = {
-        latitude: geoResults[0].lat,
-        longitude: geoResults[0].lng
+  // Get real coordinates for the destination with timeout
+  let destinationCoords = { latitude: 48.8566, longitude: 2.3522 } // Default to Paris
+  
+  // Skip geocoding in development for faster response
+  if (process.env.NODE_ENV !== 'development') {
+    try {
+      // Add timeout for geocoding
+      const geoPromise = GeocodingService.searchLocations(destination)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Geocoding timeout')), 2000)
+      )
+      
+      const geoResults = await Promise.race([geoPromise, timeoutPromise]) as any
+      if (geoResults && geoResults.length > 0 && geoResults[0].lat && geoResults[0].lng) {
+        destinationCoords = {
+          latitude: geoResults[0].lat,
+          longitude: geoResults[0].lng
+        }
       }
-      console.log(`[Generate Itinerary] Geocoded ${destination}:`, destinationCoords)
+    } catch (error) {
+      console.error(`[Generate Itinerary] Failed to geocode ${destination}:`, error)
+      // Continue with default coordinates
     }
-  } catch (error) {
-    console.error(`[Generate Itinerary] Failed to geocode ${destination}:`, error)
   }
   // Sample activities
   const activities: Activity[] = [
@@ -514,9 +524,15 @@ export async function POST(request: NextRequest) {
   const startTime = performance.now()
   const performanceTracker = new PerformanceTracker()
 
+  // Set a global timeout for the entire request
+  const requestTimeout = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('Request timeout')), 10000) // 10 second timeout
+  )
+
   try {
-    // Parse request body
-    const body = await request.json()
+    // Parse request body with timeout
+    const bodyPromise = request.json()
+    const body = await Promise.race([bodyPromise, requestTimeout]) as any
     const preferences: UserPreferences = body.preferences
 
     // Validate required fields
@@ -548,8 +564,9 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Generate new itinerary
-    const itinerary = await generateCompleteItinerary(preferences, performanceTracker)
+    // Generate new itinerary with timeout
+    const generationPromise = generateCompleteItinerary(preferences, performanceTracker)
+    const itinerary = await Promise.race([generationPromise, requestTimeout]) as GeneratedItinerary
     
     const totalTime = performance.now() - startTime
     itinerary.metadata.generationTime = totalTime

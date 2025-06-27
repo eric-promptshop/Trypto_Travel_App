@@ -60,6 +60,7 @@ export function ContentImportScreen() {
   )
   const [showUrlDialog, setShowUrlDialog] = useState(false)
   const [customUrl, setCustomUrl] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -97,7 +98,6 @@ export function ContentImportScreen() {
           }, 800)
           
           // Call the actual scanning API
-          console.log('Starting scan for URL:', websiteUrl)
           const scanStartTime = Date.now()
           
           const response = await fetch('/api/content/scan', {
@@ -111,7 +111,6 @@ export function ContentImportScreen() {
           })
           
           const scanDuration = Date.now() - scanStartTime
-          console.log(`Scan completed in ${scanDuration}ms`)
           
           clearInterval(progressInterval)
           
@@ -122,8 +121,6 @@ export function ContentImportScreen() {
           }
           
           const result = await response.json()
-          console.log('Scan API response:', result)
-          console.log('Tours found:', result.data?.tours?.length || 0)
           
           // The API wraps the response in a 'data' property
           const scanData = result.data || result
@@ -201,6 +198,40 @@ export function ContentImportScreen() {
     )
   }
 
+  // Function to decode HTML entities
+  const decodeHtmlEntities = (text: string) => {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+  }
+
+  // Function to parse tour information from the name
+  const parseTourInfo = (tour: Tour) => {
+    const decodedName = decodeHtmlEntities(tour.name);
+    
+    // Extract price from name (e.g., "$1339" or "from $1339")
+    const priceMatch = decodedName.match(/\$[\d,]+/);
+    const price = priceMatch ? priceMatch[0] : null;
+    
+    // Extract duration from name if it's in the name (e.g., "6 days from")
+    const durationMatch = decodedName.match(/(\d+)\s*days?\s*from/i);
+    const durationFromName = durationMatch ? `${durationMatch[1]} days` : null;
+    
+    // Clean the tour name by removing price and duration info
+    let cleanName = decodedName
+      .replace(/\d+\s*days?\s*from\s*\$[\d,]+/gi, '') // Remove "X days from $Y"
+      .replace(/from\s*\$[\d,]+/gi, '') // Remove "from $Y"
+      .replace(/\$[\d,]+/g, '') // Remove any remaining prices
+      .trim();
+    
+    return {
+      cleanName,
+      price,
+      duration: durationFromName || tour.duration,
+      destination: decodeHtmlEntities(tour.destination)
+    };
+  }
+
   const toggleSelectAll = (checked: boolean) => {
     const allTourIds = importedTours.map((t) => t.id)
     setSelectedTours(checked ? allTourIds : [])
@@ -222,7 +253,6 @@ export function ContentImportScreen() {
     <div className="grid md:grid-cols-3 gap-6">
       <Card onClick={() => {
         const companyUrl = onboardingData.companyProfile?.websiteUrl || 'https://'
-        console.log('Opening URL dialog with:', companyUrl)
         setCustomUrl(companyUrl)
         setShowUrlDialog(true)
       }} className="cursor-pointer hover:shadow-xl transition-shadow bg-white">
@@ -323,50 +353,96 @@ export function ContentImportScreen() {
         <CheckCircle className="w-6 h-6" />
         <p className="font-medium">{successMessage}</p>
       </div>
-      <div className="flex items-center mb-4">
-        <Checkbox
-          id="selectAllTours"
-          checked={selectedTours.length === importedTours.length && importedTours.length > 0}
-          onCheckedChange={(checked) => toggleSelectAll(Boolean(checked))}
-          className="mr-2"
-        />
-        <Label htmlFor="selectAllTours" className="text-sm font-medium">
-          Select All / Deselect All
-        </Label>
-      </div>
-      <Card className="border-slate-200">
-        <Input placeholder="Search tours..." className="m-4 w-[calc(100%-2rem)]" />
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]"></TableHead>
-              <TableHead>Tour Name</TableHead>
-              <TableHead>Destination</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead className="text-right">Status (Enable/Disable)</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {importedTours.map((tour) => (
-              <TableRow key={tour.id}>
-                <TableCell>
-                  <Checkbox checked={tour.status === "enabled"} onCheckedChange={() => toggleTourStatus(tour.id)} />
-                </TableCell>
-                <TableCell className="font-medium">{tour.name}</TableCell>
-                <TableCell>{tour.destination}</TableCell>
-                <TableCell>{tour.duration}</TableCell>
-                <TableCell className="text-right">
-                  <Switch
-                    checked={tour.status === "enabled"}
-                    onCheckedChange={() => toggleTourStatus(tour.id)}
-                    aria-label={`Toggle ${tour.name}`}
-                  />
-                </TableCell>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Checkbox
+              id="selectAllTours"
+              checked={selectedTours.length === importedTours.length && importedTours.length > 0}
+              onCheckedChange={(checked) => toggleSelectAll(Boolean(checked))}
+              className="mr-2"
+            />
+            <Label htmlFor="selectAllTours" className="text-sm font-medium">
+              Select All / Deselect All
+            </Label>
+          </div>
+          <Input 
+            placeholder="Search tours..." 
+            className="w-64" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Card className="border-slate-200">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]"></TableHead>
+                <TableHead>Tour Name</TableHead>
+                <TableHead>Destination</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead className="text-right">Status</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+            </TableHeader>
+            <TableBody>
+              {importedTours
+                .filter((tour) => {
+                  if (!searchQuery) return true;
+                  const query = searchQuery.toLowerCase();
+                  const tourInfo = parseTourInfo(tour);
+                  return (
+                    tourInfo.cleanName.toLowerCase().includes(query) ||
+                    tourInfo.destination.toLowerCase().includes(query) ||
+                    tourInfo.duration.toLowerCase().includes(query) ||
+                    (tourInfo.price && tourInfo.price.toLowerCase().includes(query))
+                  );
+                })
+                .map((tour) => {
+                  const tourInfo = parseTourInfo(tour);
+                  return (
+                    <TableRow 
+                      key={tour.id}
+                      className={`cursor-pointer transition-colors hover:bg-slate-50 ${
+                        tour.status === "enabled" ? "bg-blue-50/50" : ""
+                      }`}
+                      onClick={() => toggleTourStatus(tour.id)}
+                    >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox 
+                          checked={tour.status === "enabled"} 
+                          onCheckedChange={() => toggleTourStatus(tour.id)} 
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{tourInfo.cleanName}</TableCell>
+                      <TableCell>{tourInfo.destination}</TableCell>
+                      <TableCell>{tourInfo.duration}</TableCell>
+                      <TableCell className="font-semibold text-green-700">
+                        {tourInfo.price || '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Badge 
+                            variant={tour.status === "enabled" ? "default" : "outline"}
+                            className={tour.status === "enabled" ? "bg-success-default text-white" : ""}
+                          >
+                            {tour.status === "enabled" ? "Enabled" : "Disabled"}
+                          </Badge>
+                          <Switch
+                            checked={tour.status === "enabled"}
+                            onCheckedChange={() => toggleTourStatus(tour.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Toggle ${tour.name}`}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
       {importedTours.length === 0 && <p className="text-center text-slate-500 py-8">No tours imported yet.</p>}
     </div>
   )
@@ -446,7 +522,6 @@ export function ContentImportScreen() {
             <Button 
               type="button"
               onClick={() => {
-                console.log('Start Scan clicked, customUrl:', customUrl);
                 if (customUrl) {
                   setShowUrlDialog(false)
                   // Update the onboarding data with the custom URL temporarily

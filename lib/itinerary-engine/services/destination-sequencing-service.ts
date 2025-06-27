@@ -61,13 +61,11 @@ export class DefaultDestinationSequencingService implements DestinationSequencin
       const validation = this.validateSequence(sequencedDestinations)
       
       if (!validation.valid) {
-        console.warn('Generated sequence has validation issues:', validation.issues)
         // Attempt to fix issues automatically
         return this.fixSequenceIssues(sequencedDestinations, validation.issues)
       }
       
       const endTime = Date.now()
-      console.log(`Destination sequencing completed in ${endTime - startTime}ms`)
       
       return sequencedDestinations
     } catch (error) {
@@ -706,7 +704,6 @@ export class DefaultDestinationSequencingService implements DestinationSequencin
   ): SequencedDestination[] {
     // For now, return the sequence as-is
     // In a real implementation, you would analyze and fix specific issues
-    console.warn('Sequence has issues but automatic fixing is not implemented:', issues)
     return sequence
   }
 

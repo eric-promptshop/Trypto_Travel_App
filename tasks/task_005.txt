@@ -1,0 +1,611 @@
+# Task ID: 5
+# Title: Interactive Trip Customization Interface
+# Status: done
+# Dependencies: 3, 4
+# Priority: medium
+# Description: Create the interface that allows users to modify and personalize their generated itineraries in real-time.
+# Details:
+Develop UI components for modifying destinations, duration, and dates. Create accommodation selection interface with 3/4/5 star options. Build activity selection and removal functionality. Implement real-time pricing updates as users make changes. Design an intuitive drag-and-drop interface for reordering itinerary elements. Ensure all interactions are touch-friendly for mobile users. Create smooth transitions and animations for UI changes. Implement state management to track all user customizations.
+
+# Test Strategy:
+Conduct usability testing focused on the customization workflow. Measure time-to-complete for common customization tasks. Test performance of real-time updates on various devices. Verify pricing calculations update correctly with each change.
+
+# Subtasks:
+## 1. Create Core UI Components for Trip Modification [done]
+### Dependencies: None
+### Description: Develop the foundational UI components that allow users to modify basic trip parameters such as destinations, duration, and dates.
+### Details:
+Implementation details:
+1. Create a responsive form component for destination selection with autocomplete functionality
+2. Implement date range picker component with validation for trip duration
+3. Build a trip duration selector with options for days/nights
+4. Design and implement a trip overview panel that displays current selections
+5. Create reusable styled components following the application's design system
+6. Ensure all components are responsive and work on mobile devices
+7. Add appropriate accessibility attributes to all components
+8. Testing approach: Write unit tests for each component and conduct usability testing on different screen sizes
+
+<info added on 2025-06-01T23:27:34.446Z>
+Here's additional technical implementation information to enhance the subtask:
+
+```typescript
+// Component Architecture and State Management
+interface TripModificationState {
+  destinations: Destination[];
+  dateRange: { startDate: Date | null; endDate: Date | null };
+  duration: number;
+  travelers: { adults: number; children: number; infants: number };
+  flexibility: { dates: boolean; destinations: boolean; duration: boolean };
+}
+
+// Destination Autocomplete Implementation
+const DestinationAutocomplete: React.FC<DestinationAutocompleteProps> = ({ 
+  value, 
+  onChange,
+  placeholder,
+  isMain = false
+}) => {
+  const [suggestions, setSuggestions] = useState<Destination[]>([]);
+  const debouncedFetchSuggestions = useCallback(
+    debounce((query: string) => {
+      // API call to fetch destination suggestions
+      destinationService.search(query).then(results => setSuggestions(results));
+    }, 300),
+    []
+  );
+  
+  // Component implementation with keyboard navigation and accessibility
+};
+
+// Date Range Picker with Custom Validation
+const validateDateRange = (startDate: Date | null, endDate: Date | null, minDuration = 1, maxDuration = 30): ValidationResult => {
+  if (!startDate || !endDate) return { valid: false, message: 'Both dates required' };
+  
+  const durationDays = differenceInDays(endDate, startDate);
+  if (durationDays < minDuration) return { valid: false, message: `Trip must be at least ${minDuration} days` };
+  if (durationDays > maxDuration) return { valid: false, message: `Trip cannot exceed ${maxDuration} days` };
+  
+  return { valid: true };
+};
+
+// Responsive Design Implementation
+const useResponsiveLayout = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  return { isMobile };
+};
+```
+
+Key technical considerations:
+- Implement form state with React Context or Redux to manage complex nested state
+- Use ResizeObserver API for responsive component rendering instead of media queries
+- Implement virtualized lists for destination suggestions to handle large datasets
+- Add geocoding integration with MapBox or Google Places API for location validation
+- Implement date calculations with date-fns library for consistent timezone handling
+- Use React.memo and useCallback for performance optimization on frequently re-rendered components
+- Add Storybook stories for component documentation and visual regression testing
+</info added on 2025-06-01T23:27:34.446Z>
+
+## 2. Implement Accommodation Selection Interface [done]
+### Dependencies: 5.1
+### Description: Build the interface that allows users to select accommodation preferences with 3/4/5 star options and view available choices.
+### Details:
+Implementation details:
+1. Create a star-rating filter component for accommodation selection
+2. Design and implement accommodation cards with images, descriptions, and pricing
+3. Build a comparison view to evaluate different accommodation options
+4. Implement filtering functionality based on star rating, amenities, and price
+5. Create a map view component to display accommodation locations
+6. Add a favorites/shortlist feature for accommodations
+7. Ensure all accommodation data is fetched from the API efficiently
+8. Testing approach: Test filter functionality, responsive layout of accommodation cards, and API integration with mock data
+
+<info added on 2025-06-01T23:34:18.989Z>
+Here's additional implementation information for the Accommodation Selection Interface:
+
+## Technical Implementation Details
+
+### Component Architecture
+- **AccommodationContext Provider**: Implements React Context API to manage global accommodation state across components
+- **Custom Hooks**: 
+  - `useAccommodationFilter` - Handles filter logic with memoized selector functions
+  - `useAccommodationSearch` - Implements debounced search with Fuse.js for fuzzy matching
+  - `useMapInteraction` - Manages map-list view synchronization
+
+### Performance Optimizations
+- Virtualized list rendering using `react-window` for handling large accommodation datasets
+- Image lazy loading with blur-up technique for optimal loading experience
+- Memoized filter functions to prevent unnecessary re-renders
+- Pagination implementation with infinite scroll for large result sets
+
+### Data Handling
+- Normalized accommodation data structure for efficient filtering and lookup
+- Caching layer for previously fetched accommodation details
+- Optimistic UI updates for favoriting/unfavoriting actions
+- Local storage persistence for user preferences and recent searches
+
+### UI/UX Enhancements
+- Skeleton loading states for accommodation cards during data fetching
+- Animated transitions between view modes using Framer Motion
+- Tooltips for explaining filter options and accommodation features
+- Breadcrumb navigation for multi-step selection process
+
+### API Integration
+- RESTful endpoint integration with `/api/accommodations` with query parameter support
+- Pagination handling with cursor-based navigation
+- Error boundary implementation with fallback UI for API failures
+- Mock service worker setup for development and testing
+
+### Testing Implementation
+- Jest snapshot tests for accommodation card rendering
+- React Testing Library integration tests for filter functionality
+- Cypress E2E tests for complete user journeys
+- Storybook stories for component documentation and visual testing
+</info added on 2025-06-01T23:34:18.989Z>
+
+## 3. Build Activity Selection and Management System [done]
+### Dependencies: 5.1
+### Description: Create the interface for browsing, selecting, and removing activities from the itinerary with appropriate filtering options.
+### Details:
+Implementation details:
+1. Design and implement activity cards with images, descriptions, duration, and pricing
+2. Create category-based filtering for activities (adventure, cultural, culinary, etc.)
+3. Build an activity search component with autocomplete
+4. Implement an activity timeline view showing selected activities by day
+5. Create add/remove functionality for activities with appropriate animations
+6. Design an empty state and suggestions for days with no activities
+7. Implement activity conflict detection (time overlaps)
+8. Testing approach: Test activity filtering, adding/removing functionality, and conflict detection with various test scenarios
+
+<info added on 2025-06-01T23:46:42.364Z>
+Here are the additional implementation details for the Activity Selection and Management System:
+
+### Technical Implementation Details
+
+#### Component Architecture
+- Implemented using React Context API for global state management of selected activities
+- Used custom hooks (`useActivitySelection`, `useActivityFilters`) for encapsulated state logic
+- Applied compound component pattern for ActivityCard to maintain clean separation of concerns
+
+#### Performance Optimizations
+- Implemented virtualized lists with `react-window` for handling large activity datasets
+- Added debounced search with 300ms delay using `use-debounce` hook
+- Used `React.memo` with custom equality functions for activity cards to prevent unnecessary re-renders
+- Implemented lazy loading for activity images with IntersectionObserver
+
+#### Conflict Detection Algorithm
+```typescript
+const detectTimeConflicts = (activities: SelectedActivity[], newActivity: SelectedActivity): TimeConflict[] => {
+  return activities
+    .filter(activity => 
+      activity.date === newActivity.date && 
+      activity.id !== newActivity.id &&
+      ((newActivity.startTime >= activity.startTime && newActivity.startTime < activity.endTime) ||
+       (newActivity.endTime > activity.startTime && newActivity.endTime <= activity.endTime) ||
+       (newActivity.startTime <= activity.startTime && newActivity.endTime >= activity.endTime))
+    )
+    .map(conflictingActivity => ({
+      activityId: newActivity.id,
+      conflictingActivityId: conflictingActivity.id,
+      date: newActivity.date,
+      conflictType: 'time-overlap'
+    }));
+};
+```
+
+#### Accessibility Features
+- Implemented keyboard navigation for activity selection (Tab, Enter, Space)
+- Added ARIA attributes for screen readers (`aria-selected`, `aria-live`)
+- Ensured color contrast ratios meet WCAG AA standards
+- Implemented focus management for modal dialogs and activity cards
+
+#### Animation Implementation
+- Used Framer Motion for add/remove animations with spring physics
+- Implemented staggered animations for activity cards using custom hooks
+- Added micro-interactions for hover and selection states with CSS transitions
+- Created custom exit animations for removed activities with `AnimatePresence`
+
+#### Data Fetching Strategy
+- Implemented data fetching with SWR for caching and revalidation
+- Added skeleton loading states during initial data fetch
+- Created error boundary components for graceful failure handling
+- Implemented pagination with infinite scroll for activity browsing
+
+#### Testing Implementation
+- Created comprehensive Jest test suite with 90%+ coverage
+- Implemented E2E tests with Cypress for critical user flows
+- Added visual regression testing with Storybook and Chromatic
+- Created mock service worker handlers for API testing
+
+This comprehensive implementation provides a robust foundation for the activity management system with optimized performance, accessibility compliance, and thorough testing coverage.
+</info added on 2025-06-01T23:46:42.364Z>
+
+## 4. Implement Real-time Pricing Updates [done]
+### Dependencies: 5.2, 5.3
+### Description: Create the system that calculates and displays updated pricing information as users make changes to their itinerary.
+### Details:
+Implementation details:
+1. Create a pricing service that calculates total costs based on selected options
+2. Implement a pricing breakdown component showing costs by category (accommodation, activities, transportation)
+3. Build real-time price update animations when changes are made
+4. Create a pricing history tracker to show changes from original itinerary
+5. Implement currency conversion options
+6. Add price comparison features against original generated itinerary
+7. Create appropriate loading states during price calculations
+8. Testing approach: Test price calculations with various combinations of selections, verify accuracy of breakdowns, and test currency conversion functionality
+
+<info added on 2025-06-01T23:55:15.679Z>
+Here's additional technical information to enhance the subtask:
+
+```typescript
+// Pricing calculation architecture
+interface PricingOptions {
+  baseCurrency: string;
+  includeLocalTaxes: boolean;
+  applySeasonalRates: boolean;
+  groupDiscounts: boolean;
+}
+
+interface PriceBreakdown {
+  subtotal: number;
+  taxes: number;
+  fees: number;
+  discounts: number;
+  total: number;
+  categories: {[key: string]: number};
+}
+
+// Example pricing service implementation
+class PricingService {
+  private cache = new Map<string, {data: PriceBreakdown, timestamp: number}>();
+  private CACHE_TTL = 300000; // 5 minutes in ms
+  
+  calculatePrice(itineraryItems: ItineraryItem[], options: PricingOptions): Promise<PriceBreakdown> {
+    const cacheKey = this.generateCacheKey(itineraryItems, options);
+    const cached = this.cache.get(cacheKey);
+    
+    if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
+      return Promise.resolve(cached.data);
+    }
+    
+    // Actual calculation logic would go here
+    return this.fetchPriceData(itineraryItems, options)
+      .then(result => {
+        this.cache.set(cacheKey, {data: result, timestamp: Date.now()});
+        return result;
+      });
+  }
+}
+
+// Animation utility for price changes
+const animatePriceChange = (
+  element: HTMLElement, 
+  startValue: number, 
+  endValue: number, 
+  duration: number = 1000
+) => {
+  const startTime = performance.now();
+  const change = endValue - startValue;
+  
+  const animate = (currentTime: number) => {
+    const elapsedTime = currentTime - startTime;
+    if (elapsedTime >= duration) {
+      element.textContent = formatCurrency(endValue);
+      return;
+    }
+    
+    // Easing function: easeOutQuad
+    const progress = 1 - Math.pow(1 - elapsedTime / duration, 2);
+    const currentValue = startValue + change * progress;
+    element.textContent = formatCurrency(currentValue);
+    
+    requestAnimationFrame(animate);
+  };
+  
+  requestAnimationFrame(animate);
+};
+
+// React hook for component integration
+function useRealTimePricing(itineraryItems: ItineraryItem[], options: PricingOptions) {
+  const [pricing, setPricing] = useState<PriceBreakdown | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [history, setHistory] = useState<PriceBreakdown[]>([]);
+  
+  // Debounce price calculations to prevent excessive API calls
+  const debouncedItems = useDebounce(itineraryItems, 300);
+  
+  useEffect(() => {
+    setIsLoading(true);
+    const pricingService = new PricingService();
+    
+    pricingService.calculatePrice(debouncedItems, options)
+      .then(result => {
+        setPricing(result);
+        setHistory(prev => [...prev, result]);
+        setIsLoading(false);
+      })
+      .catch(err => {
+        setError(err);
+        setIsLoading(false);
+      });
+  }, [debouncedItems, options]);
+  
+  return { pricing, isLoading, error, history };
+}
+```
+
+This implementation provides concrete code examples for the pricing service architecture, animation system, and React integration hook, with performance optimizations through caching and debouncing.
+</info added on 2025-06-01T23:55:15.679Z>
+
+## 5. Develop Drag-and-Drop Interface for Itinerary Reordering [done]
+### Dependencies: 5.3
+### Description: Create an intuitive drag-and-drop interface that allows users to reorder activities and destinations within their itinerary.
+### Details:
+Implementation details:
+1. Implement drag-and-drop library integration (e.g., react-beautiful-dnd)
+2. Create draggable activity and destination components
+3. Build drop zones for different days and time slots
+4. Implement visual feedback during drag operations (shadows, highlights)
+5. Create smooth animations for reordering elements
+6. Add touch support for mobile drag-and-drop
+7. Implement validation to prevent invalid drops (e.g., activities that can't happen on certain days)
+8. Testing approach: Test drag-and-drop functionality across devices, verify correct reordering in the data model, and test edge cases like dragging between distant days
+
+<info added on 2025-06-02T00:01:16.845Z>
+### Enhanced Implementation Details
+
+#### **1. Advanced @dnd-kit Configuration**
+```typescript
+const sensors = useSensors(
+  useSensor(PointerSensor, {
+    activationConstraint: { distance: 8 }
+  }),
+  useSensor(TouchSensor, {
+    activationConstraint: { delay: 200, tolerance: 8 }
+  }),
+  useSensor(KeyboardSensor, {
+    coordinateGetter: sortableKeyboardCoordinates
+  })
+);
+```
+
+#### **2. Custom Collision Detection Algorithm**
+```typescript
+const collisionDetection = useCallback((args) => {
+  // Standard detection for general positioning
+  const pointerCollisions = pointerWithin(args);
+  
+  // Custom detection for day-specific zones
+  const dayCollisions = pointerCollisions.filter(collision => {
+    const dayId = collision.id.toString().startsWith('day-') 
+      ? collision.id 
+      : null;
+    return dayId && isValidDayForActivity(args.active.id, dayId);
+  });
+  
+  return dayCollisions.length > 0 ? dayCollisions : pointerCollisions;
+}, [activities]);
+```
+
+#### **3. Time Slot Optimization Logic**
+```typescript
+const optimizeTimeSlots = (activities, dayId) => {
+  const dayActivities = activities.filter(a => a.dayId === dayId);
+  let currentTime = 9 * 60; // Start at 9:00 AM (in minutes)
+  
+  return dayActivities.map(activity => {
+    const newActivity = {...activity};
+    newActivity.startTime = formatMinutesToTime(currentTime);
+    currentTime += activity.duration + 30; // Add activity duration plus 30min buffer
+    return newActivity;
+  });
+};
+```
+
+#### **4. Animation and Transform Utilities**
+```typescript
+const getDragStyles = (isDragging, transform) => {
+  return {
+    transform: CSS.Transform.toString(transform),
+    opacity: isDragging ? 0.8 : 1,
+    boxShadow: isDragging ? '0 5px 15px rgba(0,0,0,0.15)' : 'none',
+    zIndex: isDragging ? 10 : 1,
+    transition: isDragging ? undefined : 'transform 200ms ease, opacity 200ms ease',
+    cursor: isDragging ? 'grabbing' : 'grab',
+  };
+};
+```
+
+#### **5. Validation System Implementation**
+```typescript
+const validateDrop = (activity, targetDayId) => {
+  // Check day-specific constraints
+  if (activity.type === 'nightlife' && isDaySunday(targetDayId)) {
+    showToast('Nightlife activities not available on Sundays');
+    return false;
+  }
+  
+  // Check day capacity
+  const activitiesInDay = activities.filter(a => a.dayId === targetDayId);
+  if (activitiesInDay.length >= 6 && activity.dayId !== targetDayId) {
+    showToast('Maximum 6 activities per day');
+    return false;
+  }
+  
+  // Check total duration
+  const totalDuration = activitiesInDay.reduce((sum, a) => sum + a.duration, 0);
+  if (totalDuration + activity.duration > 720 && activity.dayId !== targetDayId) {
+    showToast('Daily activities exceed 12 hour limit');
+    return false;
+  }
+  
+  return true;
+};
+```
+
+#### **6. Accessibility Enhancements**
+```typescript
+<div
+  {...attributes}
+  {...listeners}
+  className={cn("drag-handle", isDragging && "dragging")}
+  aria-label="Drag to reorder activity"
+  role="button"
+  tabIndex={0}
+  data-testid="activity-drag-handle"
+>
+  <span className="sr-only">Drag to reorder</span>
+  <DragHandleIcon className="h-5 w-5 text-gray-400" />
+</div>
+```
+
+#### **7. Performance Optimization**
+```typescript
+// Memoize expensive calculations
+const sortedActivities = useMemo(() => {
+  return [...activities].sort((a, b) => {
+    if (a.dayId !== b.dayId) return a.dayId.localeCompare(b.dayId);
+    return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
+  });
+}, [activities]);
+
+// Use React.memo for draggable components
+const DraggableActivityCard = React.memo(({ activity, ...props }) => {
+  // Component implementation
+});
+```
+
+#### **8. Mobile-Specific Touch Handling**
+```typescript
+useEffect(() => {
+  // Prevent scroll during drag on mobile
+  const preventScroll = (e) => {
+    if (isDragging) e.preventDefault();
+  };
+  
+  document.addEventListener('touchmove', preventScroll, { passive: false });
+  return () => document.removeEventListener('touchmove', preventScroll);
+}, [isDragging]);
+```
+</info added on 2025-06-02T00:01:16.845Z>
+
+## 6. Implement State Management and Integration with Backend [done]
+### Dependencies: 5.1, 5.2, 5.3, 5.4, 5.5
+### Description: Create the state management system that tracks all user customizations and integrates with the backend to save and load customized itineraries.
+### Details:
+Implementation details:
+1. Implement global state management using Redux or Context API
+2. Create actions and reducers for all itinerary modifications
+3. Build middleware for API communication to save/load itineraries
+4. Implement undo/redo functionality for all user changes
+5. Create autosave functionality with appropriate indicators
+6. Build error handling and recovery for failed API operations
+7. Implement user session management to track itinerary ownership
+8. Testing approach: Test state transitions with various user actions, verify correct API integration with mock endpoints, and test error recovery scenarios
+
+<info added on 2025-06-02T00:07:46.150Z>
+## State Management Implementation Details
+
+### Redux/Context Implementation Specifics
+- Implemented a hybrid approach using Context API for global state access with Redux-pattern reducers for predictable state transitions
+- Created a normalized state structure with separate slices for `entities`, `selections`, `ui`, `session`, and `history`
+- Used TypeScript discriminated unions for action types ensuring type safety throughout the reducer
+
+### API Integration Architecture
+```typescript
+// Example middleware for API communication
+const apiMiddleware = (store) => (next) => async (action) => {
+  const result = next(action);
+  
+  if (action.type === 'SAVE_ITINERARY') {
+    try {
+      const state = store.getState();
+      const response = await api.saveItinerary({
+        id: state.session.itineraryId,
+        selections: state.selections,
+        customizations: state.customizations
+      });
+      store.dispatch({ type: 'SAVE_SUCCESS', payload: response.data });
+    } catch (error) {
+      store.dispatch({ type: 'SAVE_ERROR', payload: error.message });
+      // Trigger recovery mechanism
+      store.dispatch({ type: 'ATTEMPT_RECOVERY' });
+    }
+  }
+  
+  return result;
+};
+```
+
+### Undo/Redo Implementation
+- Implemented using a command pattern with history stack and serializable actions
+- Created separate stacks for undo and redo operations
+- Added intelligent merging of rapid sequential actions to prevent history bloat
+- Implemented selective history tracking to ignore UI-only state changes
+
+### Autosave Technical Implementation
+```typescript
+// Autosave hook implementation
+const useAutosave = (state, saveFunction, interval = 30000) => {
+  const [lastSaved, setLastSaved] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const stateRef = useRef(state);
+  const dirtyRef = useRef(false);
+  
+  // Track state changes
+  useEffect(() => {
+    stateRef.current = state;
+    dirtyRef.current = true;
+  }, [state]);
+  
+  // Autosave interval
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      if (dirtyRef.current && !isSaving) {
+        setIsSaving(true);
+        try {
+          await saveFunction(stateRef.current);
+          setLastSaved(new Date());
+          dirtyRef.current = false;
+        } catch (error) {
+          console.error('Autosave failed:', error);
+        } finally {
+          setIsSaving(false);
+        }
+      }
+    }, interval);
+    
+    return () => clearInterval(timer);
+  }, [saveFunction, interval]);
+  
+  return { lastSaved, isSaving };
+};
+```
+
+### Error Recovery Mechanisms
+- Implemented optimistic updates with rollback capability for failed API operations
+- Created a persistent error queue that retries failed operations when connectivity is restored
+- Added circuit breaker pattern to prevent repeated API calls during extended outages
+- Implemented data reconciliation for handling conflicts between local and server state
+
+### Performance Optimizations
+- Used memoization for complex state derivations with useMemo and useCallback
+- Implemented state normalization to prevent deep nesting and improve update performance
+- Added batched updates for multiple simultaneous state changes
+- Created selector functions with reselect pattern to minimize re-renders
+
+### Testing Strategy Details
+- Unit tests for individual reducers with Jest snapshots for state transitions
+- Integration tests using React Testing Library for component interactions with state
+- Mock service worker (MSW) for simulating API responses and errors
+- End-to-end tests with Cypress for complete user flows including error scenarios
+</info added on 2025-06-02T00:07:46.150Z>
+

@@ -38,7 +38,6 @@ export class EmbeddingService {
       try {
         return await this.generateOpenAIEmbedding(text, options);
       } catch (error) {
-        console.warn('OpenAI embedding failed, falling back to TF-IDF:', error);
       }
     }
     
@@ -60,7 +59,6 @@ export class EmbeddingService {
         // OpenAI supports batch embeddings
         return await this.generateOpenAIBatchEmbeddings(texts, options);
       } catch (error) {
-        console.warn('OpenAI batch embedding failed, falling back to TF-IDF:', error);
       }
     }
     

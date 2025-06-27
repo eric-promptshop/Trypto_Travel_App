@@ -1,0 +1,37 @@
+
+> my-v0-project@0.1.0 build
+> NODE_OPTIONS='--max-old-space-size=16384' NEXT_DISABLE_TELEMETRY=1 next build
+
+ ⚠ Invalid next.config.mjs options detected: 
+ ⚠     Unrecognized key(s) in object: 'instrumentationHook' at "experimental"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ `experimental.instrumentationHook` is no longer needed, because `instrumentation.js` is available by default. You can remove it from next.config.mjs.
+   ▲ Next.js 15.2.4
+   - Environments: .env.local, .env.production, .env
+   - Experiments (use with caution):
+     · clientTraceMetadata
+
+   Creating an optimized production build ...
+[@sentry/nextjs] Could not find `onRequestError` hook in instrumentation file. This indicates outdated configuration of the Sentry SDK. Use `Sentry.captureRequestError` to instrument the `onRequestError` hook: https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#errors-from-nested-react-server-components
+[@sentry/nextjs] DEPRECATION WARNING: It is recommended renaming your `sentry.client.config.ts` file, or moving its content to `instrumentation-client.ts`. When using Turbopack `sentry.client.config.ts` will no longer work. Read more about the `instrumentation-client.ts` file: https://nextjs.org/docs/app/api-reference/file-conventions/instrumentation-client
+ ⚠ Compiled with warnings
+
+./node_modules/replicate/lib/util.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/replicate/lib/util.js
+./node_modules/replicate/index.js
+./lib/services/replicate-service.ts
+./app/api/tour-operator/tours/batch-import/route.ts
+
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/136) ...
+   Generating static pages (34/136) 
+   Generating static pages (68/136) 
+   Generating static pages (102/136) 
+ ✓ Generating static pages (136/136)
+   Finalizing page optimization ...
+   Collecting build traces ...

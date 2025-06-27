@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
     
     const { destination, interests, dayInfo, category, userPreferences } = validation.data
     
-    console.log('[Recommendations API] Generating for:', destination)
     
     // Build context for the AI
     let context = `Generate personalized recommendations for a traveler visiting ${destination}.`
@@ -108,7 +107,6 @@ export async function POST(request: NextRequest) {
       recommendations: Array.isArray(recommendations) ? recommendations : recommendations.recommendations || []
     }
     
-    console.log('[Recommendations API] Generated', enhancedRecommendations.recommendations.length, 'recommendations')
     
     return NextResponse.json(enhancedRecommendations)
   } catch (error) {

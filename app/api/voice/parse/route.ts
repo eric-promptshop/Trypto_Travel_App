@@ -62,7 +62,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Voice Parse API] Parsing transcript:', transcript);
 
     const completion = await openai.chat.completions.create({
       model: process.env.MODEL || 'gpt-4o-mini',
@@ -76,7 +75,6 @@ export async function POST(request: NextRequest) {
     });
 
     const responseText = completion.choices[0].message.content;
-    console.log('[Voice Parse API] AI raw response:', responseText);
     
     if (!responseText) {
       throw new Error('No response from AI');
@@ -114,7 +112,6 @@ export async function POST(request: NextRequest) {
       parsed.budget = parsed.budget.toString().replace(/[^0-9]/g, '');
     }
 
-    console.log('[Voice Parse API] Processed result:', parsed);
     
     return NextResponse.json(parsed);
     

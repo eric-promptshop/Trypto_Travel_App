@@ -3,13 +3,23 @@ import { v4 as uuidv4 } from 'uuid'
 import { GeocodingService } from './geocoding-service'
 
 interface AIActivity {
+  id?: string
   time: string
   title: string
   description: string
   duration: string
   location: string
+  coordinates?: {
+    lat: number
+    lng: number
+  }
+  category?: 'dining' | 'activity' | 'transport' | 'accommodation' | 'tour'
   price?: number
-  type: string
+  type?: string
+  placeId?: string
+  imageUrl?: string
+  rating?: number
+  tips?: string[]
 }
 
 interface AIDay {
@@ -24,7 +34,7 @@ interface AIDay {
     price: number
     location: string
   }
-  meals: {
+  meals?: {
     type: string
     venue: string
     cuisine: string
@@ -38,12 +48,17 @@ interface AIItinerary {
   duration: number
   startDate: string
   endDate: string
-  travelers: number
-  totalBudget: number
+  travelers: number | { adults: number; children: number }
+  totalBudget?: number
   days: AIDay[]
   highlights: string[]
   tips: string[]
-  estimatedTotalCost: number
+  estimatedTotalCost?: number
+  metadata?: {
+    generatedAt: string
+    version: string
+    interests: string[]
+  }
 }
 
 // Map AI activity types to our POI categories
@@ -98,7 +113,17 @@ function calculateEndTime(startTime: string, durationMinutes: number): string {
 }
 
 // Extract coordinates from location string or use destination coordinates
-async function extractCoordinates(location: string, destination: string, destinationCoords?: { lat: number, lng: number }): Promise<{ lat: number, lng: number }> {
+async function extractCoordinates(
+  location: string, 
+  destination: string, 
+  destinationCoords?: { lat: number, lng: number },
+  providedCoords?: { lat: number, lng: number }
+): Promise<{ lat: number, lng: number }> {
+  // If coordinates are explicitly provided, use them
+  if (providedCoords && providedCoords.lat && providedCoords.lng) {
+    return providedCoords
+  }
+  
   // If we already have destination coordinates, use them with a small offset
   if (destinationCoords && destinationCoords.lat && destinationCoords.lng) {
     return {
@@ -138,7 +163,6 @@ async function extractCoordinates(location: string, destination: string, destina
   }
   
   // Last resort: return a default (we should rarely get here)
-  console.warn('Could not geocode location, using default coordinates')
   return { lat: 0, lng: 0 }
 }
 
@@ -168,7 +192,6 @@ export async function convertAIItineraryToStoreFormat(
         lat: destResults[0].lat,
         lng: destResults[0].lng
       }
-      console.log(`[Itinerary Converter] Geocoded destination ${aiItinerary.destination}:`, destinationCoords)
     }
   } catch (error) {
     console.error('[Itinerary Converter] Failed to geocode destination:', aiItinerary.destination, error)
@@ -181,9 +204,24 @@ export async function convertAIItineraryToStoreFormat(
     
     // Convert activities to POIs and time slots
     for (const [index, activity] of aiDay.activities.entries()) {
-      const poiId = uuidv4()
+      const poiId = activity.id || uuidv4()
       const duration = parseDuration(activity.duration)
-      const category = typeToCategory[activity.type.toLowerCase()] || 'attraction'
+      
+      // Use category from activity if available, otherwise map from type
+      let category: POI['category'] = 'attraction'
+      if (activity.category) {
+        // Map new category format to POI categories
+        const categoryMap: Record<string, POI['category']> = {
+          'dining': 'restaurant',
+          'activity': 'attraction',
+          'transport': 'transport',
+          'accommodation': 'hotel',
+          'tour': 'attraction'
+        }
+        category = categoryMap[activity.category] || 'attraction'
+      } else if (activity.type) {
+        category = typeToCategory[activity.type.toLowerCase()] || 'attraction'
+      }
       
       // Create POI
       const poi: POI = {
@@ -197,8 +235,10 @@ export async function convertAIItineraryToStoreFormat(
         },
         description: activity.description,
         price: getPriceLevel(activity.price),
-        rating: 4.5 + Math.random() * 0.5, // Mock rating between 4.5 and 5
-        image: undefined, // Will be fetched by Unsplash
+        rating: activity.rating || (4.5 + Math.random() * 0.5), // Use provided rating or mock
+        image: activity.imageUrl, // Use provided image URL
+        tips: activity.tips,
+        placeId: activity.placeId,
         openingHours: {
           monday: { open: '09:00', close: '18:00' },
           tuesday: { open: '09:00', close: '18:00' },
@@ -211,7 +251,12 @@ export async function convertAIItineraryToStoreFormat(
       }
       
       // Get coordinates based on location and destination
-      const coords = await extractCoordinates(activity.location, aiItinerary.destination, destinationCoords)
+      const coords = await extractCoordinates(
+        activity.location, 
+        aiItinerary.destination, 
+        destinationCoords,
+        activity.coordinates
+      )
       poi.location.lat = coords.lat
       poi.location.lng = coords.lng
       
@@ -248,7 +293,7 @@ export async function convertAIItineraryToStoreFormat(
         image: undefined
       }
       
-      const coords = await extractCoordinates(aiDay.accommodation.location, aiItinerary.destination, destinationCoords)
+      const coords = await extractCoordinates(aiDay.accommodation.location, aiItinerary.destination, destinationCoords, undefined)
       accommodationPoi.location.lat = coords.lat
       accommodationPoi.location.lng = coords.lng
       
@@ -256,7 +301,8 @@ export async function convertAIItineraryToStoreFormat(
     }
     
     // Add meals as POIs
-    for (const meal of aiDay.meals) {
+    if (aiDay.meals && Array.isArray(aiDay.meals)) {
+      for (const meal of aiDay.meals) {
       const mealId = uuidv4()
       const mealPoi: POI = {
         id: mealId,
@@ -273,7 +319,7 @@ export async function convertAIItineraryToStoreFormat(
         image: undefined
       }
       
-      const coords = await extractCoordinates(meal.venue, aiItinerary.destination, destinationCoords)
+      const coords = await extractCoordinates(meal.venue, aiItinerary.destination, destinationCoords, undefined)
       mealPoi.location.lat = coords.lat
       mealPoi.location.lng = coords.lng
       
@@ -299,6 +345,7 @@ export async function convertAIItineraryToStoreFormat(
           slots.splice(insertIndex, 0, mealSlot)
         }
       }
+    }
     }
     
     // Create day plan

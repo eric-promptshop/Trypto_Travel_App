@@ -31,7 +31,6 @@ interface FieldParser {
 // Debug logging utility
 const debugLog = (category: string, ...args: any[]) => {
   if (typeof window !== 'undefined' && window.localStorage?.getItem('debug-voice')) {
-    console.log(`[Voice Parser - ${category}]`, ...args);
   }
 };
 
@@ -731,7 +730,6 @@ export function parseVoiceTranscript(transcript: string): ParsedFields {
       }
       if (!isUsed) {
         unparsedWords.push(word);
-        console.debug('UNPARSED', word);
       }
     }
   }
@@ -754,10 +752,8 @@ export function enableVoiceDebug(enable: boolean = true) {
   if (typeof window !== 'undefined') {
     if (enable) {
       window.localStorage.setItem('debug-voice', 'true');
-      console.log('Voice parser debugging enabled');
     } else {
       window.localStorage.removeItem('debug-voice');
-      console.log('Voice parser debugging disabled');
     }
   }
 }

@@ -148,7 +148,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
     setError(null)
 
     try {
-      console.log("Sending message to API:", textToSend)
 
       // Send message to AI
       const response = await fetch("/api/form-chat", {
@@ -160,7 +159,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         }),
       })
 
-      console.log("API response status:", response.status)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -169,7 +167,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
       }
 
       const data = await response.json()
-      console.log("API response data:", data)
 
       // Check if we got a fallback response due to configuration issues
       const responseText = data.fallbackResponse || data.response
@@ -228,7 +225,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
 
   const extractFormData = async (conversationHistory: Message[]) => {
     try {
-      console.log("Extracting form data from conversation")
       const response = await fetch("/api/extract-form-data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -237,7 +233,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
 
       if (response.ok) {
         const result = await response.json()
-        console.log("Extracted data:", result.data)
         setExtractedData(result.data)
       } else {
         console.error("Failed to extract form data:", response.status)
@@ -274,7 +269,6 @@ export function AIRequestForm({ onComplete }: AIRequestFormProps) {
         })
       } else {
         // If trip creation fails, still proceed with form data only
-        console.warn('Trip creation failed, proceeding with form data only')
         onComplete(extractedData)
       }
     } catch (error) {

@@ -124,7 +124,6 @@ export class MemoryCachingService implements CachingService {
     this.updateStats()
     
     if (keysToDelete.length > 0) {
-      console.log(`Cache cleanup: removed ${keysToDelete.length} expired entries`)
     }
   }
 
@@ -273,7 +272,6 @@ export class RedisCachingService implements CachingService {
 
   constructor(redisConfig?: any) {
     // Initialize Redis client in production
-    console.log('Redis caching service initialized (placeholder)')
   }
 
   generateCacheKey(preferences: UserPreferences): string {
@@ -283,24 +281,20 @@ export class RedisCachingService implements CachingService {
 
   async set(key: string, result: GenerationResult, ttlSeconds?: number): Promise<void> {
     // Redis implementation would go here
-    console.log(`Redis SET: ${key} (TTL: ${ttlSeconds || 3600}s)`)
   }
 
   async get(key: string): Promise<GenerationResult | null> {
     // Redis implementation would go here
-    console.log(`Redis GET: ${key}`)
     return null
   }
 
   async has(key: string): Promise<boolean> {
     // Redis implementation would go here
-    console.log(`Redis EXISTS: ${key}`)
     return false
   }
 
   async cleanup(): Promise<void> {
     // Redis handles TTL automatically
-    console.log('Redis cleanup (automatic)')
   }
 
   getStats(): CacheStats {

@@ -24,27 +24,22 @@ export function useWebVitals() {
 
         onCLS((metric: Metric) => {
           setMetrics((prev) => ({ ...prev, cls: metric.value }))
-          console.log('CLS:', metric.value)
         })
 
         onINP((metric: Metric) => {
           setMetrics((prev) => ({ ...prev, inp: metric.value }))
-          console.log('INP:', metric.value)
         })
 
         onLCP((metric: Metric) => {
           setMetrics((prev) => ({ ...prev, lcp: metric.value }))
-          console.log('LCP:', metric.value)
         })
 
         onFCP((metric: Metric) => {
           setMetrics((prev) => ({ ...prev, fcp: metric.value }))
-          console.log('FCP:', metric.value)
         })
 
         onTTFB((metric: Metric) => {
           setMetrics((prev) => ({ ...prev, ttfb: metric.value }))
-          console.log('TTFB:', metric.value)
         })
       } catch (error) {
         console.error('Failed to load web-vitals:', error)

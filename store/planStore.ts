@@ -23,6 +23,8 @@ export interface POI {
     [day: string]: { open: string; close: string }
   }
   tags?: string[]
+  tips?: string[]  // Practical tips for visitors
+  placeId?: string  // Google Places ID for additional data
 }
 
 export interface TimeSlot {

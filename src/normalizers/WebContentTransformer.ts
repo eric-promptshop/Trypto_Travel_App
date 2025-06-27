@@ -31,7 +31,6 @@ export class WebContentTransformer {
    */
   public async transform(rawContent: RawContent): Promise<NormalizedContent | null> {
     if (rawContent.contentType !== 'html') {
-      console.warn(`WebContentTransformer received non-HTML content: ${rawContent.contentType}`);
       return null;
     }
 

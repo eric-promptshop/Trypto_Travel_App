@@ -58,7 +58,6 @@ export default function TripCustomizationDemo() {
       await new Promise(resolve => setTimeout(resolve, 1500))
       
       // In a real app, you would save to your backend here
-      console.log('Saving trip data:', data)
       
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 3000)
@@ -100,7 +99,6 @@ export default function TripCustomizationDemo() {
       await new Promise(resolve => setTimeout(resolve, 2000))
       
       // In a real app, you would call your itinerary generation API
-      console.log('Generating itinerary for:', tripData)
       
       // Navigate to results page or show generated itinerary
       alert('Itinerary generated successfully! (This is a demo)')

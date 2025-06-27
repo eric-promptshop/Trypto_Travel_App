@@ -173,9 +173,7 @@ export function logRequest(request: NextRequest) {
     // In production, send to log aggregation service
     if (process.env.NODE_ENV === 'production') {
       // Send to CloudWatch, LogDNA, etc.
-      console.log(JSON.stringify(logData));
     } else {
-      console.log('Request:', logData);
     }
   }
 }
@@ -213,7 +211,6 @@ export function initializeMonitoring() {
   if (typeof window === 'undefined') {
     // Set up graceful shutdown
     process.on('SIGTERM', async () => {
-      console.log('SIGTERM received, shutting down gracefully...');
       // Add cleanup logic here
       process.exit(0);
     });

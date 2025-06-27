@@ -114,7 +114,6 @@ export const ImageOptimizationDemo: React.FC<{
                   enableProgressive={true}
                   aspectRatio={4/3}
                   onQualityChange={(quality) => {
-                    console.log(`${image.title} loaded at ${quality} quality`);
                   }}
                 />
               </ImageLoadTracker>

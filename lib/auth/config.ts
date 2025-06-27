@@ -32,10 +32,12 @@ export const authOptions: NextAuthOptions = {
 
         if (credentials.email === 'demo-operator@example.com' && credentials.password === 'demo123') {
           return {
-            id: 'demo-agent-001',
+            id: 'demo-operator-001',
             email: 'demo-operator@example.com',
             name: 'Demo Tour Operator',
             role: 'TOUR_OPERATOR',
+            operatorId: 'demo-operator-001',
+            operatorStatus: 'active',
             tenantId: 'default'
           };
         }
@@ -43,41 +45,43 @@ export const authOptions: NextAuthOptions = {
         try {
           // Find user by email
           const user = await prisma.user.findUnique({
-            where: { email: credentials.email }
+            where: { email: credentials.email },
+            include: {
+              operator: true,
+              profile: true
+            }
           });
 
-          if (!user) {
+          if (!user || !user.password) {
             return null;
           }
 
-          // Check password from the account table (temporary solution)
-          const account = await prisma.account.findFirst({
-            where: {
-              userId: user.id,
-              provider: 'credentials'
-            }
-          });
-          
-          if (!account?.refresh_token) {
-            // For existing users without password, allow any password (demo mode)
-            console.log('Demo mode: allowing login without password verification');
-          } else {
-            // Verify the password
-            const passwordValid = await bcrypt.compare(credentials.password, account.refresh_token);
-            if (!passwordValid) {
-              return null;
-            }
+          // Verify the password
+          const passwordValid = await bcrypt.compare(credentials.password, user.password);
+          if (!passwordValid) {
+            return null;
           }
 
-          return {
+          // Prepare user data
+          const userData: any = {
             id: user.id,
             email: user.email,
-            name: user.name || '',
-            role: user.role,
-            tenantId: 'default' // Will be implemented with multi-tenancy
+            name: user.profile?.firstName && user.profile?.lastName
+              ? `${user.profile.firstName} ${user.profile.lastName}`
+              : user.name || user.email,
+            role: user.role || 'TRAVELER',
+            tenantId: user.tenantId || 'default'
           };
+
+          // Add operator data if user is an operator
+          if (user.operator) {
+            userData.operatorId = user.operator.id;
+            userData.operatorStatus = user.operator.status;
+            userData.role = 'TOUR_OPERATOR';
+          }
+
+          return userData;
         } catch (error) {
-          console.error('Auth error:', error);
           return null;
         }
       }
@@ -92,6 +96,8 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = user.role;
         token.tenantId = user.tenantId;
+        token.operatorId = user.operatorId;
+        token.operatorStatus = user.operatorStatus;
       }
       return token;
     },
@@ -100,6 +106,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub || '';
         session.user.role = token.role as string;
         session.user.tenantId = token.tenantId as string;
+        session.user.operatorId = token.operatorId as string;
+        session.user.operatorStatus = token.operatorStatus as string;
       }
       return session;
     },
@@ -108,7 +116,16 @@ export const authOptions: NextAuthOptions = {
       if (url.startsWith('/')) return `${baseUrl}${url}`;
       // Allow callback URLs on the same origin
       if (new URL(url).origin === baseUrl) return url;
-      // Default redirect to trips page
+      // Default redirect based on role
+      const token = url.includes('callbackUrl=') 
+        ? new URLSearchParams(url.split('?')[1]).get('callbackUrl')
+        : null;
+      
+      if (token?.includes('operator')) {
+        return `${baseUrl}/operator/dashboard`;
+      }
+      
+      // Default redirect to trips page for travelers
       return `${baseUrl}/trips`;
     }
   },

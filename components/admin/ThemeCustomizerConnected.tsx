@@ -480,7 +480,6 @@ export function ThemeCustomizerConnected({ clientId, onThemeApplied }: ThemeCust
       
       const data = await response.json();
       // You could open a preview window or update the UI here
-      console.log('Theme preview:', data);
     } catch (error) {
       console.error('Error previewing theme:', error);
     }

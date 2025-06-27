@@ -27,17 +27,38 @@ import { usePlanStore } from '@/store/planStore'
 import { format, differenceInDays } from 'date-fns'
 import { convertAIItineraryToStoreFormat, storeItineraryMetadata } from '@/lib/services/itinerary-converter'
 import { ModernExploreSidebar } from '@/components/ModernExploreSidebar'
-import { ModernTimeline } from '@/components/itinerary/ModernTimeline'
 import { MobileDayCards } from '@/components/itinerary/MobileDayCards'
 import { TimelineWithImagesV2 as TimelineWithImages } from '@/components/itinerary/TimelineWithImagesV2'
-import { MapCanvas } from '@/components/MapCanvas'
 import { ShareItineraryModal } from '@/components/ShareItineraryModal'
+import { useItineraryState } from '@/lib/state/itinerary-state'
 
-// Dynamically import map to avoid SSR issues
-const DynamicMap = dynamic(() => import('@/components/MapCanvas').then(mod => mod.MapCanvas), {
+// Dynamically import Google Maps to avoid SSR issues
+const DynamicGoogleMap = dynamic(() => import('@/components/GoogleMapCanvas'), {
   ssr: false,
   loading: () => <div className="w-full h-full bg-gray-100 animate-pulse" />
 })
+
+// Fallback to Leaflet if Google Maps fails
+const DynamicLeafletMap = dynamic(() => import('@/components/MapCanvas').then(mod => mod.MapCanvas), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-gray-100 animate-pulse" />
+})
+
+// Smart map component that falls back to Leaflet if Google Maps fails
+const DynamicMap = ({ className }: { className?: string }) => {
+  const [useGoogleMaps, setUseGoogleMaps] = useState(true)
+  
+  if (useGoogleMaps) {
+    return (
+      <DynamicGoogleMap 
+        className={className}
+        onError={() => setUseGoogleMaps(false)}
+      />
+    )
+  }
+  
+  return <DynamicLeafletMap className={className} />
+}
 
 // Mobile Bottom Navigation
 function MobileBottomNav({ 
@@ -275,6 +296,9 @@ export default function ModernTripPlannerPage() {
   const [isMobile, setIsMobile] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   
+  // Use unified state
+  const { currentItinerary } = useItineraryState()
+  
   const {
     itinerary,
     setItinerary,
@@ -312,17 +336,14 @@ export default function ModernTripPlannerPage() {
       setIsLoading(true)
       
       try {
-        // Check for stored itinerary first
-        const storedItinerary = localStorage.getItem('lastGeneratedItinerary')
-        if (storedItinerary) {
-          const parsed = JSON.parse(storedItinerary)
-          console.log('Loading AI-generated itinerary:', parsed)
+        // Check for stored itinerary from unified state
+        if (currentItinerary) {
           
           // Convert AI itinerary to store format with activities
-          const storeItinerary = await convertAIItineraryToStoreFormat(parsed, tripId)
+          const storeItinerary = await convertAIItineraryToStoreFormat(currentItinerary, tripId)
           
           // Store metadata for later use
-          storeItineraryMetadata(parsed)
+          storeItineraryMetadata(currentItinerary)
           
           // Set the itinerary in the store
           setItinerary(storeItinerary)
@@ -335,7 +356,6 @@ export default function ModernTripPlannerPage() {
           
           // Map will auto-center on POIs
           
-          localStorage.removeItem('lastGeneratedItinerary')
           toast.success('Your personalized itinerary is ready!')
         } else {
           // No generated itinerary, create empty one
@@ -605,10 +625,8 @@ export default function ModernTripPlannerPage() {
                       }) || []}
                       onReorder={(activities) => {
                         // Handle reordering
-                        console.log('Reordered activities:', activities)
                       }}
                       onEdit={(activity) => {
-                        console.log('Edit activity:', activity)
                       }}
                       onDelete={(activityId) => {
                         removePoiFromDay(selectedDay.id, activityId)

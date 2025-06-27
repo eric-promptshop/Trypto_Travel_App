@@ -39,15 +39,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const conversationHistory = body.messages || body.conversationHistory || []
-    
-    console.log('Extract request received:', {
-      historyLength: conversationHistory.length,
-      hasCurrentData: !!body.currentData
-    })
 
     // If no OpenAI API key, use simple extraction
     if (!process.env.OPENAI_API_KEY) {
-      console.log('No OpenAI API key, using simple extraction')
       const extractedData = simpleExtraction(conversationHistory)
       return NextResponse.json({ data: extractedData })
     }
@@ -271,7 +265,6 @@ function simpleExtraction(conversationHistory: Message[]): ExtractedData {
   
   data.completeness = Math.round((fieldsCompleted / totalFields) * 100)
   
-  console.log('Simple extraction - Fields completed:', fieldsCompleted, 'Total fields:', totalFields, 'Completeness:', data.completeness)
 
   return data
 }

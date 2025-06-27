@@ -88,14 +88,11 @@ export class ScraperLogger {
     switch (entry.level) {
       case 'debug':
         if (process.env.DEBUG === 'true') {
-          console.debug(message, entry.context || '');
         }
         break;
       case 'info':
-        console.info(message, entry.context || '');
         break;
       case 'warn':
-        console.warn(message, entry.context || '');
         break;
       case 'error':
         console.error(message, entry.context || '');

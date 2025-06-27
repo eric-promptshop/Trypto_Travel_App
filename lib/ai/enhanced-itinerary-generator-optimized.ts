@@ -87,7 +87,6 @@ function cleanCache() {
 }
 
 export async function generateEnhancedItinerary(tripData: any) {
-  console.log('🚀 Starting OPTIMIZED itinerary generation for:', tripData.destination);
   const genStart = Date.now();
   
   try {
@@ -95,7 +94,6 @@ export async function generateEnhancedItinerary(tripData: any) {
     const cacheKey = getCacheKey(tripData);
     const cached = cache.get(cacheKey);
     if (cached && cached.expires > Date.now()) {
-      console.log('✅ Returning cached itinerary');
       return cached.data;
     }
 
@@ -133,7 +131,6 @@ export async function generateEnhancedItinerary(tripData: any) {
       )
     ]);
 
-    console.log(`📦 Found ${tourOperatorContent.length} tour offerings`);
 
     // 2. Format tour offerings (simplified)
     const tourOfferings: TourOperatorOffering[] = tourOperatorContent
@@ -211,7 +208,6 @@ Be concise. Include 2-3 activities per day.`;
       )
     ]);
 
-    console.log(`✅ OpenAI responded in ${Date.now() - apiStart}ms`);
 
     // 5. Parse response
     const aiResponse = (completion as any).choices[0]?.message?.content || '[]';
@@ -267,7 +263,6 @@ Be concise. Include 2-3 activities per day.`;
       expires: Date.now() + CACHE_TTL
     });
 
-    console.log(`✅ Itinerary generated in ${Date.now() - genStart}ms`);
     return itinerary;
 
   } catch (error) {
@@ -349,5 +344,4 @@ export function getCacheStats() {
 
 export function clearCache() {
   cache.clear();
-  console.log('✅ Cache cleared');
 }

@@ -195,7 +195,6 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
         return cached
       }
     } catch (error) {
-      console.warn('Cache retrieval failed:', error)
     }
     
     return null
@@ -406,8 +405,6 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
       const metPerformanceTarget = totalTime <= this.config.performanceTarget
 
       if (this.config.debugMode) {
-        console.log(`Itinerary generation completed in ${totalTime}ms (target: ${this.config.performanceTarget}ms)`)
-        console.log('Performance metrics:', metrics)
       }
 
       return {
@@ -538,8 +535,6 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
       const metPerformanceTarget = totalTime <= this.config.performanceTarget
 
       if (this.config.debugMode) {
-        console.log(`Itinerary generation completed in ${totalTime}ms (target: ${this.config.performanceTarget}ms)`)
-        console.log('Performance metrics:', metrics)
       }
 
       return {
@@ -919,7 +914,6 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
       }
 
     } catch (error) {
-      console.warn(`Failed to plan day ${dayNumber}:`, error)
       return null
     }
   }
@@ -1026,7 +1020,6 @@ export class DefaultItineraryGenerationEngine implements ItineraryGenerationEngi
       }
 
     } catch (fallbackError) {
-      console.warn('Fallback strategy also failed:', fallbackError)
     }
 
     return null

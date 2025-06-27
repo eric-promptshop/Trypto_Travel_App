@@ -55,8 +55,6 @@ export class EntityRecognizer {
     // Add more sophisticated entity extraction logic here using NLP libraries,
     // regex, and the gazetteer for different entity types (addresses, coordinates, prices etc.).
 
-    console.log(`Input text for entity extraction: ${text.substring(0,100)}...`);
-    console.log(`Extracted entities: ${JSON.stringify(entities)}`);
     return entities;
   }
 
@@ -94,14 +92,12 @@ export class EntityRecognizer {
   public extractAddress(text: string): Partial<Address> {
     // Placeholder for address parsing logic. 
     // Use libraries like `address-parser` or regex for specific countries.
-    console.log(`Attempting to extract address from: ${text.substring(0,100)}...`);
     return {};
   }
 
   public extractCoordinates(text: string): Partial<Coordinates> {
     // Placeholder for coordinate parsing (e.g., DD, DMS formats)
     // Regex example: /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/
-    console.log(`Attempting to extract coordinates from: ${text.substring(0,100)}...`);
     return {};
   }
 

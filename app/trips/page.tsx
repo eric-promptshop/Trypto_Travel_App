@@ -115,8 +115,6 @@ export default function TripsPage() {
               tripId={selectedTrip?.id || formData.tripId || null}
               formData={formData}
               onEdit={() => selectedTrip ? handleEditTrip(selectedTrip) : setCurrentView('edit')}
-              onShare={() => console.log('Share trip')}
-              onDownload={() => console.log('Download trip')}
             />
           </motion.div>
         )

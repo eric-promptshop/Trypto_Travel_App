@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 import toast, { Toaster } from 'react-hot-toast'
 
 // Lazy load heavy components
-const ModernItineraryBuilder = lazy(() => import('./ModernItineraryBuilder').then(mod => ({ default: mod.ModernItineraryBuilder })))
+const EnhancedItineraryBuilder = lazy(() => import('@/components/EnhancedItineraryBuilder').then(mod => ({ default: mod.default })))
 const ModernItineraryViewer = lazy(() => import('./ModernItineraryViewer').then(mod => ({ default: mod.ModernItineraryViewer })))
 
 interface EnhancedItineraryViewerProps {
@@ -157,7 +157,7 @@ function EnhancedItineraryViewerContent({
       <div className="relative">
         {viewMode === 'builder' ? (
           <Suspense fallback={<Skeleton type="itinerary" className="p-4" />}>
-            <ModernItineraryBuilder
+            <EnhancedItineraryBuilder
               tripId={tripId}
               initialItinerary={itinerary}
               onSave={handleSaveFromBuilder}

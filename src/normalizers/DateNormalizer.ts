@@ -93,7 +93,6 @@ export class DateNormalizer {
       return format(localeSpecificDate, "yyyy-MM-dd'T'HH:mm:ss'Z'");
     }
 
-    console.warn(`Failed to normalize date: ${dateString}`);
     return null;
   }
 

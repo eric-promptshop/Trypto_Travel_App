@@ -42,7 +42,6 @@ function validateImageRelevance(imageData: any, location: string): boolean {
   }
 
   // Default to true for now, but with a warning logged
-  console.warn(`Could not verify image relevance for ${location}, using anyway`)
   return true
 }
 
@@ -59,7 +58,6 @@ export async function GET(request: NextRequest) {
     // Check if we have the Unsplash access key
     const accessKey = process.env.UNSPLASH_ACCESS_KEY
     if (!accessKey || accessKey === 'your_unsplash_api_key_here') {
-      console.warn("UNSPLASH_ACCESS_KEY not configured, using fallback image")
       const fallbackImage =
         VERIFIED_LOCATION_IMAGES[location] ||
         `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(location)}`
@@ -88,9 +86,7 @@ export async function GET(request: NextRequest) {
         
         // Handle specific error codes
         if (response.status === 403) {
-          console.warn("Unsplash API rate limit or permission error, using fallback")
         } else if (response.status === 401) {
-          console.warn("Unsplash API authentication error, check your access key")
         }
         
         throw new Error(`Failed to fetch image: ${response.status}`)
@@ -102,7 +98,6 @@ export async function GET(request: NextRequest) {
       const isRelevant = validateImageRelevance(data, location)
 
       if (!isRelevant) {
-        console.warn(`Image for ${location} may not be relevant, using verified fallback`)
         const fallbackImage =
           VERIFIED_LOCATION_IMAGES[location] ||
           `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(location)}`
@@ -129,7 +124,6 @@ export async function GET(request: NextRequest) {
     const fallbackImage =
       VERIFIED_LOCATION_IMAGES[location] || `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(location)}`
 
-    console.log(`Returning fallback image due to error: ${fallbackImage}`)
     return NextResponse.json({ imageUrl: fallbackImage })
   }
 }

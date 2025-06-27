@@ -6,6 +6,7 @@ import { AITravelFormWizard } from "@/components/ui/ai-travel-form-wizard"
 import { useTrips } from '@/hooks/use-trips'
 import { toast } from "sonner"
 import { useSession } from 'next-auth/react'
+import { useItineraryState } from '@/lib/state/itinerary-state'
 
 interface FormData {
   destinations?: string[]
@@ -40,10 +41,15 @@ export function AIRequestForm({ onComplete, onGenerating }: AIRequestFormProps) 
   const { createTrip } = useTrips()
   const { data: session } = useSession()
   const [isGenerating, setIsGenerating] = useState(false)
+  const { setCurrentItinerary, setTripData } = useItineraryState()
   
   const handleFormComplete = async (data: any) => {
-    console.log('[AIRequestForm] handleFormComplete called with data:', data);
-    console.trace('[AIRequestForm] Call stack'); // This will help us see where it's being called from
+    
+    // Check authentication before expensive operations
+    if (!session?.user) {
+      toast.warning('Please sign in to generate AI-powered itineraries. You can continue as a guest with limited features.')
+      // Still allow form completion but with limited features
+    }
     
     setIsGenerating(true)
     
@@ -108,19 +114,41 @@ export function AIRequestForm({ onComplete, onGenerating }: AIRequestFormProps) 
       
       toast.info('Generating your AI-powered itinerary...')
       
+      // Prepare data for the new generation endpoint
+      const generationData = {
+        destination: data.destination || '',
+        dates: {
+          startDate: data.startDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+          endDate: data.endDate?.toISOString().split('T')[0] || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        },
+        travelers: {
+          adults: data.travelers || 2,
+          children: 0
+        },
+        budget: data.budget ? {
+          amount: tripFormData.budget[1], // Use the upper range
+          currency: 'USD',
+          perPerson: false
+        } : undefined,
+        interests: data.interests || [],
+        accommodation: data.accommodation,
+        transportation: data.transportation || [],
+        specialRequirements: data.specialRequests,
+        naturalLanguageInput: data.specialRequests // Use special requests as natural language context
+      }
+      
       // Call the AI generation endpoint with timeout
-      console.log('Calling AI generation endpoint with data:', tripFormData)
       
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
       
       try {
-        const response = await fetch('/api/trips-ai/generate', {
+        const response = await fetch('/api/itinerary/generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(tripFormData), // Send tripFormData directly, not wrapped
+          body: JSON.stringify(generationData),
           signal: controller.signal
         })
         
@@ -133,7 +161,6 @@ export function AIRequestForm({ onComplete, onGenerating }: AIRequestFormProps) 
         }
         
         result = await response.json()
-        console.log('API response received:', result)
       } catch (fetchError: any) {
         clearTimeout(timeoutId)
         if (fetchError.name === 'AbortError') {
@@ -146,10 +173,9 @@ export function AIRequestForm({ onComplete, onGenerating }: AIRequestFormProps) 
         throw new Error(result.error || 'Failed to generate itinerary')
       }
       
-      // Store the generated itinerary in localStorage for the plan page
+      // Store the generated itinerary in unified state
       if (result.itinerary) {
-        console.log('Storing generated itinerary for plan page')
-        localStorage.setItem('lastGeneratedItinerary', JSON.stringify(result.itinerary))
+        setCurrentItinerary(result.itinerary)
       }
       
       let newTrip = null
@@ -193,6 +219,9 @@ export function AIRequestForm({ onComplete, onGenerating }: AIRequestFormProps) 
           tripId: newTrip?.id, // Optional trip ID (only if saved)
           generatedItinerary: result.itinerary
         }
+        
+        // Store trip data in unified state
+        setTripData(formData)
         
         onComplete(formData)
     } catch (error: any) {

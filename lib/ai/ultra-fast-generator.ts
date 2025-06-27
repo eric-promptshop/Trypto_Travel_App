@@ -12,13 +12,11 @@ const miniCache = new Map<string, any>();
 
 export async function generateUltraFastItinerary(tripData: any) {
   const startTime = Date.now();
-  console.log('⚡ Ultra-fast generation started for:', tripData.destination);
 
   try {
     // Step 1: Check for exact template match (instant)
     const template = findTemplate(tripData.destination);
     if (template) {
-      console.log('✅ Template found! Customizing for user preferences...');
       const customized = await customizeTemplate(template, tripData, startTime);
       // Cache in Redis for next time
       await cacheItinerary(tripData, customized, { ttl: 7200 }); // 2 hour TTL for templates
@@ -28,7 +26,6 @@ export async function generateUltraFastItinerary(tripData: any) {
     // Step 2: Check Redis cache (L2 cache)
     const redisCache = await getCachedItinerary(tripData);
     if (redisCache) {
-      console.log('✅ Redis cache hit! Returning in', Date.now() - startTime, 'ms');
       // Also store in L1 cache
       const cacheKey = `${tripData.destination}_${calculateDuration(tripData)}`;
       miniCache.set(cacheKey, redisCache);
@@ -39,7 +36,6 @@ export async function generateUltraFastItinerary(tripData: any) {
     const cacheKey = `${tripData.destination}_${calculateDuration(tripData)}`;
     const cached = miniCache.get(cacheKey);
     if (cached) {
-      console.log('✅ L1 cache hit! Returning in', Date.now() - startTime, 'ms');
       return customizeBasicItinerary(cached, tripData);
     }
 
@@ -58,7 +54,6 @@ export async function generateUltraFastItinerary(tripData: any) {
     // Cache in Redis
     await cacheItinerary(tripData, itinerary, { ttl: 3600 }); // 1 hour TTL for AI-generated
 
-    console.log('✅ Generated in', Date.now() - startTime, 'ms');
     return itinerary;
 
   } catch (error) {
@@ -88,7 +83,6 @@ async function customizeTemplate(template: any, tripData: any, startTime: number
       }))
     };
     
-    console.log('✅ Template customized in', Date.now() - startTime, 'ms');
     return customized;
   }
 
@@ -131,7 +125,6 @@ Return ONLY a JSON array of ${requestedDuration} days with this structure:
       }))
     };
 
-    console.log('✅ Template AI-adjusted in', Date.now() - startTime, 'ms');
     return customized;
 
   } catch (error) {
@@ -154,7 +147,6 @@ Return ONLY a JSON array of ${requestedDuration} days with this structure:
       })
     };
 
-    console.log('✅ Template mechanically adjusted in', Date.now() - startTime, 'ms');
     return customized;
   }
 }

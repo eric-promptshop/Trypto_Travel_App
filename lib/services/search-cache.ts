@@ -107,12 +107,10 @@ export async function withCache<T>(
   // Check cache first
   const cached = searchCache.get<T>(params)
   if (cached !== null) {
-    console.log('Cache hit for:', params)
     return cached
   }
 
   // Fetch data
-  console.log('Cache miss for:', params)
   const data = await fetcher()
   
   // Store in cache

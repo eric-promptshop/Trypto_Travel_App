@@ -15,6 +15,7 @@ model User {
   role          String    @default("USER")
   emailVerified DateTime?
   tenantId      String?   @default("default")
+  operatorId    String?
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -23,10 +24,14 @@ model User {
   sessions      Session[]
   trips         Trip[]
   tenant        Tenant?        @relation(fields: [tenantId], references: [id])
+  operator      Operator?      @relation(fields: [operatorId], references: [id])
   authoredContent TenantContent[]
   auditLogs     AuditLog[]
+  bookings      Booking[]
+  reviews       Review[]
 
   @@index([tenantId])
+  @@index([operatorId])
   @@map("users")
 }
 
@@ -84,6 +89,8 @@ model Tenant {
   content     TenantContent[]
   itineraries Itinerary[]
   auditLogs   AuditLog[]
+  operators   Operator[]
+  leadsEnhanced LeadEnhanced[]
 
   @@map("tenants")
 }
@@ -111,6 +118,8 @@ model Lead {
   name          String?
   phone         String?
   destination   String
+  destinationCoordinates Json?    // {"lat": number, "lng": number}
+  destinationPlaceId String?
   startDate     DateTime?
   endDate       DateTime?
   travelers     Int
@@ -132,6 +141,7 @@ model Lead {
   @@index([email])
   @@index([status])
   @@index([tenantId])
+  @@index([destinationPlaceId])
   @@map("leads")
 }
 
@@ -143,6 +153,8 @@ model Content {
   location    String
   city        String?
   country     String?
+  coordinates Json?    // {"lat": number, "lng": number}
+  googlePlaceId String?
   price       Float?
   currency    String   @default("USD")
   duration    Int?     // in minutes
@@ -161,6 +173,7 @@ model Content {
   @@index([type])
   @@index([location])
   @@index([tenantId])
+  @@index([googlePlaceId])
   @@map("content")
 }
 
@@ -191,6 +204,8 @@ model Itinerary {
   title       String
   description String?
   destination String
+  destinationCoordinates Json?    // {"lat": number, "lng": number}
+  destinationPlaceId String?
   startDate   DateTime
   endDate     DateTime
   travelers   Int
@@ -209,6 +224,7 @@ model Itinerary {
   @@index([leadId])
   @@index([userId])
   @@index([tenantId])
+  @@index([destinationPlaceId])
   @@map("itineraries")
 }
 
@@ -233,4 +249,301 @@ model AuditLog {
   @@index([resourceId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ===== NEW MODELS FOR AI TRAVEL PLANNER =====
+
+model Operator {
+  id            String   @id @default(cuid())
+  businessName  String
+  slug          String   @unique
+  email         String   @unique
+  phone         String?
+  website       String?
+  description   String?
+  logo          String?
+  coverImage    String?
+  address       Json?
+  coordinates   Json?    // {"lat": number, "lng": number}
+  googlePlaceId String?
+  timezone      String   @default("UTC")
+  languages     String[]
+  currencies    String[] @default(["USD"])
+  certifications Json?
+  settings      Json?
+  status        String   @default("pending")
+  verifiedAt    DateTime?
+  subscription  Json?
+  tenantId      String   @default("default")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  users         User[]
+  tours         Tour[]
+  leads         LeadEnhanced[]
+  bookings      Booking[]
+  widgetConfigs WidgetConfig[]
+  integrations  Integration[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([googlePlaceId])
+  @@map("operators")
+}
+
+model Tour {
+  id                 String   @id @default(cuid())
+  operatorId         String
+  name               String
+  slug               String
+  description        String   @db.Text
+  shortDescription   String?
+  destination        String
+  city               String?
+  country            String?
+  coordinates        Json?    // {"lat": number, "lng": number}
+  googlePlaceId      String?
+  duration           Int
+  durationType       String   @default("hours")
+  price              Float
+  currency           String   @default("USD")
+  priceType          String   @default("per_person")
+  groupSize          Json?
+  categories         String[]
+  difficulty         String?
+  languages          String[]
+  images             Json
+  videos             Json?
+  highlights         String[]
+  included           String[]
+  excluded           String[]
+  itinerary          Json?
+  startingPoint      String?
+  endingPoint        String?
+  meetingInstructions String?
+  cancellationPolicy String?
+  healthAndSafety    String?
+  accessibility      String?
+  schedule           Json?
+  availability       Json?
+  metadata           Json?
+  seoTitle           String?
+  seoDescription     String?
+  seoKeywords        String[]
+  status             String   @default("draft")
+  publishedAt        DateTime?
+  featured           Boolean  @default(false)
+  rating             Float?   @default(0)
+  reviewCount        Int?     @default(0)
+  viewCount          Int?     @default(0)
+  bookingCount       Int?     @default(0)
+  externalId         String?
+  sourceUrl          String?
+  lastScrapedAt      DateTime?
+  isTemplate         Boolean  @default(false)
+  templateId         String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  operator           Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  template           Tour?    @relation("TourTemplate", fields: [templateId], references: [id])
+  instances          Tour[]   @relation("TourTemplate")
+  bookings           Booking[]
+  reviews            Review[]
+
+  @@unique([slug, operatorId])
+  @@index([operatorId])
+  @@index([destination])
+  @@index([status])
+  @@index([featured])
+  @@index([categories])
+  @@index([googlePlaceId])
+  @@index([isTemplate])
+  @@index([templateId])
+  @@map("tours")
+}
+
+model LeadEnhanced {
+  id               String   @id @default(cuid())
+  email            String
+  phone            String?
+  firstName        String?
+  lastName         String?
+  source           String
+  sourceDetails    Json?
+  destination      String?
+  destinationCoordinates Json?    // {"lat": number, "lng": number}
+  destinationPlaceId String?
+  startDate        DateTime?
+  endDate          DateTime?
+  flexibleDates    Boolean? @default(false)
+  travelers        Int?     @default(1)
+  budget           Json?
+  interests        String[]
+  specialRequests  String?
+  itinerary        Json?
+  tourIds          String[]
+  context          Json?
+  userAgent        String?
+  ipAddress        String?
+  referrer         String?
+  utmParams        Json?
+  score            Int      @default(0)
+  tags             String[]
+  status           String   @default("new")
+  engagementHistory Json?
+  lastEngagedAt    DateTime?
+  crmId            String?
+  crmSyncStatus    String?
+  crmSyncedAt      DateTime?
+  assignedTo       String?
+  notes            String?
+  optInMarketing   Boolean  @default(true)
+  optInTimestamp   DateTime?
+  operatorId       String?
+  tenantId         String   @default("default")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  operator         Operator?       @relation(fields: [operatorId], references: [id])
+  tenant           Tenant          @relation(fields: [tenantId], references: [id])
+  activities       LeadActivity[]
+  bookings         Booking[]
+
+  @@index([email])
+  @@index([operatorId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([destinationPlaceId])
+  @@map("leads_enhanced")
+}
+
+model LeadActivity {
+  id          String   @id @default(cuid())
+  leadId      String
+  type        String
+  description String?
+  metadata    Json?
+  performedBy String?
+  createdAt   DateTime @default(now())
+
+  lead        LeadEnhanced @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("lead_activities")
+}
+
+model Booking {
+  id                 String   @id @default(cuid())
+  bookingNumber      String   @unique
+  tourId             String
+  leadId             String?
+  userId             String?
+  operatorId         String
+  bookingDate        DateTime
+  travelDate         DateTime @db.Date
+  travelers          Int
+  totalPrice         Float
+  currency           String
+  status             String   @default("pending")
+  paymentStatus      String   @default("pending")
+  paymentMethod      String?
+  specialRequests    String?
+  internalNotes      String?
+  customerDetails    Json
+  confirmationSentAt DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  metadata           Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  tour               Tour         @relation(fields: [tourId], references: [id])
+  lead               LeadEnhanced? @relation(fields: [leadId], references: [id])
+  user               User?        @relation(fields: [userId], references: [id])
+  operator           Operator     @relation(fields: [operatorId], references: [id])
+  review             Review?
+
+  @@index([tourId])
+  @@index([operatorId])
+  @@index([userId])
+  @@index([leadId])
+  @@index([status])
+  @@index([travelDate])
+  @@map("bookings")
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  tourId      String
+  bookingId   String?  @unique
+  userId      String?
+  rating      Int
+  title       String?
+  comment     String?
+  images      String[]
+  helpful     Int?     @default(0)
+  verified    Boolean? @default(false)
+  response    String?
+  respondedAt DateTime?
+  status      String   @default("pending")
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tour        Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  booking     Booking? @relation(fields: [bookingId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([tourId])
+  @@index([bookingId])
+  @@index([userId])
+  @@index([status])
+  @@index([rating])
+  @@map("reviews")
+}
+
+model WidgetConfig {
+  id         String   @id @default(cuid())
+  operatorId String
+  name       String
+  type       String   @default("itinerary_builder")
+  theme      Json
+  features   String[]
+  domains    String[]
+  apiKey     String   @unique
+  isActive   Boolean  @default(true)
+  analytics  Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  operator   Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+
+  @@index([operatorId])
+  @@map("widget_configs")
+}
+
+model Integration {
+  id          String   @id @default(cuid())
+  operatorId  String
+  type        String
+  name        String
+  config      Json
+  credentials Json?
+  webhooks    Json?
+  lastSyncAt  DateTime?
+  syncStatus  String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  operator    Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+
+  @@index([operatorId])
+  @@index([type])
+  @@map("integrations")
 }

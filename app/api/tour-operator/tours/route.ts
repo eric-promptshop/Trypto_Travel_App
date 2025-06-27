@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
     
     const tenantId = session.user?.tenantId || 'default'
     
-    console.log('Tour API - Session:', {
+    console.log('[Tours API] GET request:', {
       email: session.user?.email,
       role: session.user?.role,
       tenantId: tenantId
@@ -91,7 +91,6 @@ export async function GET(request: NextRequest) {
     
     try {
       // Fetch tours from content table for this tenant
-      console.log('Fetching tours with tenantId:', tenantId)
       
       const dbTours = await prisma.content.findMany({
         where: {
@@ -103,11 +102,9 @@ export async function GET(request: NextRequest) {
         }
       })
       
-      console.log('Tours found:', dbTours.length)
       
       // If no tours found with current tenant, try 'default' tenant
       if (dbTours.length === 0 && tenantId !== 'default') {
-        console.log('No tours found for tenant, trying default tenant...')
         const defaultTours = await prisma.content.findMany({
           where: {
             tenantId: 'default',
@@ -117,7 +114,6 @@ export async function GET(request: NextRequest) {
             createdAt: 'desc'
           }
         })
-        console.log('Default tenant tours found:', defaultTours.length)
         dbTours.push(...defaultTours)
       }
       
@@ -141,7 +137,6 @@ export async function GET(request: NextRequest) {
     
     // Use demo data if database is not available or no tours found
     if (useDemo || tours.length === 0) {
-      console.log('Using demo tour data')
       tours = DEMO_TOURS
     }
     
@@ -212,7 +207,6 @@ export async function POST(request: NextRequest) {
     const { tourData } = validation.data
     const tenantId = session.user?.tenantId || 'default'
     
-    console.log('[Create Tour API] Creating tour:', tourData.name, 'for tenant:', tenantId)
     
     // Calculate duration in minutes
     let durationMinutes = 480 // Default 8 hours
@@ -258,7 +252,6 @@ export async function POST(request: NextRequest) {
       }
     })
     
-    console.log('[Create Tour API] Tour created successfully:', tour.id)
     
     return NextResponse.json({
       tour: {

@@ -367,7 +367,6 @@ export class HealthMonitor {
 
   private async sendEmailAlert(alert: any): Promise<void> {
     // Email alert implementation would go here
-    console.log('Email alert:', alert)
   }
 
   private async sendWebhookAlert(alert: any): Promise<void> {

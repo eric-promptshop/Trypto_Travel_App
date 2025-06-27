@@ -190,7 +190,6 @@ export function useImageQualityPreference(): [ImageQualityPreference, (pref: Par
           return { ...getDefaultPreference(), ...JSON.parse(stored) };
         }
       } catch (error) {
-        console.warn('Failed to load image quality preference:', error);
       }
     }
     return getDefaultPreference();
@@ -205,7 +204,6 @@ export function useImageQualityPreference(): [ImageQualityPreference, (pref: Par
         try {
           localStorage.setItem('tripnav-image-quality-preference', JSON.stringify(updated));
         } catch (error) {
-          console.warn('Failed to save image quality preference:', error);
         }
       }
       

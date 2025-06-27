@@ -54,7 +54,6 @@ export default function VoiceTestPage() {
                   onChange={(e) => setInputValue(e.target.value)}
                   onVoiceTranscript={(transcript) => {
                     setInputValue(transcript)
-                    console.log('Voice transcript:', transcript)
                   }}
                 />
               </div>

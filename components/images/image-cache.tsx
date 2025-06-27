@@ -70,7 +70,6 @@ export class ImageCacheManager {
         await this.registerServiceWorker();
       }
     } catch (error) {
-      console.warn('Failed to initialize image cache:', error);
     }
   }
 
@@ -123,9 +122,7 @@ export class ImageCacheManager {
 
     try {
       const registration = await navigator.serviceWorker.register('/sw-image-cache.js');
-      console.log('Image cache service worker registered:', registration);
     } catch (error) {
-      console.warn('Failed to register image cache service worker:', error);
     }
   }
 
@@ -173,7 +170,6 @@ export class ImageCacheManager {
 
       return this.createObjectURL(blob);
     } catch (error) {
-      console.warn('Failed to cache image:', error);
       return url; // Fallback to original URL
     }
   }

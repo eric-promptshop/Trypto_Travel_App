@@ -66,7 +66,6 @@ export class DefaultPreferenceMatchingService implements PreferenceMatchingServi
       const duration = endTime - startTime
       
       if (duration > this.performance.scoringTimeout) {
-        console.warn(`Preference matching took ${duration}ms, exceeding timeout of ${this.performance.scoringTimeout}ms`)
       }
       
       // Sort by score (highest first) and add performance metadata
@@ -146,7 +145,6 @@ export class DefaultPreferenceMatchingService implements PreferenceMatchingServi
         const score = await this.scoreIndividualContent(item, criteria)
         scores.push(score)
       } catch (error) {
-        console.warn(`Failed to score content item ${item.id}:`, error)
       }
     }
     

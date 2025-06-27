@@ -93,7 +93,6 @@ export class PriceNormalizer {
     
     // Validate currency code
     if (!this.isValidCurrencyCode(finalCurrency)) {
-      console.warn(`Invalid currency code: ${finalCurrency}`);
       return null;
     }
 

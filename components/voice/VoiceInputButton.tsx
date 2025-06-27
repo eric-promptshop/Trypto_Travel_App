@@ -39,7 +39,6 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
   }, []);
 
   const handleTranscript = useCallback((transcript: string, isFinal: boolean) => {
-    console.log('[Voice Input] Transcript received:', { transcript, isFinal });
     
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
@@ -60,7 +59,6 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
 
     // Reset silence timer
     silenceTimerRef.current = setTimeout(() => {
-      console.log('[Voice Input] Silence detected, stopping...');
       handleStopRef.current();
     }, SILENCE_LIMIT_MS);
   }, [updateDisplayTranscript]);
@@ -91,7 +89,6 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
     
     const finalText = accumulatedTranscriptRef.current.trim();
     if (finalText) {
-      console.log('[Voice Input] Final transcript:', finalText);
       
       // Enable debug logging temporarily
       if (typeof window !== 'undefined') {
@@ -111,7 +108,6 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
         }
         
         const parsed = await response.json();
-        console.log('[Voice Input] AI parsed fields:', parsed);
         
         // Apply parsed fields with proper validation
         let successfulFields = 0;
@@ -121,7 +117,6 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
       // Process each parsed field
       for (const [key, value] of Object.entries(parsed)) {
         if (value !== undefined && value !== null && key !== 'specialRequests') {
-          console.log(`[Voice Input] Setting ${key} to:`, value, 'Type:', typeof value);
           
           try {
             // Handle date fields specially - convert to Date objects
@@ -130,7 +125,6 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
               if (typeof value === 'string') {
                 // API now returns YYYY-MM-DD, convert to Date object
                 formattedValue = new Date(value + 'T00:00:00');
-                console.log(`[Voice Input] Converted date ${key}: ${value} -> ${formattedValue}`);
               }
             }
             
@@ -143,31 +137,21 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
             
             // Verify the value was set
             setTimeout(() => {
-              console.log(`[Voice Input] Verification - ${key} form value:`, (window as any).lastFormValues?.[key]);
             }, 100);
             
-            console.log(`[Voice Input] Successfully set ${key}`);
             successfulFields++;
             
             if (basicFieldsNeeded.includes(key)) {
               foundBasicFields.push(key);
             }
           } catch (error) {
-            console.error(`[Voice Input] Error setting ${key}:`, error);
+            // Error setting field
           }
         }
       }
       
-      console.log('[Voice Input] Summary:', {
-        totalFieldsParsed: Object.keys(parsed).filter(k => k !== 'specialRequests').length,
-        successfullySet: successfulFields,
-        basicFieldsFound: foundBasicFields,
-        missingBasicFields: basicFieldsNeeded.filter(f => !foundBasicFields.includes(f))
-      });
-      
       // Navigate to review if we have all basic fields
       if (foundBasicFields.length === basicFieldsNeeded.length) {
-        console.log('[Voice Input] All basic fields found! Navigating to review...');
         
         // Update display to show success
         updateDisplayTranscript('✓ Trip details captured! Taking you to review...');
@@ -187,23 +171,16 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
       } else if (successfulFields > 0) {
         // Some fields were set but not all basic fields
         updateDisplayTranscript(`✓ Captured ${successfulFields} field(s). Please complete missing details.`);
-        console.log('[Voice Input] Partial success - missing:', basicFieldsNeeded.filter(f => !foundBasicFields.includes(f)));
       } else {
         // No fields were successfully parsed
         updateDisplayTranscript('Could not understand. Try: "Going to Paris from July 10th to 18th with 2 people"');
-        console.log('[Voice Input] No fields parsed. Example patterns:', {
-          destination: '"going to Paris", "destination is Tokyo"',
-          dates: '"from July 10th to July 18th", "leaving August 5th returning August 12th"',
-          travelers: '"2 people", "party of 4", "couple"',
-          budget: '"budget is $2000 per person"'
-        });
       }
       
         if (onTranscriptComplete) {
           onTranscriptComplete(finalText);
         }
       } catch (error) {
-        console.error('[Voice Input] Error parsing with AI:', error);
+        // Error parsing with AI
         updateDisplayTranscript('Sorry, could not process your speech. Please try again.');
       }
     }
@@ -237,7 +214,6 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
       
       abortControllerRef.current = new AbortController();
       const timeoutId = setTimeout(() => {
-        console.log('[Voice Input] Max session time reached, stopping...');
         if (isListening) {
           handleStop();
         }
@@ -247,11 +223,6 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
         clearTimeout(timeoutId);
       });
       
-      console.log('[Voice Input] Starting speech recognition...');
-      console.log('[Voice Input] Try saying something like:');
-      console.log('  - "I\'m going to Paris from July 10th to July 18th with 2 people"');
-      console.log('  - "Travel to Tokyo, leaving August 5th for 7 days, party of 4"');
-      console.log('  - "Destination is London, departing September 1st returning September 8th, 2 adults"');
       start();
     }
   }, [isListening, start, handleStop]);
@@ -328,10 +299,8 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
               const isDebugEnabled = typeof window !== 'undefined' && 
                 window.localStorage?.getItem('debug-voice') === 'true';
               enableVoiceDebug(!isDebugEnabled);
-              console.log(`[Voice Debug] ${!isDebugEnabled ? 'Enabled' : 'Disabled'}`);
               
               // Test parsing
-              console.log('[Voice Debug] Testing parser with example inputs:');
               const testInputs = [
                 "I'm going to Tokyo from July 10th to July 18th with 2 people",
                 "Travel to Paris, leaving August 5th returning August 12th, party of 4",
@@ -340,8 +309,6 @@ export function VoiceInputButton({ onTranscriptComplete, setValue, navigateToRev
               
               testInputs.forEach(input => {
                 const parsed = parseVoiceTranscript(input);
-                console.log(`[Voice Debug] "${input}"`);
-                console.log('[Voice Debug] Parsed:', parsed);
               });
             }}
             className="p-2"

@@ -5,7 +5,6 @@ import { seedTourOperatorDemoData } from '../scripts/seed-tour-operator-demo-dat
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('Seeding database...')
 
   // Create a test user
   const testUser = await prisma.user.create({
@@ -16,7 +15,6 @@ async function main() {
     },
   })
 
-  console.log('Created test user:', testUser.email)
 
   // Create sample content for Peru and Brazil
   const destinations = [
@@ -130,7 +128,6 @@ async function main() {
     await prisma.content.create({ data: accommodation })
   }
 
-  console.log('Sample content created successfully')
 
   // Create a sample trip for the test user
   const sampleTrip = await prisma.trip.create({
@@ -161,10 +158,8 @@ async function main() {
     },
   })
 
-  console.log('Sample trip created:', sampleTrip.title)
 
   // Seed tour operator demo data
-  console.log('\nSeeding tour operator demo data...')
   try {
     await seedTourOperatorDemoData()
   } catch (error) {

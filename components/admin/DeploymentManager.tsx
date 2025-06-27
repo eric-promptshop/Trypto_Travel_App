@@ -93,7 +93,6 @@ export default function DeploymentManager() {
       if (response.ok) {
         const data = await response.json()
         // Handle deployment status data
-        console.log('Deployment status:', data)
       }
     } catch (error) {
       console.error('Error loading deployment status:', error)
@@ -118,7 +117,6 @@ export default function DeploymentManager() {
 
       if (response.ok) {
         const result = await response.json()
-        console.log('Deployment successful:', result)
         
         // Add to deployments list
         setDeployments(prev => [...prev, result.deployment])

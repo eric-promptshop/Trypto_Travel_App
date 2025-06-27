@@ -20,6 +20,14 @@ interface UploadedFile {
   file: File
   status: 'pending' | 'processing' | 'success' | 'error'
   extractedData?: ExtractedTourData
+  qualityReport?: {
+    score: number
+    status: 'excellent' | 'good' | 'fair' | 'poor'
+    missingRequired: string[]
+    missingRecommended: string[]
+    warnings: string[]
+    suggestions: string[]
+  }
   error?: string
 }
 
@@ -75,11 +83,11 @@ export default function TourUploadModal({ isOpen, onClose, onTourCreated }: Tour
           throw new Error('Failed to process file')
         }
 
-        const { tourData } = await response.json()
+        const { tourData, qualityReport } = await response.json()
 
-        // Update with extracted data
+        // Update with extracted data and quality report
         setUploadedFiles(prev => prev.map((f, idx) => 
-          idx === i ? { ...f, status: 'success', extractedData: tourData } : f
+          idx === i ? { ...f, status: 'success', extractedData: tourData, qualityReport } : f
         ))
       } catch (error) {
         console.error('Error processing file:', error)
@@ -238,6 +246,44 @@ export default function TourUploadModal({ isOpen, onClose, onTourCreated }: Tour
                       {uploadedFile.extractedData.price && (
                         <div>
                           <span className="font-medium">Price:</span> {uploadedFile.extractedData.price.currency} {uploadedFile.extractedData.price.amount}
+                        </div>
+                      )}
+                      
+                      {uploadedFile.qualityReport && (
+                        <div className="mt-3 pt-3 border-t">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">Quality Score:</span>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-bold ${
+                                uploadedFile.qualityReport.score >= 90 ? 'text-green-600' :
+                                uploadedFile.qualityReport.score >= 75 ? 'text-blue-600' :
+                                uploadedFile.qualityReport.score >= 60 ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`}>
+                                {uploadedFile.qualityReport.score}%
+                              </span>
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                uploadedFile.qualityReport.status === 'excellent' ? 'bg-green-100 text-green-800' :
+                                uploadedFile.qualityReport.status === 'good' ? 'bg-blue-100 text-blue-800' :
+                                uploadedFile.qualityReport.status === 'fair' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {uploadedFile.qualityReport.status}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {uploadedFile.qualityReport.warnings.length > 0 && (
+                            <div className="text-xs text-yellow-600 mb-2">
+                              ⚠️ {uploadedFile.qualityReport.warnings[0]}
+                            </div>
+                          )}
+                          
+                          {uploadedFile.qualityReport.suggestions.length > 0 && (
+                            <div className="text-xs text-gray-600">
+                              💡 {uploadedFile.qualityReport.suggestions[0]}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

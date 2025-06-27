@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
 import { TourOnboardingService } from '@/lib/services/tour-onboarding-service'
+import { TourImportValidator } from '@/lib/services/tour-import-validator'
 import { PDFParser } from '@/src/parsers/PDFParser'
 import { z } from 'zod'
 
@@ -21,7 +22,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[Extract Tour API] Processing file upload for:', session.user.email)
 
     // Get form data
     const formData = await request.formData()
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[Extract Tour API] File details:', {
+    console.log('[Extract Tour API] Processing file:', {
       name: file.name,
       type: file.type,
       size: file.size
@@ -53,7 +53,6 @@ export async function POST(request: NextRequest) {
         const pdfParser = new PDFParser()
         const parsedDoc = await pdfParser.parse(buffer)
         content = parsedDoc.rawText
-        console.log('[Extract Tour API] PDF text extracted, length:', content.length)
       } catch (pdfError) {
         console.error('[Extract Tour API] PDF parsing error:', pdfError)
         return NextResponse.json(
@@ -83,14 +82,23 @@ export async function POST(request: NextRequest) {
     // Validate and enhance the extracted data
     const validatedData = TourOnboardingService.validateAndEnhanceTourData(extractedData)
 
+    // Generate quality report
+    const qualityReport = TourImportValidator.validateTourData(validatedData)
+
     // Generate SEO content
     const seoContent = await TourOnboardingService.generateSEOContent(validatedData)
 
-    console.log('[Extract Tour API] Successfully extracted tour:', validatedData.name)
+    console.log('[Extract Tour API] Quality Report:', {
+      score: qualityReport.score,
+      status: qualityReport.status,
+      missingRequired: qualityReport.missingRequired.length,
+      missingRecommended: qualityReport.missingRecommended.length
+    })
 
     return NextResponse.json({
       tourData: validatedData,
       seoContent,
+      qualityReport,
       metadata: {
         fileName: file.name,
         fileType: file.type,

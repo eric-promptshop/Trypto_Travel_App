@@ -1,0 +1,47 @@
+{
+  "name": "TripNav AI - Travel Planning",
+  "short_name": "TripNav",
+  "description": "AI-powered travel planning platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Plan New Trip",
+      "short_name": "New Trip",
+      "description": "Start planning a new trip",
+      "url": "/plan",
+      "icons": [{ "src": "/shortcut-plan.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Trips",
+      "short_name": "Trips",
+      "description": "View your saved trips",
+      "url": "/trips",
+      "icons": [{ "src": "/shortcut-trips.png", "sizes": "192x192" }]
+    }
+  ],
+  "categories": ["travel", "productivity", "lifestyle"],
+  "prefer_related_applications": false,
+  "related_applications": []
+}

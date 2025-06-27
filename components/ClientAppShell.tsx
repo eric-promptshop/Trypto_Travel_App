@@ -38,7 +38,6 @@ function useRegisterServiceWorker() {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((err) => {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('Service worker registration failed:', err)
         }
       })
     }
@@ -63,27 +62,27 @@ export default function ClientAppShell({ children }: { children: React.ReactNode
   useEffect(() => {
     setMounted(true)
     
-    // Initialize analytics and monitoring
+    // Initialize analytics and monitoring in the background
     if (typeof window !== 'undefined') {
-      analytics.initialize({})
-      performanceMonitor.startAutomaticMonitoring()
-      
-      // Track initial page view
-      analytics.page(window.location.pathname)
+      // Defer analytics initialization to not block rendering
+      setTimeout(() => {
+        analytics.initialize({})
+        performanceMonitor.startAutomaticMonitoring()
+        
+        // Track initial page view
+        analytics.page(window.location.pathname)
+      }, 100)
     }
   }, [])
 
+  // Remove the loading state here to prevent double loading screens
   if (!mounted) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    )
+    return null
   }
 
   return (
     <SessionProvider>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      <ThemeProvider>
         <CustomThemeProvider>
           <TripProvider>
             <TemplateProvider>

@@ -2,22 +2,77 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/config'
 import { z } from 'zod'
+import { replicateService } from '@/lib/services/replicate-service'
+import { createClient } from '@supabase/supabase-js'
+import { withRateLimit, rateLimitConfigs } from '@/lib/middleware/rate-limit'
+import { createSuccessResponse, createErrorResponse, createValidationErrorResponse } from '@/lib/api/response'
+import { googlePlacesService } from '@/lib/services/google-places'
 
 const scrapeRequestSchema = z.object({
   url: z.string().url()
 })
 
-// Mock scraper that simulates extracting tour data from a URL
-async function scrapeTourFromUrl(url: string) {
-  // In a real implementation, this would use puppeteer, playwright, or an API
-  // For demo purposes, we'll return mock data based on the URL
-  
+// AI-powered tour scraper using Replicate
+async function scrapeTourFromUrl(url: string, operatorId: string) {
+  try {
+    // First, check if we should use Supabase Edge Function
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      )
+      
+      const { data, error } = await supabase.functions.invoke('ai-tour-scraper', {
+        body: { url, operatorId }
+      })
+      
+      if (!error && data?.tourData) {
+        return data.tourData
+      }
+      
+    }
+    
+    // Fallback to direct Replicate integration
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch webpage: ${response.status}`)
+    }
+    
+    const html = await response.text()
+    
+    // Use Replicate service to extract tour data
+    const tourData = await replicateService.extractTourFromWebpage(html, url)
+    
+    // Enhance with image analysis if images found
+    if (tourData.images && tourData.images.length > 0) {
+      try {
+        const imageAnalysis = await replicateService.analyzeTourImages(tourData.images)
+        tourData.imageDescriptions = imageAnalysis
+      } catch (imgError) {
+        console.error('Image analysis failed:', imgError)
+      }
+    }
+    
+    return tourData
+    
+  } catch (error) {
+    console.error('AI scraping failed, using fallback:', error)
+    
+    // Fallback to basic extraction
+    return fallbackScraper(url)
+  }
+}
+
+// Fallback scraper for when AI services are unavailable
+function fallbackScraper(url: string) {
   const urlLower = url.toLowerCase()
   
-  // Simulate processing delay
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // Generate mock tour data based on URL patterns
+  // Generate contextual tour data based on URL patterns
   if (urlLower.includes('paris') || urlLower.includes('eiffel')) {
     return {
       name: 'Magical Paris Evening Tour',
@@ -30,13 +85,13 @@ async function scrapeTourFromUrl(url: string) {
         'Montmartre artist quarter',
         'Traditional French café stop'
       ],
-      inclusions: [
+      included: [
         'Professional guide',
         'River cruise ticket',
         'Metro passes',
         'Complimentary photos'
       ],
-      exclusions: [
+      excluded: [
         'Meals and drinks',
         'Hotel transfers',
         'Personal expenses'
@@ -65,13 +120,13 @@ async function scrapeTourFromUrl(url: string) {
         'Roman Forum archaeological site',
         'Palatine Hill imperial palaces'
       ],
-      inclusions: [
+      included: [
         'Expert archaeologist guide',
         'All entrance fees',
         'Headsets for clear audio',
         'Detailed map and guidebook'
       ],
-      exclusions: [
+      excluded: [
         'Transportation',
         'Food and beverages',
         'Gratuities'
@@ -101,13 +156,13 @@ async function scrapeTourFromUrl(url: string) {
         'Traditional craft demonstration',
         'Secret viewpoint'
       ],
-      inclusions: [
+      included: [
         'Local expert guide',
         'Walking tour',
         'Surprise local treat',
         'Photo opportunities'
       ],
-      exclusions: [
+      excluded: [
         'Transportation to meeting point',
         'Meals',
         'Shopping expenses'
@@ -127,7 +182,7 @@ async function scrapeTourFromUrl(url: string) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handleTourScrape(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -139,40 +194,116 @@ export async function POST(request: NextRequest) {
     const validation = scrapeRequestSchema.safeParse(body)
     
     if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Invalid URL provided' },
-        { status: 400 }
+      return createValidationErrorResponse(
+        validation.error.errors.map(err => ({
+          code: 'VALIDATION_ERROR',
+          message: err.message,
+          field: err.path.join('.')
+        }))
       )
     }
     
     const { url } = validation.data
+    const operatorId = session.user?.operatorId || 'default'
     
-    console.log('[Tour Scraper] Scraping URL:', url)
     
     try {
-      // Scrape tour data from URL
-      const tourData = await scrapeTourFromUrl(url)
+      // Check if Replicate is configured
+      if (!process.env.REPLICATE_API_TOKEN && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      }
       
-      console.log('[Tour Scraper] Extracted tour data:', tourData.name)
+      // Scrape tour data from URL using AI
+      const tourData = await scrapeTourFromUrl(url, operatorId)
       
-      return NextResponse.json({ 
-        success: true,
-        tourData 
+      
+      // Geocode the tour location to get coordinates and Google Place ID
+      if (tourData.destination || tourData.city) {
+        const locationString = tourData.startingPoint || 
+                              `${tourData.destination || ''}, ${tourData.city || ''}, ${tourData.country || ''}`.trim()
+        
+        
+        const geocodeResult = await googlePlacesService.geocodeLocation(locationString)
+        
+        if (geocodeResult) {
+          tourData.googlePlaceId = geocodeResult.placeId
+          tourData.coordinates = {
+            lat: geocodeResult.coordinates.lat,
+            lng: geocodeResult.coordinates.lng
+          }
+          tourData.formattedAddress = geocodeResult.formattedAddress
+          
+          // Update city and country if not already set
+          if (!tourData.city && geocodeResult.city) {
+            tourData.city = geocodeResult.city
+          }
+          if (!tourData.country && geocodeResult.country) {
+            tourData.country = geocodeResult.country
+          }
+          
+          console.log('[Tour Scraper] Geocoding successful:', {
+            placeId: geocodeResult.placeId,
+            coordinates: tourData.coordinates
+          })
+        } else {
+        }
+      }
+      
+      // Generate marketing copy if AI is available
+      if (process.env.REPLICATE_API_TOKEN) {
+        try {
+          const marketingCopy = await replicateService.generateTourCopy(
+            tourData,
+            'General travelers'
+          )
+          
+          // Enhance tour data with generated copy
+          if (marketingCopy.title) tourData.name = marketingCopy.title
+          if (marketingCopy.shortDescription) tourData.shortDescription = marketingCopy.shortDescription
+          if (marketingCopy.fullDescription) tourData.description = marketingCopy.fullDescription
+          if (marketingCopy.sellingPoints) tourData.sellingPoints = marketingCopy.sellingPoints
+        } catch (copyError) {
+          console.error('[Tour Scraper] Marketing copy generation failed:', copyError)
+        }
+      }
+      
+      return createSuccessResponse({ 
+        tourData,
+        extractionMethod: process.env.REPLICATE_API_TOKEN ? 'ai-powered' : 'fallback'
       })
       
     } catch (scrapeError) {
       console.error('[Tour Scraper] Scraping error:', scrapeError)
-      return NextResponse.json(
-        { error: 'Failed to extract tour information from the provided URL' },
-        { status: 500 }
+      return createErrorResponse(
+        'Failed to extract tour information from the provided URL',
+        scrapeError instanceof Error ? { message: scrapeError.message } : undefined,
+        500
       )
     }
     
   } catch (error) {
     console.error('[Tour Scraper API] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to process request' },
-      { status: 500 }
+    return createErrorResponse(
+      'Failed to process request',
+      error instanceof Error ? { message: error.message } : undefined,
+      500
     )
   }
 }
+
+// Apply rate limiting to the endpoint
+export const POST = withRateLimit({
+  ...rateLimitConfigs.expensive,
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5, // 5 requests per 10 minutes
+  message: 'Too many tour scraping requests. Please wait before trying again.',
+  keyGenerator: (req) => {
+    // Rate limit by authenticated user since this requires auth
+    const authHeader = req.headers.get('authorization')
+    if (authHeader) {
+      return `auth:${authHeader}`
+    }
+    const forwarded = req.headers.get('x-forwarded-for')
+    const ip = forwarded ? forwarded.split(',')[0] : 'unknown'
+    return `ip:${ip}`
+  }
+})(handleTourScrape)

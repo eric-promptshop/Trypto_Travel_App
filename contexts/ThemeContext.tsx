@@ -92,7 +92,6 @@ export function ThemeProvider({
           }
         }
       } catch (err) {
-        console.warn('Failed to load saved theme from localStorage:', err);
       }
     }
   }, []);

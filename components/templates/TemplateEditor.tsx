@@ -295,7 +295,6 @@ export function TemplateEditor({ instanceId, onPublish, onSave }: TemplateEditor
                           component={selectedComponent}
                           onUpdate={(updates: Partial<ConfiguredComponent>) => {
                             // Handle component updates
-                            console.log('Component updates:', updates);
                           }}
                         />
                       </div>
@@ -312,7 +311,6 @@ export function TemplateEditor({ instanceId, onPublish, onSave }: TemplateEditor
                   selectionMode={true}
                   onAssetSelect={(asset) => {
                     // Handle asset selection for component
-                    console.log('Asset selected:', asset);
                   }}
                 />
               </div>
@@ -334,7 +332,6 @@ export function TemplateEditor({ instanceId, onPublish, onSave }: TemplateEditor
                           value={currentInstance.name}
                           onChange={(e) => {
                             // Update template name
-                            console.log('Update name:', e.target.value);
                           }}
                           className="w-full mt-1 px-3 py-2 border border-border rounded-md"
                         />

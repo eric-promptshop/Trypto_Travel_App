@@ -13,9 +13,7 @@ interface SimpleTourData {
 
 export class SimpleFetchScraper {
   private logger = {
-    info: (msg: string, data?: any) => console.log(`[SimpleFetchScraper] ${msg}`, data || ''),
     error: (msg: string, data?: any) => console.error(`[SimpleFetchScraper] ${msg}`, data || ''),
-    debug: (msg: string, data?: any) => console.log(`[SimpleFetchScraper:DEBUG] ${msg}`, data || '')
   };
 
   async scrapeUrl(url: string): Promise<{ success: boolean; data?: Activity[]; errors?: string[] }> {

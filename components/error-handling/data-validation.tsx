@@ -182,7 +182,6 @@ class DataValidator {
             }
           }
         } catch (error) {
-          console.warn(`Validation rule '${rule.name}' failed for field '${fieldPath}':`, error);
         }
       }
     };
@@ -290,7 +289,6 @@ class DataValidator {
     try {
       return JSON.parse(JSON.stringify(obj));
     } catch (error) {
-      console.warn('Failed to deep clone object:', error);
       return obj;
     }
   }

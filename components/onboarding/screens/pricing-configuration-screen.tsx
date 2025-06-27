@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,13 +27,65 @@ const initialPricingMatrix: PricingRow[] = [
 export function PricingConfigurationScreen() {
   const { onboardingData, updateOnboardingData, navigateToNextStep, navigateToPrevStep } = useOnboarding()
 
-  const [pricingMatrix, setPricingMatrix] = useState<PricingRow[]>(
-    onboardingData.pricingConfig?.matrix && onboardingData.pricingConfig.matrix.length > 0
-      ? onboardingData.pricingConfig.matrix
-      : initialPricingMatrix,
-  )
+  // Extract unique destinations from imported tours
+  const getUniqueDestinations = () => {
+    if (!onboardingData.contentImport?.tours || onboardingData.contentImport.tours.length === 0) {
+      return [];
+    }
+    
+    // Get unique destinations from imported tours
+    const destinations = new Set<string>();
+    onboardingData.contentImport.tours.forEach(tour => {
+      // Parse destination - it might have multiple locations separated by commas
+      const tourDestinations = tour.destination.split(',').map(d => d.trim());
+      tourDestinations.forEach(dest => {
+        if (dest) destinations.add(dest);
+      });
+    });
+    
+    return Array.from(destinations).sort();
+  };
+
+  const uniqueDestinations = getUniqueDestinations();
+  
+  // Create initial pricing matrix from imported destinations or use defaults
+  const createInitialMatrix = (): PricingRow[] => {
+    if (onboardingData.pricingConfig?.matrix && onboardingData.pricingConfig.matrix.length > 0) {
+      return onboardingData.pricingConfig.matrix;
+    }
+    
+    if (uniqueDestinations.length > 0) {
+      // Create pricing rows for each unique destination
+      return uniqueDestinations.map(destination => ({
+        id: uuidv4(),
+        destination,
+        star3: "150", // Default pricing
+        star4: "250",
+        star5: "400"
+      }));
+    }
+    
+    // Fall back to initial defaults if no imported tours
+    return initialPricingMatrix;
+  };
+
+  const [pricingMatrix, setPricingMatrix] = useState<PricingRow[]>(createInitialMatrix())
   const [includeMargin, setIncludeMargin] = useState(onboardingData.pricingConfig?.includeMargin ?? true)
   const [displayRanges, setDisplayRanges] = useState(onboardingData.pricingConfig?.displayRanges ?? true)
+  
+  // Update pricing matrix when imported tours change
+  useEffect(() => {
+    if (!onboardingData.pricingConfig?.matrix && uniqueDestinations.length > 0) {
+      const newMatrix = uniqueDestinations.map(destination => ({
+        id: uuidv4(),
+        destination,
+        star3: "150",
+        star4: "250",
+        star5: "400"
+      }));
+      setPricingMatrix(newMatrix);
+    }
+  }, [uniqueDestinations.length]) // Only depend on the length to avoid infinite loops
 
   const handleMatrixChange = (id: string, field: keyof PricingRow, value: string) => {
     setPricingMatrix((prevMatrix) => prevMatrix.map((row) => (row.id === id ? { ...row, [field]: value } : row)))
@@ -99,6 +151,11 @@ export function PricingConfigurationScreen() {
             Set your per-person, per-day pricing (USD) for different accommodation levels. These will be used to
             generate initial estimates for your customers.
           </p>
+          {uniqueDestinations.length > 0 && !onboardingData.pricingConfig?.matrix && (
+            <p className="text-sm text-primary-blue mt-2 font-medium">
+              ✓ Destinations have been automatically populated from your imported tours.
+            </p>
+          )}
         </CardContent>
       </Card>
 

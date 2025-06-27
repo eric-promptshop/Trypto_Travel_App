@@ -34,7 +34,6 @@ export async function getLocationImage(location: string, query?: string): Promis
       searchQuery = query
     }
 
-    console.log(`Fetching image for: ${searchQuery}`)
 
     // Use our API route with timeout
     const controller = new AbortController()
@@ -61,7 +60,6 @@ export async function getLocationImage(location: string, query?: string): Promis
         throw new Error(data.error)
       }
 
-      console.log(`Successfully fetched image for ${location}`)
       return data.imageUrl
     } catch (fetchError) {
       clearTimeout(timeoutId)
@@ -72,7 +70,6 @@ export async function getLocationImage(location: string, query?: string): Promis
     // Return a verified fallback image for the location
     const fallbackImage =
       VERIFIED_LOCATION_IMAGES[location] || `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(location)}`
-    console.log(`Using fallback image for ${location}: ${fallbackImage}`)
     return fallbackImage
   }
 }
@@ -86,7 +83,6 @@ export async function getCachedLocationImage(location: string, query?: string): 
 
   // Return cached image if available
   if (imageCache[cacheKey]) {
-    console.log(`Using cached image for ${location}`)
     return imageCache[cacheKey]
   }
 
@@ -152,21 +148,18 @@ export async function getRealisticImageUrl(location: string): Promise<string> {
     const cachedImage = typeof window !== "undefined" ? sessionStorage.getItem(cacheKey) : null
 
     if (cachedImage) {
-      console.log(`Using session cached image for ${location}`)
       return cachedImage
     }
 
     // Check if we have a verified image for this location
     const verifiedImage = VERIFIED_LOCATION_IMAGES[location]
     if (verifiedImage) {
-      console.log(`Using verified image for ${location}: ${verifiedImage}`)
 
       // Cache the verified image
       if (typeof window !== "undefined") {
         try {
           sessionStorage.setItem(cacheKey, verifiedImage)
         } catch (e) {
-          console.warn("Could not cache image URL:", e)
         }
       }
 
@@ -181,7 +174,6 @@ export async function getRealisticImageUrl(location: string): Promise<string> {
       try {
         sessionStorage.setItem(cacheKey, imageUrl)
       } catch (e) {
-        console.warn("Could not cache image URL:", e)
       }
     }
 
@@ -190,7 +182,6 @@ export async function getRealisticImageUrl(location: string): Promise<string> {
     console.error("Error getting realistic image:", error)
     const fallbackImage =
       VERIFIED_LOCATION_IMAGES[location] || `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(location)}`
-    console.log(`Final fallback for ${location}: ${fallbackImage}`)
     return fallbackImage
   }
 }

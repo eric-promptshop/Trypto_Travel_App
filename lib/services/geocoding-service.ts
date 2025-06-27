@@ -65,15 +65,12 @@ export class GeocodingService {
   }
 
   /**
-   * Search for locations using Mapbox API (requires API key)
+   * Search for locations using Mapbox API (via proxy)
    */
   private static async searchWithMapbox(query: string): Promise<LocationResult[]> {
-    const apiKey = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-    if (!apiKey) return []
-
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?limit=10&types=place,locality,district&access_token=${apiKey}`
+        `/api/mapbox/search?q=${encodeURIComponent(query)}&limit=10`
       )
 
       if (!response.ok) {
@@ -98,15 +95,12 @@ export class GeocodingService {
   }
 
   /**
-   * Search for locations using Google Places API (requires API key)
+   * Search for locations using Google Places API (via proxy)
    */
   private static async searchWithGooglePlaces(query: string): Promise<LocationResult[]> {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-    if (!apiKey) return []
-
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&types=(cities)&key=${apiKey}`
+        `/api/places/autocomplete?input=${encodeURIComponent(query)}&types=(cities)`
       )
 
       if (!response.ok) {
@@ -144,11 +138,13 @@ export class GeocodingService {
     // Try primary provider (Nominatim - free, no API key required)
     results = await this.searchWithNominatim(query)
 
-    // If no results and we have API keys, try other providers
+    // If no results, try other providers via proxy
     if (results.length === 0) {
-      if (process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
-        results = await this.searchWithMapbox(query)
-      } else if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
+      // Try Mapbox first (generally better for city search)
+      results = await this.searchWithMapbox(query)
+      
+      // If still no results, try Google Places
+      if (results.length === 0) {
         results = await this.searchWithGooglePlaces(query)
       }
     }

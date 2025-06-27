@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TenantResolver } from '@/lib/middleware/tenant-resolver';
 import { getToken } from 'next-auth/jwt';
+import { requireOperatorAuth, isOperatorPath } from '@/lib/middleware/operator-auth';
 
 /**
  * Multi-tenant middleware for handling domain-based and subdomain-based routing
@@ -9,7 +10,6 @@ import { getToken } from 'next-auth/jwt';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  console.log(`🌐 Middleware processing: ${pathname}`);
 
   // Skip middleware for static files and API routes that don't need tenant context
   if (
@@ -21,16 +21,36 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Development mode bypass for simpler local testing
+  if (process.env.NODE_ENV === 'development' && request.headers.get('host')?.includes('localhost')) {
+    const response = NextResponse.next();
+    // Set default tenant for localhost
+    response.headers.set('x-tenant-id', 'default');
+    response.headers.set('x-tenant-name', 'Default Organization');
+    response.headers.set('x-tenant-slug', 'default');
+    response.headers.set('x-tenant-domain', 'localhost:3000');
+    response.headers.set('x-tenant-settings', '{}');
+    response.headers.set('x-pathname', pathname);
+    return response;
+  }
+
   // Protected routes that require authentication
   const protectedRoutes = [
     '/trips',
     '/itinerary',
-    '/itinerary-display',
     '/profile',
     '/settings',
     '/tour-operator',
     '/admin'
   ];
+
+  // Handle operator-specific routes
+  if (isOperatorPath(pathname)) {
+    const operatorResponse = await requireOperatorAuth(request);
+    if (operatorResponse.status !== 200) {
+      return operatorResponse;
+    }
+  }
 
   // Check if the current path is protected
   const isProtectedRoute = protectedRoutes.some(route => 
@@ -43,6 +63,10 @@ export async function middleware(request: NextRequest) {
                        pathname === '/ui-showcase' || 
                        pathname === '/ui-showcase-v2' ||
                        pathname === '/docs' ||
+                       pathname === '/plan' ||
+                       pathname.startsWith('/plan/') ||
+                       pathname === '/test-geocoding' ||
+                       pathname === '/test-plan' ||
                        pathname.startsWith('/api/');
 
   // Check authentication for protected routes
@@ -54,14 +78,12 @@ export async function middleware(request: NextRequest) {
       });
 
       if (!token) {
-        console.log(`🔒 Unauthenticated access to protected route: ${pathname}`);
         const url = request.nextUrl.clone();
         url.pathname = '/auth/signin';
         url.searchParams.set('callbackUrl', pathname);
         return NextResponse.redirect(url);
       }
 
-      console.log(`✅ Authenticated user accessing: ${pathname}`);
     } catch (error) {
       console.error('Authentication check error:', error);
       // On error, redirect to signin for safety
@@ -76,7 +98,6 @@ export async function middleware(request: NextRequest) {
     // Resolve tenant information
     const tenant = await TenantResolver.resolveTenant(request);
     
-    console.log(`🏢 Resolved tenant: ${tenant.name} (${tenant.id})`);
 
     // Create response with tenant information in headers
     const response = NextResponse.next();
@@ -94,7 +115,6 @@ export async function middleware(request: NextRequest) {
       // For white-label clients, handle special routing
       if (tenant.isCustomDomain || tenant.subdomain) {
         // Custom domain or subdomain - serve branded version
-        console.log(`🎨 Serving branded version for tenant: ${tenant.name}`);
         
         // Check authentication for protected routes on tenant domains
         if (isProtectedRoute && !isAuthRoute) {
@@ -105,7 +125,6 @@ export async function middleware(request: NextRequest) {
             });
 
             if (!token) {
-              console.log(`🔒 Unauthenticated access to protected tenant route: ${pathname}`);
               const url = request.nextUrl.clone();
               url.pathname = '/auth/signin';
               url.searchParams.set('callbackUrl', pathname);
@@ -126,7 +145,6 @@ export async function middleware(request: NextRequest) {
         
         // Block admin routes for non-default tenants
         if (pathname.startsWith('/admin')) {
-          console.log(`🚫 Blocking admin access for tenant: ${tenant.name}`);
           return new NextResponse('Access Denied', { status: 403 });
         }
       } else if (pathname.startsWith('/client/')) {
@@ -134,7 +152,6 @@ export async function middleware(request: NextRequest) {
         const tenantSlug = pathname.split('/')[2];
         if (tenantSlug === tenant.slug) {
           const newPath = pathname.replace(`/client/${tenantSlug}`, '') || '/';
-          console.log(`🔄 Rewriting path from ${pathname} to ${newPath}`);
           
           // Check if the rewritten path is protected
           const isRewrittenProtected = protectedRoutes.some(route => 
@@ -149,7 +166,6 @@ export async function middleware(request: NextRequest) {
               });
 
               if (!token) {
-                console.log(`🔒 Unauthenticated access to protected tenant route: ${newPath}`);
                 const url = request.nextUrl.clone();
                 url.pathname = '/auth/signin';
                 url.searchParams.set('callbackUrl', pathname);
@@ -186,7 +202,6 @@ export async function middleware(request: NextRequest) {
 
     // For admin routes, ensure proper authentication (placeholder for now)
     if (pathname.startsWith('/admin')) {
-      console.log(`👑 Admin route accessed for default tenant`);
       response.headers.set('x-admin-route', 'true');
     }
 

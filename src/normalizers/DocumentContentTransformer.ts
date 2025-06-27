@@ -28,7 +28,6 @@ export class DocumentContentTransformer {
    */
   public async transform(rawContent: RawContent): Promise<NormalizedContent | null> {
     if (rawContent.contentType !== 'pdf_text' && rawContent.contentType !== 'docx_text') {
-      console.warn(`DocumentContentTransformer received unexpected content type: ${rawContent.contentType}`);
       return null;
     }
 

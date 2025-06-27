@@ -236,7 +236,6 @@ export default function UIShowcaseV2() {
                   tripId="demo-trip"
                   dayNumber={1}
                   activities={mockActivities}
-                  onActivitiesChange={(activities) => console.log('Activities updated:', activities)}
                 />
               </CardContent>
             </Card>

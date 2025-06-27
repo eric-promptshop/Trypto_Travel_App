@@ -29,6 +29,8 @@ import { toast } from 'sonner'
 import TourUploadModal from './TourUploadModal'
 import TourDetailModal from './TourDetailModal'
 import TourUrlImportModal from './TourUrlImportModal'
+import { TourAnalyticsDashboard } from '@/components/operator/TourAnalyticsDashboard'
+import { LeadManagementTab } from '@/components/operator/LeadManagementTab'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,15 +98,12 @@ export default function TourOperatorDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      console.log('[TourOperatorDashboard] Fetching dashboard data...')
       
       // Fetch tours
       const toursResponse = await fetch('/api/tour-operator/tours')
-      console.log('[TourOperatorDashboard] Tours response status:', toursResponse.status)
       
       if (toursResponse.ok) {
         const toursData = await toursResponse.json()
-        console.log('[TourOperatorDashboard] Tours data:', toursData)
         setTours(toursData.tours || [])
       } else {
         const errorText = await toursResponse.text()
@@ -113,11 +112,9 @@ export default function TourOperatorDashboard() {
 
       // Fetch stats
       const statsResponse = await fetch('/api/tour-operator/stats')
-      console.log('[TourOperatorDashboard] Stats response status:', statsResponse.status)
       
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
-        console.log('[TourOperatorDashboard] Stats data:', statsData)
         setStats(statsData.stats || stats)
       } else {
         const errorText = await statsResponse.text()
@@ -252,7 +249,8 @@ export default function TourOperatorDashboard() {
       <Tabs defaultValue="tours" className="space-y-4">
         <TabsList>
           <TabsTrigger value="tours">Tours</TabsTrigger>
-          <TabsTrigger value="bookings">Bookings</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="leads">Leads</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
@@ -414,34 +412,86 @@ export default function TourOperatorDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="bookings">
+        <TabsContent value="templates">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Bookings</CardTitle>
-              <CardDescription>Manage customer bookings and inquiries</CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Tour Templates</CardTitle>
+                  <CardDescription>Browse and customize proven tour templates</CardDescription>
+                </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.href = '/operator/templates'}
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  View Full Library
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-gray-500">
-                <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>No bookings yet. Your bookings will appear here once customers start booking your tours.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="hover:shadow-md transition-shadow cursor-pointer border">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <Package className="h-8 w-8 text-blue-600" />
+                      <Badge variant="secondary">Popular</Badge>
+                    </div>
+                    <CardTitle className="text-base mt-2">City Tour Templates</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600">12 ready-to-use templates for city tours</p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="hover:shadow-md transition-shadow cursor-pointer border">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <Package className="h-8 w-8 text-green-600" />
+                      <Badge variant="secondary">New</Badge>
+                    </div>
+                    <CardTitle className="text-base mt-2">Adventure Templates</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600">8 templates for outdoor adventures</p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="hover:shadow-md transition-shadow cursor-pointer border">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <Package className="h-8 w-8 text-purple-600" />
+                      <Badge>AI-Generated</Badge>
+                    </div>
+                    <CardTitle className="text-base mt-2">Custom Templates</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600">Generate templates with AI assistance</p>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-600 mb-4">
+                  Access our full library of tour templates to quickly create new offerings
+                </p>
+                <Button 
+                  className="bg-brand-orange-500 hover:bg-brand-orange-600"
+                  onClick={() => window.location.href = '/operator/templates'}
+                >
+                  Browse All Templates
+                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        <TabsContent value="leads">
+          <LeadManagementTab />
+        </TabsContent>
+
         <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle>Analytics</CardTitle>
-              <CardDescription>Track your tour performance and customer insights</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-gray-500">
-                <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Analytics dashboard coming soon. Track views, conversions, and revenue.</p>
-              </div>
-            </CardContent>
-          </Card>
+          <TourAnalyticsDashboard operatorName={session?.user?.name || 'Tour Operator'} />
         </TabsContent>
 
         <TabsContent value="settings">

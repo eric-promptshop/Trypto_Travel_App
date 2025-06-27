@@ -47,7 +47,6 @@ export function useSpeechRecognition({
 
   useEffect(() => {
     if (!isSupported) {
-      console.log('[Speech Recognition] Not supported in this browser');
       return;
     }
 
@@ -59,14 +58,11 @@ export function useSpeechRecognition({
     recognition.lang = language;
     recognition.maxAlternatives = 1;
 
-    console.log('[Speech Recognition] Initialized with:', { continuous, interimResults, language });
 
     recognition.onstart = () => {
-      console.log('[Speech Recognition] Started');
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      console.log('[Speech Recognition] Result event:', event);
       let finalTranscript = '';
       let interimTranscript = '';
 
@@ -79,7 +75,6 @@ export function useSpeechRecognition({
         }
       }
 
-      console.log('[Speech Recognition] Transcripts:', { finalTranscript, interimTranscript });
 
       if (finalTranscript) {
         onTranscriptRef.current?.(finalTranscript, true);
@@ -91,21 +86,18 @@ export function useSpeechRecognition({
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error('[Speech Recognition] Error:', event.error);
       if (event.error === 'no-speech') {
-        console.log('[Speech Recognition] No speech detected');
         return;
       }
       onErrorRef.current?.(event.error);
     };
 
     recognition.onend = () => {
-      console.log('[Speech Recognition] Ended, isListening:', isListeningRef.current);
       if (isListeningRef.current) {
         // Auto-restart if still supposed to be listening
         setTimeout(() => {
           if (isListeningRef.current) {
             try {
               recognition.start();
-              console.log('[Speech Recognition] Restarted');
             } catch (e) {
               console.error('[Speech Recognition] Failed to restart:', e);
               isListeningRef.current = false;
@@ -116,11 +108,9 @@ export function useSpeechRecognition({
     };
 
     recognition.onspeechstart = () => {
-      console.log('[Speech Recognition] Speech started');
     };
 
     recognition.onspeechend = () => {
-      console.log('[Speech Recognition] Speech ended');
     };
 
     recognitionRef.current = recognition;
@@ -128,7 +118,6 @@ export function useSpeechRecognition({
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
-        console.log('[Speech Recognition] Cleanup: stopped');
       }
     };
   }, [continuous, interimResults, language, isSupported]);
@@ -143,13 +132,11 @@ export function useSpeechRecognition({
       isListeningRef.current = true;
       try {
         recognitionRef.current.start();
-        console.log('[Speech Recognition] Start called');
       } catch (e) {
         console.error('[Speech Recognition] Failed to start:', e);
         isListeningRef.current = false;
       }
     } else {
-      console.log('[Speech Recognition] Already listening or not initialized');
     }
   }, [isSupported]);
 
@@ -157,7 +144,6 @@ export function useSpeechRecognition({
     if (recognitionRef.current && isListeningRef.current) {
       isListeningRef.current = false;
       recognitionRef.current.stop();
-      console.log('[Speech Recognition] Stop called');
     }
   }, []);
 

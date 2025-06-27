@@ -362,7 +362,6 @@ export class PricingCalculationTester {
    * Test individual component pricing
    */
   async testComponentPricing(): Promise<void> {
-    console.log('🧪 Testing Individual Component Pricing...\n')
 
     const context = PricingTestDataFactory.createPricingContext()
     const activities = PricingTestDataFactory.createSampleActivities()
@@ -372,32 +371,16 @@ export class PricingCalculationTester {
     // Test activity pricing
     for (const activity of activities) {
       const cost = await this.service.estimateComponentCost(activity, context)
-      console.log(`🎯 ${activity.title}:`)
-      console.log(`   Category: ${activity.category}`)
-      console.log(`   Estimated Cost: ${cost.amount} ${cost.currency}`)
-      console.log(`   Base Cost: ${activity.estimatedCost?.amount} ${activity.estimatedCost?.currency}`)
-      console.log('')
     }
 
     // Test accommodation pricing
     for (const accommodation of accommodations) {
       const cost = await this.service.estimateComponentCost(accommodation, context)
-      console.log(`🏨 ${accommodation.title}:`)
-      console.log(`   Type: ${accommodation.type} (${accommodation.starRating} stars)`)
-      console.log(`   Estimated Cost: ${cost.amount} ${cost.currency}`)
-      console.log(`   Base Cost: ${accommodation.estimatedCost?.amount} ${accommodation.estimatedCost?.currency}`)
-      console.log('')
     }
 
     // Test transportation pricing
     for (const transport of transportation) {
       const cost = await this.service.estimateComponentCost(transport, context)
-      console.log(`✈️ ${transport.title}:`)
-      console.log(`   Type: ${transport.type}`)
-      console.log(`   Route: ${transport.from} → ${transport.to}`)
-      console.log(`   Estimated Cost: ${cost.amount} ${cost.currency}`)
-      console.log(`   Base Cost: ${transport.estimatedCost?.amount} ${transport.estimatedCost?.currency}`)
-      console.log('')
     }
   }
 
@@ -405,7 +388,6 @@ export class PricingCalculationTester {
    * Test seasonal pricing adjustments
    */
   async testSeasonalPricing(): Promise<void> {
-    console.log('🌤️ Testing Seasonal Pricing Adjustments...\n')
 
     const activities = PricingTestDataFactory.createSampleActivities()
     if (activities.length === 0) throw new Error('No test activities available')
@@ -415,9 +397,6 @@ export class PricingCalculationTester {
     for (const season of seasons) {
       const context = PricingTestDataFactory.createPricingContext({ seasonality: season })
       const cost = await this.service.estimateComponentCost(activity, context)
-      console.log(`🗓️ ${season.toUpperCase()} Season:`)
-      console.log(`   ${activity.title}: ${cost.amount} ${cost.currency}`)
-      console.log('')
     }
   }
 
@@ -425,7 +404,6 @@ export class PricingCalculationTester {
    * Test currency conversion
    */
   async testCurrencyConversion(): Promise<void> {
-    console.log('💱 Testing Currency Conversion...\n')
 
     const activities = PricingTestDataFactory.createSampleActivities()
     if (activities.length === 0) throw new Error('No test activities available')
@@ -435,68 +413,45 @@ export class PricingCalculationTester {
     for (const currency of currencies) {
       const context = PricingTestDataFactory.createPricingContext({ currency })
       const cost = await this.service.estimateComponentCost(activity, context)
-      console.log(`💰 ${currency}: ${cost.amount} ${cost.currency}`)
     }
-    console.log('')
   }
 
   /**
    * Test complete itinerary cost calculation
    */
   async testItineraryCostCalculation(): Promise<void> {
-    console.log('📊 Testing Complete Itinerary Cost Calculation...\n')
 
     const itinerary = PricingTestDataFactory.createSampleItinerary()
     const costBreakdown = await this.service.calculateItineraryCost(itinerary)
 
-    console.log('💰 COST BREAKDOWN:')
-    console.log(`   Total: ${costBreakdown.total.amount} ${costBreakdown.total.currency}`)
-    console.log(`   Confidence: ${(costBreakdown.confidence * 100).toFixed(1)}%`)
-    console.log('')
 
-    console.log('📋 BY CATEGORY:')
     Object.entries(costBreakdown.byCategory).forEach(([category, cost]) => {
-      console.log(`   ${category}: ${cost.amount} ${cost.currency}`)
     })
-    console.log('')
 
-    console.log('📅 BY DAY:')
     costBreakdown.byDay.forEach((day, index) => {
-      console.log(`   Day ${index + 1} (${day.date}): ${day.total.amount} ${day.total.currency}`)
     })
-    console.log('')
 
-    console.log(`🛡️ Contingency Buffer: ${costBreakdown.contingency.amount} ${costBreakdown.contingency.currency}`)
-    console.log('')
   }
 
   /**
    * Test budget optimization
    */
   async testBudgetOptimization(): Promise<void> {
-    console.log('⚖️ Testing Budget Optimization...\n')
 
     const itinerary = PricingTestDataFactory.createSampleItinerary()
     const maxBudget: Money = { amount: 800, currency: 'EUR' }
 
     // Get current cost
     const currentCost = await this.service.calculateItineraryCost(itinerary)
-    console.log(`💸 Current Total: ${currentCost.total.amount} ${currentCost.total.currency}`)
-    console.log(`🎯 Target Budget: ${maxBudget.amount} ${maxBudget.currency}`)
 
     // Optimize for budget
     const optimization = await this.service.optimizeForBudget(itinerary, maxBudget)
-    console.log(`💰 Cost Reduction: ${optimization.costReduction.amount} ${optimization.costReduction.currency}`)
-    console.log(`🔧 Changes Applied: ${optimization.changesApplied.length}`)
-    console.log(`⚠️ Tradeoffs: ${optimization.tradeoffs.length}`)
-    console.log('')
   }
 
   /**
    * Test service performance
    */
   async testPerformance(): Promise<void> {
-    console.log('⚡ Testing Performance...\n')
 
     const startTime = performance.now()
     const activities = PricingTestDataFactory.createSampleActivities()
@@ -513,26 +468,15 @@ export class PricingCalculationTester {
     const endTime = performance.now()
     const avgTime = (endTime - startTime) / iterations
 
-    console.log(`⏱️ Performance Results (${iterations} iterations):`)
-    console.log(`   Average time per calculation: ${avgTime.toFixed(2)}ms`)
-    console.log(`   Total time: ${(endTime - startTime).toFixed(2)}ms`)
-    console.log('')
 
     // Test service stats
     const stats = this.service.getServiceStats()
-    console.log('📈 Service Statistics:')
-    console.log(`   Cache size: ${stats.cacheSize}`)
-    console.log(`   Supported currencies: ${stats.supportedCurrencies.join(', ')}`)
-    console.log(`   Pricing models: ${stats.pricingModels.length}`)
-    console.log('')
   }
 
   /**
    * Run all tests
    */
   async runAllTests(): Promise<void> {
-    console.log('🚀 Starting Comprehensive Pricing Service Tests\n')
-    console.log('='.repeat(60) + '\n')
 
     try {
       await this.testComponentPricing()
@@ -542,7 +486,6 @@ export class PricingCalculationTester {
       await this.testBudgetOptimization()
       await this.testPerformance()
 
-      console.log('✅ All tests completed successfully!')
     } catch (error) {
       console.error('❌ Test failed:', error)
     }

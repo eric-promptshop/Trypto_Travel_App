@@ -211,7 +211,6 @@ export function ConnectedItineraryViewer({
     if (onEdit) {
       onEdit()
     } else {
-      console.log('Edit functionality not implemented')
     }
   }
 
@@ -222,7 +221,6 @@ export function ConnectedItineraryViewer({
         if (shareResult?.shareUrl) {
           // Copy to clipboard
           await navigator.clipboard.writeText(shareResult.shareUrl)
-          console.log('Share URL copied to clipboard:', shareResult.shareUrl)
         }
       } catch (error) {
         console.error('Failed to share itinerary:', error)
@@ -230,7 +228,6 @@ export function ConnectedItineraryViewer({
     } else if (onShare) {
       onShare()
     } else {
-      console.log('Share functionality not available')
     }
   }
 
@@ -238,14 +235,12 @@ export function ConnectedItineraryViewer({
     if (tripId && exportItinerary) {
       try {
         await exportItinerary('pdf')
-        console.log('PDF download initiated')
       } catch (error) {
         console.error('Failed to download PDF:', error)
       }
     } else if (onDownload) {
       onDownload()
     } else {
-      console.log('Download functionality not available')
     }
   }
 
@@ -376,7 +371,6 @@ export function ConnectedItineraryViewer({
           onDownload={handleDownload}
           onSave={async (updates) => {
             // Handle save functionality
-            console.log('Saving itinerary updates:', updates)
             if (tripId && refreshItinerary) {
               await refreshItinerary()
             }

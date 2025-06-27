@@ -38,37 +38,31 @@ export class TenantResolver {
     const host = request.headers.get('host') || 'localhost:3000'
     const pathname = request.nextUrl.pathname
 
-    console.log(`🔍 Resolving tenant for host: ${host}, path: ${pathname}`)
 
     // Strategy 1: Check for custom domain mapping
     const customDomainTenant = await this.resolveByCustomDomain(host)
     if (customDomainTenant) {
-      console.log(`✅ Resolved tenant by custom domain: ${customDomainTenant.name}`)
       return customDomainTenant
     }
 
     // Strategy 2: Check for subdomain
     const subdomainTenant = await this.resolveBySubdomain(host)
     if (subdomainTenant) {
-      console.log(`✅ Resolved tenant by subdomain: ${subdomainTenant.name}`)
       return subdomainTenant
     }
 
     // Strategy 3: Check for path-based routing (e.g., /client/adventure-tours)
     const pathTenant = await this.resolveByPath(pathname)
     if (pathTenant) {
-      console.log(`✅ Resolved tenant by path: ${pathTenant.name}`)
       return pathTenant
     }
 
     // Strategy 4: Admin routes use default tenant
     if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
-      console.log(`✅ Using default tenant for admin route`)
       return this.defaultTenant
     }
 
     // Fallback: Use default tenant
-    console.log(`ℹ️ Using default tenant as fallback`)
     return this.defaultTenant
   }
 
@@ -79,7 +73,6 @@ export class TenantResolver {
     try {
       // TODO: Replace with API call or edge-compatible solution
       // For now, return null to skip custom domain resolution
-      console.log('Custom domain resolution skipped in edge runtime')
       return null
     } catch (error) {
       console.error('Error resolving tenant by custom domain:', error)
@@ -106,7 +99,6 @@ export class TenantResolver {
     try {
       // TODO: Replace with API call or edge-compatible solution
       // For now, return null to skip subdomain resolution
-      console.log('Subdomain resolution skipped in edge runtime')
       return null
     } catch (error) {
       console.error('Error resolving tenant by subdomain:', error)

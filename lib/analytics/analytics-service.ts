@@ -50,26 +50,32 @@ export class AnalyticsService {
       script.async = true
       document.head.appendChild(script)
 
-      window.dataLayer = window.dataLayer || []
-      function gtag(...args: any[]) {
-        window.dataLayer.push(args)
+      // Initialize dataLayer
+      if (!window.dataLayer) {
+        window.dataLayer = []
       }
-      gtag('js', new Date())
-      gtag('config', process.env.NEXT_PUBLIC_GA_ID)
+      
+      // Define gtag function globally
+      if (!window.gtag) {
+        window.gtag = function(...args: any[]) {
+          window.dataLayer.push(args)
+        }
+      }
+      
+      window.gtag('js', new Date())
+      window.gtag('config', process.env.NEXT_PUBLIC_GA_ID)
     }
   }
 
   private initializeMixpanel(apiKey?: string) {
     if (typeof window !== 'undefined' && (apiKey || process.env.NEXT_PUBLIC_MIXPANEL_TOKEN)) {
       // Mixpanel initialization would go here
-      console.log('Mixpanel initialized')
     }
   }
 
   private initializePostHog() {
     if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
       // PostHog initialization would go here
-      console.log('PostHog initialized')
     }
   }
 
@@ -104,7 +110,7 @@ export class AnalyticsService {
     }
 
     // Send to Google Analytics
-    if (typeof window !== 'undefined' && window.gtag) {
+    if (typeof window !== 'undefined' && window.gtag && typeof window.gtag === 'function') {
       window.gtag('event', event, properties)
     }
 
@@ -113,7 +119,6 @@ export class AnalyticsService {
 
     // Console log for development
     if (process.env.NODE_ENV === 'development') {
-      console.log('Analytics Event:', eventData)
     }
   }
 
@@ -141,7 +146,7 @@ export class AnalyticsService {
     }
 
     // Send to analytics providers
-    if (typeof window !== 'undefined' && window.gtag) {
+    if (typeof window !== 'undefined' && window.gtag && typeof window.gtag === 'function') {
       window.gtag('config', process.env.NEXT_PUBLIC_GA_ID, {
         user_id: userId
       })
@@ -233,18 +238,8 @@ export const analytics = AnalyticsService.getInstance()
 
 // React hook for analytics
 export function useAnalytics() {
-  // Add comprehensive logging
-  if (typeof window !== 'undefined') {
-    console.log('[useAnalytics] Hook called, React status:', {
-      hasReact: typeof (window as any).React !== 'undefined',
-      analyticsInstance: !!analytics,
-      timestamp: new Date().toISOString()
-    })
-  }
-  
   return {
     track: (event: string, properties?: Record<string, any>) => {
-      console.log('[useAnalytics] Track called:', { event, properties })
       try {
         analytics.track(event, properties)
       } catch (error) {

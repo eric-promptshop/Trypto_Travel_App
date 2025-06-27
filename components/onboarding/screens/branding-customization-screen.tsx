@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useOnboarding } from "@/contexts/onboarding-context"
 import { ChevronLeft, ChevronRight, UploadCloud, Monitor, Smartphone, RotateCcw } from "lucide-react"
-import { BrandingPreview } from "@/components/onboarding/preview/branding-preview"
+import { ItineraryBuilderPreview } from "@/components/onboarding/preview/itinerary-builder-preview"
 import { MobilePreview } from "@/components/onboarding/preview/mobile-preview"
 import { FontLoader } from "@/components/onboarding/font-loader"
 import "@/components/onboarding/preview/preview-container.css"
@@ -341,7 +341,7 @@ export function BrandingCustomizationScreen() {
                 <div className="h-full w-full overflow-hidden rounded-lg bg-white preview-container">
                   <div className="preview-desktop-wrapper">
                     <div style={{ transform: 'scale(0.75)', transformOrigin: '0 0', width: '133.33%' }}>
-                      <BrandingPreview
+                      <ItineraryBuilderPreview
                         logoUrl={logoUrl}
                         primaryColor={primaryColor}
                         secondaryColor={secondaryColor}
