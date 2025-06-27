@@ -1,0 +1,104 @@
+# Development and test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/*.test.js
+**/*.spec.js
+__tests__/
+__mocks__/
+coverage/
+.nyc_output/
+
+# Documentation
+README.md
+CONTRIBUTING.md
+CHANGELOG.md
+LICENSE
+docs/
+*.md
+
+# Development config
+.env.example
+.env.development
+.env.test
+.env.local.example
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+
+# Development tools
+.husky/
+.vscode/
+.idea/
+*.sublime-*
+.editorconfig
+.eslintrc*
+.prettierrc*
+jest.config.*
+playwright.config.*
+cypress.config.*
+tsconfig.test.json
+
+# Scripts and tools
+scripts/
+tools/
+bin/
+
+# Archive and backup
+.archive/
+backup/
+*.backup
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+build-*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts that shouldn't be uploaded
+*.map
+stats.json
+bundle-stats.json
+
+# Storybook
+.storybook/
+storybook-static/
+
+# Task management and IDE configs
+.taskmaster/
+.clinerules/
+.cursor/
+.roo/
+.trae/
+.windsurf/
+.roomodes
+tasks/
+
+# Other
+.sentryclirc
+sentry.properties
+instrumentation.ts.bak
+sentry.client.config.ts.bak
+
+# Test data
+test-*.js
+test-endpoints.js

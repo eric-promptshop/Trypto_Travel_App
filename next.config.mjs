@@ -3,22 +3,21 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   
   // Experimental features to fix chunk loading
   experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'date-fns'],
   },
-  
-  // Disable outputFileTracing to speed up build
-  outputFileTracing: false,
   
   // Build optimizations
   compiler: {
     // Remove console logs in production
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn'],
-    } : false,
+    removeConsole: process.env.NODE_ENV === 'production',
   },
+  
+  // Reduce build output verbosity
+  productionBrowserSourceMaps: false,
   
   // Image optimization
   images: {
@@ -30,7 +29,10 @@ const nextConfig = {
       'source.unsplash.com',
       'images.unsplash.com',
       'api.mapbox.com',
+      'replicate.delivery',
+      'pbxt.replicate.delivery',
     ],
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',

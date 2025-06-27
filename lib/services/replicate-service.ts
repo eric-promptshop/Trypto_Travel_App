@@ -1,9 +1,11 @@
-import Replicate from 'replicate'
-
-// Initialize Replicate client
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN || '',
-})
+// Dynamic import to avoid build warnings
+interface ReplicateClient {
+  run: (model: string, options: any) => Promise<any>;
+  predictions: {
+    create: (options: any) => Promise<any>;
+    get: (id: string) => Promise<any>;
+  };
+}
 
 export interface ReplicateModels {
   // Text generation models
@@ -36,6 +38,24 @@ export const REPLICATE_MODELS: ReplicateModels = {
 }
 
 export class ReplicateService {
+  private client: ReplicateClient | null = null;
+
+  private async getClient(): Promise<ReplicateClient> {
+    if (!this.client) {
+      // Dynamic import to avoid build-time warnings
+      const Replicate = (await import('replicate')).default;
+      
+      if (!process.env.REPLICATE_API_TOKEN) {
+        throw new Error('REPLICATE_API_TOKEN is not set');
+      }
+
+      this.client = new Replicate({
+        auth: process.env.REPLICATE_API_TOKEN,
+      });
+    }
+    return this.client;
+  }
+
   /**
    * Extract tour information from a webpage using vision models
    */
@@ -47,7 +67,8 @@ export class ReplicateService {
     try {
       // If we have a screenshot, use the vision model
       if (screenshotUrl) {
-        const output = await replicate.run(REPLICATE_MODELS.llava, {
+        const client = await this.getClient();
+        const output = await client.run(REPLICATE_MODELS.llava, {
           input: {
             image: screenshotUrl,
             prompt: `Analyze this tour webpage screenshot and extract the following information in JSON format:
@@ -73,7 +94,8 @@ export class ReplicateService {
       }
       
       // Otherwise use text extraction with Llama 2
-      const output = await replicate.run(REPLICATE_MODELS.llama2_70b, {
+      const client = await this.getClient();
+      const output = await client.run(REPLICATE_MODELS.llama2_70b, {
         input: {
           prompt: this.buildTourExtractionPrompt(htmlContent),
           temperature: 0.3,
@@ -112,7 +134,8 @@ export class ReplicateService {
       
       Return as JSON format.`
 
-      const output = await replicate.run(REPLICATE_MODELS.llama2_70b, {
+      const client = await this.getClient();
+      const output = await client.run(REPLICATE_MODELS.llama2_70b, {
         input: {
           prompt,
           temperature: 0.7,
@@ -156,7 +179,8 @@ export class ReplicateService {
       
       Make it engaging, informative, and conversion-focused. Return as JSON.`
 
-      const output = await replicate.run(REPLICATE_MODELS.mistral_7b, {
+      const client = await this.getClient();
+      const output = await client.run(REPLICATE_MODELS.mistral_7b, {
         input: {
           prompt,
           temperature: 0.8,
@@ -189,7 +213,8 @@ export class ReplicateService {
       const prompt = `${destination} tourism, ${tourName}, ${stylePrompts[style]}, beautiful scenery, high resolution, award winning photography`
       const negativePrompt = 'low quality, blurry, distorted, ugly, bad composition'
 
-      const output = await replicate.run(REPLICATE_MODELS.sdxl_lightning, {
+      const client = await this.getClient();
+      const output = await client.run(REPLICATE_MODELS.sdxl_lightning, {
         input: {
           prompt,
           negative_prompt: negativePrompt,
@@ -216,7 +241,8 @@ export class ReplicateService {
     try {
       const analyses = await Promise.all(
         imageUrls.slice(0, 5).map(async (imageUrl) => {
-          const output = await replicate.run(REPLICATE_MODELS.blip2, {
+          const client = await this.getClient();
+          const output = await client.run(REPLICATE_MODELS.blip2, {
             input: {
               image: imageUrl,
               question: 'What tourist activities and locations are shown in this image? Describe in detail.',
