@@ -99,6 +99,7 @@ function PlanPageContent() {
   const [skeletonItinerary, setSkeletonItinerary] = useState<SkeletonItineraryData | null>(null)
   const [naturalLanguageQuery, setNaturalLanguageQuery] = useState<string>('')
   const [voiceQuery, setVoiceQuery] = useState<string>('')
+  const [hasTriedGeneration, setHasTriedGeneration] = useState(false)
   
   // Use unified state
   const { currentItinerary, setCurrentItinerary } = useItineraryState()
@@ -135,6 +136,7 @@ function PlanPageContent() {
 
   const generateSkeletonFromQuery = useCallback(async (query: string) => {
     setCurrentView('generating')
+    setHasTriedGeneration(true)
     track('skeleton_generation_started', { query })
 
     try {
@@ -178,7 +180,9 @@ function PlanPageContent() {
       })
       
       if (!generateResponse.ok) {
-        throw new Error('Failed to generate itinerary')
+        const errorText = await generateResponse.text()
+        console.error('Generate itinerary failed:', generateResponse.status, errorText)
+        throw new Error(`Failed to generate itinerary: ${generateResponse.status} - ${errorText}`)
       }
       
       const generateResult = await generateResponse.json()
@@ -241,6 +245,9 @@ function PlanPageContent() {
 
   // Check for URL parameters and pre-selected tour on mount
   useEffect(() => {
+    // Prevent re-triggering if we've already tried
+    if (hasTriedGeneration) return
+    
     const query = searchParams.get('q')
     const destination = searchParams.get('destination')
     
@@ -269,7 +276,7 @@ function PlanPageContent() {
         generateSkeletonFromQuery(destQuery)
       }
     }
-  }, [searchParams, generateSkeletonFromQuery])
+  }, [searchParams, generateSkeletonFromQuery, hasTriedGeneration])
 
   const generateSkeletonItinerary = (parsedData: any): SkeletonItineraryData => {
     const destination = parsedData.destination || 'Your Destination'
@@ -951,6 +958,23 @@ function PlanPageContent() {
           <p className="text-xl text-gray-600 mb-6">
             Use AI to create a personalized itinerary in seconds
           </p>
+          
+          {/* Reset button when there's been an error */}
+          {hasTriedGeneration && currentView === 'form' && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setHasTriedGeneration(false)
+                setNaturalLanguageQuery('')
+                setVoiceQuery('')
+                // Clear URL parameters
+                router.push('/plan')
+              }}
+              className="mb-4"
+            >
+              Clear and Try Again
+            </Button>
+          )}
           
           {isSupported && (
             <Button
