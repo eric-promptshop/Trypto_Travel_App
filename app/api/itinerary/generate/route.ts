@@ -3,7 +3,7 @@ import OpenAI from 'openai'
 import { z } from 'zod'
 import { googlePlacesService } from '@/lib/services/google-places'
 import { getCachedItinerary, cacheItinerary } from '@/lib/cache/redis-cache'
-import { withAuth, AuthenticatedRequest } from '@/lib/auth/api-auth'
+// Authentication removed to allow public access for itinerary generation
 import { createSuccessResponse, createErrorResponse, createValidationErrorResponse } from '@/lib/api/response'
 import { withRateLimit, rateLimitConfigs } from '@/lib/middleware/rate-limit'
 
@@ -389,27 +389,26 @@ function generateFallbackItinerary(
 }
 
 async function handleItineraryGeneration(request: NextRequest) {
-  return withAuth(request, async (req: AuthenticatedRequest) => {
-    const startTime = Date.now()
+  const startTime = Date.now()
+  
+  try {
+    // Parse and validate request
+    const body = await request.json()
+    const validation = generateRequestSchema.safeParse(body)
     
-    try {
-      // Parse and validate request
-      const body = await req.json()
-      const validation = generateRequestSchema.safeParse(body)
-      
-      if (!validation.success) {
-        return createValidationErrorResponse(
-          validation.error.errors.map(err => ({
-            code: 'VALIDATION_ERROR',
-            message: err.message,
-            field: err.path.join('.')
-          }))
-        )
-      }
-      
-      const data = validation.data
-      
-      // Log who is generating itinerary
+    if (!validation.success) {
+      return createValidationErrorResponse(
+        validation.error.errors.map(err => ({
+          code: 'VALIDATION_ERROR',
+          message: err.message,
+          field: err.path.join('.')
+        }))
+      )
+    }
+    
+    const data = validation.data
+    
+    // Log itinerary generation
     
     // Check cache first
     const cacheKey = {
@@ -486,15 +485,14 @@ async function handleItineraryGeneration(request: NextRequest) {
       }
     )
     
-    } catch (error) {
-      console.error('Itinerary generation error:', error)
-      return createErrorResponse(
-        'Failed to generate itinerary',
-        error instanceof Error ? { message: error.message } : undefined,
-        500
-      )
-    }
-  })
+  } catch (error) {
+    console.error('Itinerary generation error:', error)
+    return createErrorResponse(
+      'Failed to generate itinerary',
+      error instanceof Error ? { message: error.message } : undefined,
+      500
+    )
+  }
 }
 
 // Apply rate limiting to the endpoint
