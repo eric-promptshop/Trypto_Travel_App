@@ -28,7 +28,9 @@ import {
   Quote,
   TrendingUp,
   Award,
-  DollarSign
+  DollarSign,
+  Compass,
+  Check
 } from 'lucide-react'
 import { TripNavLogo } from '@/components/ui/TripNavLogo'
 import { cn } from '@/lib/utils'
@@ -403,6 +405,206 @@ export default function Home() {
       <section className="py-20 relative bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="container mx-auto px-6">
           <InspirationalPrompt />
+        </div>
+      </section>
+
+      {/* Explore Options Section with Tabs */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <Badge variant="outline" className="mb-4 border-[#e5e7eb]">
+              <span className="text-[#1f5582] font-medium">Start Your Journey</span>
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#1f5582] mb-4 tracking-tight">
+              Choose How to Begin Your Adventure
+            </h2>
+            <p className="text-xl text-[#6b7280] max-w-3xl mx-auto">
+              Browse curated tours from local operators or create a custom AI-powered itinerary
+            </p>
+          </motion.div>
+
+          <Tabs defaultValue="tours" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="tours" className="text-lg">
+                <Compass className="w-5 h-5 mr-2" />
+                Browse Tour Templates
+              </TabsTrigger>
+              <TabsTrigger value="custom" className="text-lg">
+                <Sparkles className="w-5 h-5 mr-2" />
+                Create Custom Itinerary
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="tours" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Featured Tours */}
+                <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                    <img 
+                      src="https://images.unsplash.com/photo-1533929736458-ca588d08c8be?w=400&h=300&fit=crop" 
+                      alt="London Tour"
+                      className="w-full h-full object-cover"
+                    />
+                    <Badge className="absolute top-4 left-4 bg-orange-500 text-white">Featured</Badge>
+                  </div>
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-semibold mb-2">Royal London Experience</h3>
+                    <p className="text-gray-600 mb-4">Explore London's iconic landmarks including Tower Bridge, Buckingham Palace, and more.</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Clock className="w-4 h-4" />
+                        <span>8 hours</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Users className="w-4 h-4" />
+                        <span>Max 15</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-[#1f5582]">$89</span>
+                      <Button size="sm" className="bg-[#ff6b35] hover:bg-[#e55a2b]" asChild>
+                        <Link href="/tours/london-experience">View Details</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                    <img 
+                      src="https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400&h=300&fit=crop" 
+                      alt="Paris Tour"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-semibold mb-2">Paris Evening Magic</h3>
+                    <p className="text-gray-600 mb-4">Eiffel Tower, Seine cruise, and Montmartre exploration in the City of Lights.</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Clock className="w-4 h-4" />
+                        <span>4 hours</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Users className="w-4 h-4" />
+                        <span>Max 20</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-[#1f5582]">$75</span>
+                      <Button size="sm" className="bg-[#ff6b35] hover:bg-[#e55a2b]" asChild>
+                        <Link href="/tours/paris-evening">View Details</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                    <img 
+                      src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop" 
+                      alt="Tokyo Tour"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-semibold mb-2">Tokyo Cultural Journey</h3>
+                    <p className="text-gray-600 mb-4">Traditional temples, modern districts, and authentic Japanese cuisine experience.</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Clock className="w-4 h-4" />
+                        <span>6 hours</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Users className="w-4 h-4" />
+                        <span>Max 12</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-[#1f5582]">$120</span>
+                      <Button size="sm" className="bg-[#ff6b35] hover:bg-[#e55a2b]" asChild>
+                        <Link href="/tours/tokyo-cultural">View Details</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="text-center pt-8">
+                <Button size="lg" variant="outline" className="border-2 border-[#1f5582] text-[#1f5582] hover:bg-[#1f5582] hover:text-white" asChild>
+                  <Link href="/tours">
+                    Explore All Tours
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="custom" className="space-y-6">
+              <Card className="border-0 shadow-lg p-8">
+                <div className="grid md:grid-cols-2 gap-8 items-center">
+                  <div>
+                    <h3 className="text-2xl font-bold text-[#1f5582] mb-4">AI-Powered Custom Itineraries</h3>
+                    <p className="text-gray-600 mb-6">
+                      Let our advanced AI create a personalized travel plan based on your preferences, 
+                      budget, and travel style. Get recommendations for activities, accommodations, 
+                      and hidden gems that match your unique interests.
+                    </p>
+                    <ul className="space-y-3 mb-6">
+                      <li className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-600" />
+                        </div>
+                        <span className="text-gray-700">Personalized to your preferences</span>
+                      </li>
+                      <li className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-600" />
+                        </div>
+                        <span className="text-gray-700">Real-time pricing and availability</span>
+                      </li>
+                      <li className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-600" />
+                        </div>
+                        <span className="text-gray-700">Includes local insights and tips</span>
+                      </li>
+                    </ul>
+                    <Button size="lg" className="bg-gradient-to-r from-[#1f5582] to-[#2d6ba3] hover:from-[#1a4a73] hover:to-[#265a94]" asChild>
+                      <Link href="/plan">
+                        Start Planning Now
+                        <Sparkles className="ml-2 h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <img 
+                      src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&h=400&fit=crop" 
+                      alt="Travel Planning"
+                      className="rounded-lg shadow-xl"
+                    />
+                    <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-lg shadow-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-12 h-12 bg-gradient-to-br from-[#1f5582] to-[#ff6b35] rounded-full flex items-center justify-center">
+                          <Sparkles className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">AI Assistant</p>
+                          <p className="text-sm text-gray-600">Ready to help</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </section>
 
