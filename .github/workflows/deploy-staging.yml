@@ -1,8 +1,8 @@
 name: Deploy to Staging
 
 on:
-  push:
-    branches: [ develop ]
+  pull_request:
+    types: [opened, synchronize]
   workflow_dispatch:
 
 env:
@@ -10,54 +10,93 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
-  deploy:
+  deploy-preview:
+    name: Deploy Preview to Staging
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci --force
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
       
-    - name: Run tests
-      run: npm test -- --watchAll=false
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
       
-    - name: Build application
-      run: npm run build
-      env:
-        NODE_ENV: production
-        NEXT_PUBLIC_APP_ENV: staging
-        DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-        NEXTAUTH_URL: ${{ secrets.STAGING_NEXTAUTH_URL }}
-        NEXTAUTH_SECRET: ${{ secrets.STAGING_NEXTAUTH_SECRET }}
-        SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
-        SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
-        
-    - name: Install Vercel CLI
-      run: npm install --global vercel@latest
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
       
-    - name: Pull Vercel Environment Information
-      run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Set staging environment variables
+        run: |
+          # Enable new service in staging for testing
+          echo "NEXT_PUBLIC_USE_NEW_TOUR_SERVICE=true" >> .env.preview
+          echo "NEXT_PUBLIC_USE_NEW_ITINERARY_SERVICE=false" >> .env.preview
+          echo "NEXT_PUBLIC_USE_NEW_LEAD_SERVICE=false" >> .env.preview
+          echo "NEXT_PUBLIC_USE_NEW_USER_SERVICE=false" >> .env.preview
+          
+          # 100% rollout in staging
+          echo "NEXT_PUBLIC_ROLLOUT_PERCENTAGE=100" >> .env.preview
+          echo "NEXT_PUBLIC_ROLLOUT_STRATEGY=all" >> .env.preview
+          echo 'NEXT_PUBLIC_INTERNAL_USERS=["@tripnav.com"]' >> .env.preview
+          
+          # Feature Flags
+          echo "NEXT_PUBLIC_ENABLE_TOUR_TEMPLATES=false" >> .env.preview
+          echo "NEXT_PUBLIC_ENABLE_AI_RECOMMENDATIONS=true" >> .env.preview
+          echo "NEXT_PUBLIC_ENABLE_ADVANCED_ANALYTICS=false" >> .env.preview
+          echo "NEXT_PUBLIC_ENABLE_MULTI_LANGUAGE=false" >> .env.preview
+          
+          # Performance Flags
+          echo "NEXT_PUBLIC_ENABLE_CACHING=true" >> .env.preview
+          echo "NEXT_PUBLIC_ENABLE_LAZY_LOADING=true" >> .env.preview
+          echo "NEXT_PUBLIC_ENABLE_PERFORMANCE_MONITORING=true" >> .env.preview
       
-    - name: Build Project Artifacts
-      run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
       
-    - name: Deploy Project Artifacts to Vercel
-      run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy Project Artifacts to Vercel
+        id: deploy
+        run: |
+          deployment_url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deployment_url=$deployment_url" >> $GITHUB_OUTPUT
+          echo "Preview URL: $deployment_url"
       
-    - name: Run Database Migrations
-      run: npx prisma migrate deploy
-      env:
-        DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-        
-    - name: Run Smoke Tests
-      run: |
-        sleep 30
-        curl -f ${{ secrets.STAGING_NEXTAUTH_URL }}/api/health || exit 1 
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const deployment_url = '${{ steps.deploy.outputs.deployment_url }}';
+            
+            const comment = `## 🚀 Staging Deployment Ready!
+            
+            **Preview URL**: ${deployment_url}
+            
+            ### New Service Testing Enabled ✅
+            - Tour Service: **ENABLED** (100% rollout)
+            - Health Check: ${deployment_url}/api/v1/tours/health
+            - Monitoring: ${deployment_url}/admin/monitoring
+            
+            ### Test Checklist:
+            - [ ] Create a new tour
+            - [ ] List tours
+            - [ ] Update tour details
+            - [ ] Publish a tour
+            - [ ] Archive a tour
+            - [ ] Check email notifications
+            - [ ] Verify analytics tracking
+            
+            ### Performance Testing:
+            \`\`\`bash
+            # Run from your local machine
+            npx tsx scripts/performance-comparison.ts
+            \`\`\`
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from 'sonner'
 import { Upload, FileText, Image, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react'
 import { ExtractedTourData } from '@/lib/services/tour-onboarding-service'
+import { useTours } from '@/src/presentation/hooks/useTours'
+import { useFeatureFlag } from '@/lib/feature-flags'
 
 interface TourUploadModalProps {
   isOpen: boolean
@@ -32,6 +34,8 @@ interface UploadedFile {
 }
 
 export default function TourUploadModal({ isOpen, onClose, onTourCreated }: TourUploadModalProps) {
+  const useNewTourService = useFeatureFlag('USE_NEW_TOUR_SERVICE')
+  const { createTour } = useTours()
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentStep, setCurrentStep] = useState<'upload' | 'review' | 'complete'>('upload')
@@ -108,14 +112,37 @@ export default function TourUploadModal({ isOpen, onClose, onTourCreated }: Tour
     
     for (const extraction of successfulExtractions) {
       try {
-        const response = await fetch('/api/tour-operator/tours', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tourData: extraction.extractedData })
-        })
+        if (useNewTourService && extraction.extractedData) {
+          // Use new service
+          await createTour({
+            title: extraction.extractedData.name,
+            description: extraction.extractedData.description || '',
+            duration: parseInt(extraction.extractedData.duration?.replace(/\D/g, '') || '1'),
+            price: {
+              amount: extraction.extractedData.price?.amount || 0,
+              currency: extraction.extractedData.price?.currency || 'USD'
+            },
+            destinations: [extraction.extractedData.destination],
+            activities: extraction.extractedData.activities || [],
+            images: extraction.extractedData.images?.map(img => ({
+              url: img,
+              alt: extraction.extractedData.name
+            })) || [],
+            included: extraction.extractedData.inclusions,
+            excluded: extraction.extractedData.exclusions,
+            languages: extraction.extractedData.languages
+          })
+        } else {
+          // Legacy implementation
+          const response = await fetch('/api/tour-operator/tours', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tourData: extraction.extractedData })
+          })
 
-        if (!response.ok) {
-          throw new Error('Failed to create tour')
+          if (!response.ok) {
+            throw new Error('Failed to create tour')
+          }
         }
       } catch (error) {
         console.error('Error creating tour:', error)

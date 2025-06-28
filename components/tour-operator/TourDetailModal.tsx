@@ -25,6 +25,8 @@ import {
   Plus,
   Trash2
 } from 'lucide-react'
+import { useTours } from '@/src/presentation/hooks/useTours'
+import { useFeatureFlag } from '@/lib/feature-flags'
 
 interface TourDetailModalProps {
   tour: any
@@ -35,6 +37,8 @@ interface TourDetailModalProps {
 }
 
 export default function TourDetailModal({ tour, isOpen, onClose, onSave, mode }: TourDetailModalProps) {
+  const useNewTourService = useFeatureFlag('USE_NEW_TOUR_SERVICE')
+  const { updateTour, publishTour } = useTours()
   const [isEditing, setIsEditing] = useState(mode === 'edit')
   const [formData, setFormData] = useState({
     name: '',
@@ -101,29 +105,54 @@ export default function TourDetailModal({ tour, isOpen, onClose, onSave, mode }:
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      const response = await fetch(`/api/tour-operator/tours/${tour.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
+      if (useNewTourService) {
+        // Use new service
+        const updates = {
+          title: formData.name,
           description: formData.description,
-          location: formData.destination,
-          price: formData.price,
-          currency: formData.currency,
-          highlights: JSON.stringify(formData.highlights),
-          included: JSON.stringify(formData.inclusions),
-          excluded: JSON.stringify(formData.exclusions),
-          images: JSON.stringify(formData.images),
-          metadata: JSON.stringify({
-            ...JSON.parse(tour.metadata || '{}'),
-            itinerary: formData.itinerary
-          }),
-          active: formData.status === 'active'
+          destinations: [formData.destination],
+          duration: parseInt(formData.duration.replace(/\D/g, '') || '1'),
+          price: {
+            amount: formData.price,
+            currency: formData.currency
+          },
+          included: formData.inclusions,
+          excluded: formData.exclusions,
+          images: formData.images.map(url => ({ url, alt: formData.name }))
+        }
+        
+        await updateTour(tour.id, updates)
+        
+        // If status changed to active, publish the tour
+        if (formData.status === 'active' && tour.status !== 'active') {
+          await publishTour(tour.id)
+        }
+      } else {
+        // Legacy implementation
+        const response = await fetch(`/api/tour-operator/tours/${tour.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            description: formData.description,
+            location: formData.destination,
+            price: formData.price,
+            currency: formData.currency,
+            highlights: JSON.stringify(formData.highlights),
+            included: JSON.stringify(formData.inclusions),
+            excluded: JSON.stringify(formData.exclusions),
+            images: JSON.stringify(formData.images),
+            metadata: JSON.stringify({
+              ...JSON.parse(tour.metadata || '{}'),
+              itinerary: formData.itinerary
+            }),
+            active: formData.status === 'active'
+          })
         })
-      })
 
-      if (!response.ok) {
-        throw new Error('Failed to update tour')
+        if (!response.ok) {
+          throw new Error('Failed to update tour')
+        }
       }
 
       toast.success('Tour updated successfully!')

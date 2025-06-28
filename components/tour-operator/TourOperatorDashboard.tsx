@@ -49,6 +49,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useTours } from '@/src/presentation/hooks/useTours'
+import { useFeatureFlag } from '@/lib/feature-flags'
 
 interface Tour {
   id: string
@@ -74,8 +76,22 @@ interface DashboardStats {
 
 export default function TourOperatorDashboard() {
   const { data: session } = useSession()
-  const [tours, setTours] = useState<Tour[]>([])
-  const [stats, setStats] = useState<DashboardStats>({
+  const useNewTourService = useFeatureFlag('USE_NEW_TOUR_SERVICE')
+  
+  // New service architecture - use the useTours hook
+  const {
+    tours: newServiceTours,
+    loading: newServiceLoading,
+    error: newServiceError,
+    stats: newServiceStats,
+    fetchTours: fetchNewServiceTours,
+    fetchStats: fetchNewServiceStats,
+    archiveTour: archiveNewServiceTour
+  } = useTours()
+  
+  // Legacy state for gradual migration
+  const [legacyTours, setLegacyTours] = useState<Tour[]>([])
+  const [legacyStats, setLegacyStats] = useState<DashboardStats>({
     totalTours: 0,
     activeTours: 0,
     totalBookings: 0,
@@ -83,28 +99,74 @@ export default function TourOperatorDashboard() {
     monthlyViews: 0,
     conversionRate: 0
   })
+  const [legacyLoading, setLegacyLoading] = useState(true)
+  
+  // Shared state
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'draft' | 'archived'>('all')
-  const [isLoading, setIsLoading] = useState(true)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [showUrlImportModal, setShowUrlImportModal] = useState(false)
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null)
   const [tourModalMode, setTourModalMode] = useState<'view' | 'edit'>('view')
   const [tourToDelete, setTourToDelete] = useState<string | null>(null)
+  
+  // Use new or legacy data based on feature flag
+  const tours = useNewTourService 
+    ? newServiceTours.map(t => ({
+        id: t.id,
+        name: t.title,
+        destination: t.destinations.join(', '),
+        duration: `${t.duration} days`,
+        price: t.price.amount,
+        currency: t.price.currency,
+        status: t.status.toLowerCase() as 'active' | 'draft' | 'archived',
+        views: 0, // TODO: Add views tracking to new service
+        bookings: 0, // TODO: Add bookings tracking to new service
+        nextDeparture: undefined
+      }))
+    : legacyTours
+    
+  const stats = useNewTourService && newServiceStats
+    ? {
+        totalTours: newServiceStats.total,
+        activeTours: newServiceStats.published,
+        totalBookings: 0, // TODO: Add to new service
+        totalRevenue: 0, // TODO: Add to new service
+        monthlyViews: 0, // TODO: Add to new service
+        conversionRate: 0 // TODO: Add to new service
+      }
+    : legacyStats
+    
+  const isLoading = useNewTourService ? newServiceLoading : legacyLoading
 
   useEffect(() => {
-    fetchDashboardData()
-  }, [])
+    if (useNewTourService) {
+      // Use new service
+      fetchNewServiceTours({ includeArchived: true })
+      fetchNewServiceStats()
+    } else {
+      // Use legacy implementation
+      fetchLegacyDashboardData()
+    }
+  }, [useNewTourService])
+  
+  // Show error if new service has errors
+  useEffect(() => {
+    if (useNewTourService && newServiceError) {
+      toast.error(`Error loading tours: ${newServiceError}`)
+    }
+  }, [useNewTourService, newServiceError])
 
-  const fetchDashboardData = async () => {
+  const fetchLegacyDashboardData = async () => {
     try {
+      setLegacyLoading(true)
       
       // Fetch tours
       const toursResponse = await fetch('/api/tour-operator/tours')
       
       if (toursResponse.ok) {
         const toursData = await toursResponse.json()
-        setTours(toursData.tours || [])
+        setLegacyTours(toursData.tours || [])
       } else {
         const errorText = await toursResponse.text()
         console.error('[TourOperatorDashboard] Tours fetch error:', toursResponse.status, errorText)
@@ -115,7 +177,7 @@ export default function TourOperatorDashboard() {
       
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
-        setStats(statsData.stats || stats)
+        setLegacyStats(statsData.stats || legacyStats)
       } else {
         const errorText = await statsResponse.text()
         console.error('[TourOperatorDashboard] Stats fetch error:', statsResponse.status, errorText)
@@ -123,7 +185,16 @@ export default function TourOperatorDashboard() {
     } catch (error) {
       console.error('[TourOperatorDashboard] Error fetching dashboard data:', error)
     } finally {
-      setIsLoading(false)
+      setLegacyLoading(false)
+    }
+  }
+  
+  const fetchDashboardData = () => {
+    if (useNewTourService) {
+      fetchNewServiceTours({ includeArchived: true })
+      fetchNewServiceStats()
+    } else {
+      fetchLegacyDashboardData()
     }
   }
 
@@ -155,19 +226,27 @@ export default function TourOperatorDashboard() {
 
   const handleDeleteTour = async (tourId: string) => {
     try {
-      const response = await fetch(`/api/tour-operator/tours/${tourId}`, {
-        method: 'DELETE'
-      })
+      if (useNewTourService) {
+        // Use new service - archive instead of delete
+        await archiveNewServiceTour(tourId)
+        toast.success('Tour archived successfully!')
+      } else {
+        // Legacy implementation
+        const response = await fetch(`/api/tour-operator/tours/${tourId}`, {
+          method: 'DELETE'
+        })
 
-      if (!response.ok) {
-        throw new Error('Failed to delete tour')
+        if (!response.ok) {
+          throw new Error('Failed to delete tour')
+        }
+        
+        toast.success('Tour deleted successfully!')
       }
-
-      toast.success('Tour deleted successfully!')
+      
       fetchDashboardData()
     } catch (error) {
       console.error('Error deleting tour:', error)
-      toast.error('Failed to delete tour')
+      toast.error(useNewTourService ? 'Failed to archive tour' : 'Failed to delete tour')
     } finally {
       setTourToDelete(null)
     }

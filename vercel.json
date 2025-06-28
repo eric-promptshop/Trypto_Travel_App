@@ -4,6 +4,15 @@
   "devCommand": "pnpm run dev",
   "installCommand": "pnpm install",
   "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_USE_NEW_TOUR_SERVICE": "@next_public_use_new_tour_service",
+    "NEXT_PUBLIC_USE_NEW_ITINERARY_SERVICE": "@next_public_use_new_itinerary_service",
+    "NEXT_PUBLIC_USE_NEW_LEAD_SERVICE": "@next_public_use_new_lead_service",
+    "NEXT_PUBLIC_USE_NEW_USER_SERVICE": "@next_public_use_new_user_service",
+    "NEXT_PUBLIC_ROLLOUT_PERCENTAGE": "@next_public_rollout_percentage",
+    "NEXT_PUBLIC_ROLLOUT_STRATEGY": "@next_public_rollout_strategy",
+    "NEXT_PUBLIC_INTERNAL_USERS": "@next_public_internal_users"
+  },
   "functions": {
     "app/api/generate-itinerary/route.ts": {
       "maxDuration": 30
@@ -13,6 +22,18 @@
     },
     "app/api/content/scan/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/v1/tours/health/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/monitoring/service-metrics/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/v1/tours/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/v1/tours/[tourId]/route.ts": {
+      "maxDuration": 30
     }
   },
   "regions": ["iad1"],

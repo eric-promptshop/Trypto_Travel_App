@@ -1,0 +1,9 @@
+components/tour-operator/TourOperatorDashboard.tsx:      const toursResponse = await fetch('/api/tour-operator/tours')
+components/tour-operator/TourOperatorDashboard.tsx:      const response = await fetch(`/api/tour-operator/tours/${tourId}`, {
+components/tour-operator/TourUploadModal.tsx:        const response = await fetch('/api/tour-operator/tours/extract', {
+components/tour-operator/TourUploadModal.tsx:        const response = await fetch('/api/tour-operator/tours', {
+components/tour-operator/TourImportModal.tsx:      const response = await fetch('/api/tour-operator/tours/import', {
+components/tour-operator/TourImportModal.tsx:        const response = await fetch('/api/tour-operator/tours/import', {
+components/tour-operator/TourUrlImportModal.tsx:      const response = await fetch('/api/tour-operator/tours/scrape', {
+components/tour-operator/TourUrlImportModal.tsx:      const response = await fetch('/api/tour-operator/tours', {
+components/tour-operator/TourDetailModal.tsx:      const response = await fetch(`/api/tour-operator/tours/${tour.id}`, {

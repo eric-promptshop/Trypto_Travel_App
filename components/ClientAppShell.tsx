@@ -17,7 +17,7 @@ import { BatteryStatusBanner } from "@/components/BatteryStatusBanner"
 import { GeolocationBanner } from "@/components/GeolocationBanner"
 import { MainHeader } from '@/components/layout/MainHeader'
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav'
-import { ErrorBoundary } from '@/components/error-handling/error-boundary'
+import { ErrorBoundary } from '@/src/presentation/components/shared/ErrorBoundary'
 import { analytics } from '@/lib/analytics/analytics-service'
 import { performanceMonitor } from '@/lib/monitoring/performance-monitor'
 import { ThumbZoneWrapper } from '@/components/ThumbZoneWrapper'

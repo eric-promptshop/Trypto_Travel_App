@@ -2,6 +2,16 @@
 
 An AI-powered travel planning application that transforms traditional request forms into intelligent, conversational experiences.
 
+## 🏗️ Architecture
+
+TripNav uses a **Service-Oriented Architecture (SOA)** with Domain-Driven Design principles:
+- Clean separation of concerns with distinct layers
+- Dependency injection for flexibility and testability
+- Event-driven architecture for scalability
+- Feature flags for safe deployments
+
+See [PROPOSED_SERVICE_ARCHITECTURE.md](./PROPOSED_SERVICE_ARCHITECTURE.md) for details.
+
 ## Features
 
 - 🤖 **AI-Powered Request Form**: Natural language conversation to gather travel preferences
@@ -10,6 +20,8 @@ An AI-powered travel planning application that transforms traditional request fo
 - 📱 **Mobile-First Design**: Responsive, touch-friendly interface
 - 🎤 **Voice Input**: Speech-to-text for hands-free interaction
 - 🎯 **Real-Time Validation**: Live progress tracking and data extraction
+- 🏢 **Tour Operator Tools**: Comprehensive dashboard for managing tours and leads
+- 📊 **Analytics & Monitoring**: Built-in performance tracking and error monitoring
 
 ## Setup Instructions
 

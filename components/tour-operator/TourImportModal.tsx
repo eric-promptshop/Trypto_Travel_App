@@ -17,6 +17,8 @@ import {
   ArrowRight,
   Search
 } from 'lucide-react'
+import { useTours } from '@/src/presentation/hooks/useTours'
+import { useFeatureFlag } from '@/lib/feature-flags'
 
 interface TourImportModalProps {
   isOpen: boolean
@@ -31,6 +33,8 @@ interface ImportResult {
 }
 
 export default function TourImportModal({ isOpen, onClose, onTourImported }: TourImportModalProps) {
+  const useNewTourService = useFeatureFlag('USE_NEW_TOUR_SERVICE')
+  const { createTour } = useTours()
   const [url, setUrl] = useState('')
   const [isImporting, setIsImporting] = useState(false)
   const [importResults, setImportResults] = useState<ImportResult[]>([])

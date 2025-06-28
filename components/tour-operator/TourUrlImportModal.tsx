@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { toast } from 'sonner'
 import { Globe, Loader2, CheckCircle2, AlertCircle, Link } from 'lucide-react'
 import { ExtractedTourData } from '@/lib/services/tour-onboarding-service'
+import { useTours } from '@/src/presentation/hooks/useTours'
+import { useFeatureFlag } from '@/lib/feature-flags'
 
 interface TourUrlImportModalProps {
   isOpen: boolean
@@ -17,6 +19,8 @@ interface TourUrlImportModalProps {
 }
 
 export default function TourUrlImportModal({ isOpen, onClose, onTourCreated }: TourUrlImportModalProps) {
+  const useNewTourService = useFeatureFlag('USE_NEW_TOUR_SERVICE')
+  const { createTour } = useTours()
   const [url, setUrl] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [extractedData, setExtractedData] = useState<ExtractedTourData | null>(null)
@@ -69,14 +73,37 @@ export default function TourUrlImportModal({ isOpen, onClose, onTourCreated }: T
     setIsProcessing(true)
 
     try {
-      const response = await fetch('/api/tour-operator/tours', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tourData: extractedData })
-      })
+      if (useNewTourService) {
+        // Use new service
+        await createTour({
+          title: extractedData.name,
+          description: extractedData.description || '',
+          duration: parseInt(extractedData.duration?.replace(/\D/g, '') || '1'),
+          price: {
+            amount: extractedData.price?.amount || 0,
+            currency: extractedData.price?.currency || 'USD'
+          },
+          destinations: [extractedData.destination],
+          activities: extractedData.activities || [],
+          images: extractedData.images?.map(img => ({
+            url: img,
+            alt: extractedData.name
+          })) || [],
+          included: extractedData.inclusions,
+          excluded: extractedData.exclusions,
+          languages: extractedData.languages
+        })
+      } else {
+        // Legacy implementation
+        const response = await fetch('/api/tour-operator/tours', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tourData: extractedData })
+        })
 
-      if (!response.ok) {
-        throw new Error('Failed to create tour')
+        if (!response.ok) {
+          throw new Error('Failed to create tour')
+        }
       }
 
       setCurrentStep('complete')
