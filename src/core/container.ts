@@ -18,60 +18,25 @@ import { TourApplicationService } from '@/src/core/application/tour/TourApplicat
 // Controllers
 import { TourController } from '@/src/presentation/controllers/TourController';
 
-// External Services (temporary implementations)
+// External Services
 import { Logger, EventBus } from '@/src/core/domain/tour/TourServiceImpl';
 import { EmailService, AnalyticsService } from '@/src/core/application/tour/TourApplicationService';
 import { AuthService } from '@/src/presentation/controllers/TourController';
 
-// Simple implementations for now
-class ConsoleLogger implements Logger {
-  info(message: string, data?: any): void {
-    console.log(`[INFO] ${message}`, data);
-  }
-  error(message: string, error?: any): void {
-    console.error(`[ERROR] ${message}`, error);
-  }
-  warn(message: string, data?: any): void {
-    console.warn(`[WARN] ${message}`, data);
-  }
-}
-
-class SimpleEventBus implements EventBus {
-  async publish(event: any): Promise<void> {
-    console.log('Event published:', event.constructor.name, event);
-  }
-}
-
-class MockEmailService implements EmailService {
-  async send(params: { to: string; template: string; data: any }): Promise<void> {
-    console.log('Email sent:', params);
-  }
-}
-
-class MockAnalyticsService implements AnalyticsService {
-  async track(event: string, data: any): Promise<void> {
-    console.log('Analytics tracked:', event, data);
-  }
-}
-
-class MockAuthService implements AuthService {
-  async authenticate(request: Request): Promise<{ userId: string; email: string } | null> {
-    // In production, this would verify the session/JWT
-    // For now, return a mock user
-    return {
-      userId: 'op_123',
-      email: 'operator@example.com'
-    };
-  }
-}
+// Real implementations
+import { StructuredLogger } from '@/src/infrastructure/logging/Logger';
+import { InMemoryEventBus } from '@/src/infrastructure/events/EventBus';
+import { ResendEmailService } from '@/src/infrastructure/external/email/ResendEmailService';
+import { MixedAnalyticsService } from '@/src/infrastructure/external/analytics/MixedAnalyticsService';
+import { NextAuthService } from '@/src/infrastructure/external/auth/NextAuthService';
 
 // Create and configure container
 const container = new Container({ defaultScope: 'Singleton' });
 
 // Bind infrastructure
 container.bind<PrismaClient>(TYPES.PrismaClient).toConstantValue(prisma);
-container.bind<Logger>(TYPES.Logger).to(ConsoleLogger);
-container.bind<EventBus>(TYPES.EventBus).to(SimpleEventBus);
+container.bind<Logger>(TYPES.Logger).to(StructuredLogger);
+container.bind<EventBus>(TYPES.EventBus).to(InMemoryEventBus);
 
 // Bind repositories
 container.bind<TourRepository>(TYPES.TourRepository).to(PrismaTourRepository);
@@ -82,10 +47,10 @@ container.bind<TourService>(TYPES.TourService).to(TourServiceImpl);
 // Bind application services
 container.bind<TourApplicationService>(TYPES.TourApplicationService).to(TourApplicationService);
 
-// Bind external services
-container.bind<EmailService>(TYPES.EmailService).to(MockEmailService);
-container.bind<AnalyticsService>(TYPES.AnalyticsService).to(MockAnalyticsService);
-container.bind<AuthService>(TYPES.AuthService).to(MockAuthService);
+// Bind external services with real implementations
+container.bind<EmailService>(TYPES.EmailService).to(ResendEmailService);
+container.bind<AnalyticsService>(TYPES.AnalyticsService).to(MixedAnalyticsService);
+container.bind<AuthService>(TYPES.AuthService).to(NextAuthService);
 
 // Bind controllers
 container.bind<TourController>(TourController).toSelf();

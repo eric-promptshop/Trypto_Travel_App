@@ -3,9 +3,8 @@ import { TourApplicationService } from '@/src/core/application/tour/TourApplicat
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { NextRequest, NextResponse } from 'next/server';
-
-// Feature flag to enable new service
-const USE_NEW_TOUR_SERVICE = process.env.NEXT_PUBLIC_USE_NEW_TOUR_SERVICE === 'true';
+import { isFeatureEnabled } from '@/lib/feature-flags';
+import '@/src/infrastructure/startup'; // Initialize infrastructure
 
 // Get service instance
 const tourAppService = container.get<TourApplicationService>(TourApplicationService);
@@ -15,7 +14,7 @@ const tourAppService = container.get<TourApplicationService>(TourApplicationServ
  * This allows gradual migration without breaking existing code
  */
 export async function createTourAdapter(request: NextRequest) {
-  if (!USE_NEW_TOUR_SERVICE) {
+  if (!isFeatureEnabled('USE_NEW_TOUR_SERVICE')) {
     // Use old implementation
     return legacyCreateTour(request);
   }
@@ -69,7 +68,7 @@ async function legacyCreateTour(request: NextRequest) {
  * Get tours with new service
  */
 export async function getToursAdapter(request: NextRequest) {
-  if (!USE_NEW_TOUR_SERVICE) {
+  if (!isFeatureEnabled('USE_NEW_TOUR_SERVICE')) {
     return legacyGetTours(request);
   }
 
