@@ -34,6 +34,9 @@
     },
     "app/api/v1/tours/[tourId]/route.ts": {
       "maxDuration": 30
+    },
+    "app/api/tour-operator/tours/scrape/route.ts": {
+      "maxDuration": 30
     }
   },
   "regions": ["iad1"],
