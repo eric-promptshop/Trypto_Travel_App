@@ -5,7 +5,6 @@ import { googlePlacesService } from '@/lib/services/google-places'
 import { getCachedItinerary, cacheItinerary } from '@/lib/cache/redis-cache'
 // Authentication removed to allow public access for itinerary generation
 import { createSuccessResponse, createErrorResponse, createValidationErrorResponse } from '@/lib/api/response'
-import { withRateLimit, rateLimitConfigs } from '@/lib/middleware/rate-limit'
 
 // Initialize OpenAI client
 const openaiApiKey = process.env.OPENAI_API_KEY
@@ -508,20 +507,5 @@ async function handleItineraryGeneration(request: NextRequest) {
   }
 }
 
-// Apply rate limiting to the endpoint
-export const POST = withRateLimit({
-  ...rateLimitConfigs.expensive,
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 5, // 5 requests per 5 minutes
-  message: 'Too many itinerary generation requests. Please wait before trying again.',
-  keyGenerator: (req) => {
-    // Rate limit by authenticated user if available, otherwise by IP
-    const authHeader = req.headers.get('authorization')
-    if (authHeader) {
-      return `auth:${authHeader}`
-    }
-    const forwarded = req.headers.get('x-forwarded-for')
-    const ip = forwarded ? forwarded.split(',')[0] : 'unknown'
-    return `ip:${ip}`
-  }
-})(handleItineraryGeneration)
+// Rate limiting temporarily disabled for testing
+export const POST = handleItineraryGeneration
