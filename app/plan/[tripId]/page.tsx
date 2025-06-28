@@ -26,7 +26,7 @@ import { toast } from 'sonner'
 import { usePlanStore } from '@/store/planStore'
 import { format, differenceInDays } from 'date-fns'
 import { convertAIItineraryToStoreFormat, storeItineraryMetadata } from '@/lib/services/itinerary-converter'
-import { ModernExploreSidebar } from '@/components/ModernExploreSidebar'
+import { ModernExploreSidebarWithTabs as ModernExploreSidebar } from '@/components/ModernExploreSidebarWithTabs'
 import { MobileDayCards } from '@/components/itinerary/MobileDayCards'
 import { TimelineWithImagesV2 as TimelineWithImages } from '@/components/itinerary/TimelineWithImagesV2'
 import { ShareItineraryModal } from '@/components/ShareItineraryModal'
@@ -44,15 +44,47 @@ const DynamicLeafletMap = dynamic(() => import('@/components/MapCanvas').then(mo
   loading: () => <div className="w-full h-full bg-gray-100 animate-pulse" />
 })
 
-// Smart map component that falls back to Leaflet if Google Maps fails
+// Smart map component that prioritizes Google Maps
 const DynamicMap = ({ className }: { className?: string }) => {
-  const [useGoogleMaps, setUseGoogleMaps] = useState(true)
+  const [mapLoadFailed, setMapLoadFailed] = useState(false)
+  const [isCheckingGoogleMaps, setIsCheckingGoogleMaps] = useState(true)
   
-  if (useGoogleMaps) {
+  // Check if Google Maps API key is available
+  useEffect(() => {
+    const checkGoogleMapsAvailability = async () => {
+      try {
+        const response = await fetch('/api/maps/config')
+        if (response.ok) {
+          const config = await response.json()
+          if (config.apiKey) {
+            setIsCheckingGoogleMaps(false)
+            return
+          }
+        }
+        setMapLoadFailed(true)
+      } catch (error) {
+        console.error('Failed to check Google Maps availability:', error)
+        setMapLoadFailed(true)
+      } finally {
+        setIsCheckingGoogleMaps(false)
+      }
+    }
+    
+    checkGoogleMapsAvailability()
+  }, [])
+  
+  if (isCheckingGoogleMaps) {
+    return <div className="w-full h-full bg-gray-100 animate-pulse" />
+  }
+  
+  if (!mapLoadFailed) {
     return (
       <DynamicGoogleMap 
         className={className}
-        onError={() => setUseGoogleMaps(false)}
+        onError={() => {
+          console.error('Google Maps failed to load, falling back to Leaflet')
+          setMapLoadFailed(true)
+        }}
       />
     )
   }
